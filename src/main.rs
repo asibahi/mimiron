@@ -1,7 +1,9 @@
-use anyhow::Result;
 use clap::Parser;
 
-fn main() -> Result<()> {
+fn main() {
     let args = mimiron::MimironArgs::parse();
-    mimiron::run(args)
+    if let Err(e) = mimiron::run(args) {
+        println!("Encountered error: {e}");
+        std::process::exit(1)
+    }
 }

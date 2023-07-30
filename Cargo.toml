@@ -2,8 +2,9 @@
 name = "mimiron"
 version = "0.1.0"
 edition = "2021"
+authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
+description = "A CLI application to query Blizzard hearthstone API"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Args, Parser};
 use itertools::Itertools;
 
@@ -39,15 +39,24 @@ pub fn run(args: MimironArgs) -> Result<()> {
         println!("{access_token}")
     } else if let Some(search_term) = mode.card_name {
         // Card Search
+        let search_term = search_term.join(" ").to_lowercase(); // to allow searching without spaces
         let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
             .query("locale", "en_us")
-            .query("textFilter", &search_term.join(" "))
+            .query("textFilter", &search_term)
             .query("access_token", &access_token)
-            .call()?
-            .into_json::<card::CardSearchResponse>()?;
+            .call()
+            .context("call to card search API failed")?
+            .into_json::<card::CardSearchResponse>()
+            .context("parsing card search json failed")?;
 
         if res.card_count > 0 {
-            let cards = res.cards.into_iter().unique_by(|c| c.name.clone()).take(5);
+            let cards = res
+                .cards
+                .into_iter()
+                // filtering only cards that include the text in the name, instead of the body.
+                .filter(|c| c.name.to_lowercase().contains(&search_term)) 
+                // cards have copies in different decks
+                .unique_by(|c| c.name.clone()) ;
             for card in cards {
                 println!("{card:#}");
             }
@@ -60,8 +69,10 @@ pub fn run(args: MimironArgs) -> Result<()> {
             .query("locale", "en_us")
             .query("code", &deck_string)
             .query("access_token", &access_token)
-            .call()?
-            .into_json::<deck::Deck>()?;
+            .call()
+            .context("call to deck code API failed")?
+            .into_json::<deck::Deck>()
+            .context("parsing deck code json failed")?;
 
         println!("{res}");
     }

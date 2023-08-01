@@ -25,21 +25,21 @@ pub enum Class {
 impl Display for Class {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            // colors from WoW. Couldn't find info on Hearthstone colors.
-            Class::DeathKnight => "DeathKnight".truecolor(196, 30, 6),
-            Class::DemonHunter => "DemonHunter".truecolor(163, 48, 201),
-            Class::Druid => "Druid".truecolor(255, 124, 10),
-            Class::Evoker => "Evoker".truecolor(51, 147, 127),
-            Class::Hunter => "Hunter".truecolor(170, 211, 114),
-            Class::Mage => "Mage".truecolor(63, 199, 235),
-            Class::Monk => "Monk".truecolor(0, 255, 152),
-            Class::Paladin => "Paladin".truecolor(244, 140, 186),
-            Class::Priest => "Priest".white(),
-            Class::Rogue => "Rogue".truecolor(255, 244, 104),
-            Class::Shaman => "Shaman".truecolor(0, 112, 221),
-            Class::Warlock => "Warlock".truecolor(135, 136, 238),
-            Class::Warrior => "Warrior".truecolor(198, 155, 109),
-            Class::Neutral => "Neutral".clear(),
+            // colors from D0nkey's site.
+            Class::DeathKnight => "DeathKnight".truecolor(108, 105, 154),
+            Class::DemonHunter => "DemonHunter".truecolor(37, 111, 61),
+            Class::Druid => "Druid".truecolor(255, 127, 14),
+            Class::Evoker => "Evoker".clear(),
+            Class::Hunter => "Hunter".truecolor(44, 160, 44),
+            Class::Mage => "Mage".truecolor(23, 190, 207),
+            Class::Monk => "Monk".clear(),
+            Class::Paladin => "Paladin".truecolor(240, 189, 39),
+            Class::Priest => "Priest".truecolor(199, 199, 199),
+            Class::Rogue => "Rogue".truecolor(127, 127, 127),
+            Class::Shaman => "Shaman".truecolor(43, 125, 180),
+            Class::Warlock => "Warlock".truecolor(162, 112, 153),
+            Class::Warrior => "Warrior".truecolor(200, 21, 24),
+            Class::Neutral => "Neutral".bright_black(),
             Class::Unknown => "UNKNOWN".clear(),
         };
         write!(f, "{s}")

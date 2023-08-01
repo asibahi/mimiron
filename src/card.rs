@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use clap::Args;
 use colored::Colorize;
- use itertools::Itertools;
+use itertools::Itertools;
 use serde::Deserialize;
 use std::{collections::HashSet, fmt::Display, iter};
 
@@ -246,25 +246,28 @@ pub fn run(args: CardArgs, access_token: &str) -> Result<()> {
         .into_json::<CardSearchResponse>()
         .context("parsing card search json failed")?;
 
-    if res.card_count > 0 {
-        let cards = res
-            .cards
-            .into_iter()
-            // filtering only cards that include the text in the name, instead of the body.
-            .filter(|c| {
-                if args.text {
-                    true
-                } else {
-                    c.name.to_lowercase().contains(&search_term)
-                }
-            })
-            // cards have copies in different decks
-            .unique_by(|c| c.name.clone());
-        for card in cards {
-            println!("{card:#}");
-        }
-    } else {
-        println!("No card found. Check your spelling.");
+    if res.card_count == 0 {
+        println!("No constructed card found. Check your spelling.");
+        return Ok(());
+    }
+
+    let mut cards = res
+        .cards
+        .into_iter()
+        // filtering only cards that include the text in the name, instead of the body,
+        // depending on the args.text variable
+        .filter(|c| args.text || c.name.to_lowercase().contains(&search_term))
+        // cards have copies in different sets
+        .unique_by(|c| c.name.clone())
+        .peekable();
+
+    if cards.peek().is_none(){
+        println!("No constructed card found with this name. Expand search to all text boxes with -t.");
+        return Ok(());
+    }
+
+    for card in cards {
+        println!("{card:#}");
     }
 
     Ok(())

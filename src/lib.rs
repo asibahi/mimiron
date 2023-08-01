@@ -31,8 +31,8 @@ struct MimironModes {
 }
 
 pub fn run(args: MimironArgs) -> Result<()> {
-    let creds = authorization::get_creds_from_env()?;
-    let access_token = authorization::get_access_token(creds)?;
+    let access_token = authorization::get_access_token()
+        .context("failed to get access token.")?;
 
     let mode = args.mode;
     if mode.token {
@@ -54,9 +54,9 @@ pub fn run(args: MimironArgs) -> Result<()> {
                 .cards
                 .into_iter()
                 // filtering only cards that include the text in the name, instead of the body.
-                .filter(|c| c.name.to_lowercase().contains(&search_term)) 
+                .filter(|c| c.name.to_lowercase().contains(&search_term))
                 // cards have copies in different decks
-                .unique_by(|c| c.name.clone()) ;
+                .unique_by(|c| c.name.clone());
             for card in cards {
                 println!("{card:#}");
             }

@@ -235,7 +235,7 @@ pub struct CardArgs {
 }
 
 pub fn run(args: CardArgs, access_token: &str) -> Result<()> {
-    let search_term = args.card_name;
+    let search_term = args.card_name.to_lowercase();
 
     let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")

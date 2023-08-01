@@ -21,9 +21,9 @@ pub enum Commands {
     /// For example, "Al'Akir" needs to be surrounded by quotation marks. So does "Ace Hunter".
     Card(card::CardArgs),
 
-    /// Get the cards in a deck code.
+    /// Get the cards in a deck code. Or compare two decks.
     ///
-    /// Deck code must be _only_ the deck code. The long code you get straight from Hearthstone's copy deck button is not usable.
+    /// Deck codes must be _only_ the deck code. The long code you get straight from Hearthstone's copy deck button is not usable.
     Deck(deck::DeckArgs),
 
     #[clap(hide = true)]

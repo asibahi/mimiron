@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
-use clap::{Args, Parser};
-use itertools::Itertools;
+use clap::{Parser, Subcommand};
 
 mod authorization;
 mod card;
@@ -9,73 +8,37 @@ mod deck;
 
 #[derive(Parser)]
 #[command(author, version)]
-pub struct MimironArgs {
-    #[command(flatten)]
-    mode: MimironModes,
+pub struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 }
 
-#[derive(Args)]
-#[group(required = true, multiple = false)]
-struct MimironModes {
-    /// card text to search for
-    #[arg(trailing_var_arg = true)]
-    card_name: Option<Vec<String>>, // remmeber to join!
+#[derive(Subcommand)]
+pub enum Commands {
+    /// Search for a constructed card by name
+    ///
+    /// Make sure the card's name is surrounded by quotation marks if it includes spaces or non-letter characters.
+    /// For example, "Al'Akir" needs to be surrounded by quotation marks. So does "Ace Hunter".
+    Card(card::CardArgs),
 
-    /// deck code to parse
-    #[arg(short, long)]
-    deck: Option<String>,
+    /// Get the cards in a deck code.
+    ///
+    /// Deck code must be _only_ the deck code. The long code you get straight from Hearthstone's copy deck button is not usable.
+    Deck(deck::DeckArgs),
 
-    /// get access token to test API. for development purposes. Should I use #[cfg(debug_assertions) ?
-    #[arg(short)]
-    token: bool, // remove before release hah !!
+    #[clap(hide = true)]
+    Token,
 }
 
-pub fn run(args: MimironArgs) -> Result<()> {
-    let access_token = authorization::get_access_token()
-        .context("failed to get access token.")?;
-
-    let mode = args.mode;
-    if mode.token {
-        println!("{access_token}")
-    } else if let Some(search_term) = mode.card_name {
-        // Card Search
-        let search_term = search_term.join(" ").to_lowercase(); // to allow searching without spaces
-        let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
-            .query("locale", "en_us")
-            .query("textFilter", &search_term)
-            .query("access_token", &access_token)
-            .call()
-            .context("call to card search API failed")?
-            .into_json::<card::CardSearchResponse>()
-            .context("parsing card search json failed")?;
-
-        if res.card_count > 0 {
-            let cards = res
-                .cards
-                .into_iter()
-                // filtering only cards that include the text in the name, instead of the body.
-                .filter(|c| c.name.to_lowercase().contains(&search_term))
-                // cards have copies in different decks
-                .unique_by(|c| c.name.clone());
-            for card in cards {
-                println!("{card:#}");
-            }
-        } else {
-            println!("No card found. Check your spelling.")
+pub fn run() -> Result<()> {
+    let args = Cli::parse();
+    let access_token = authorization::get_access_token().context("failed to get access token.")?;
+    match args.command {
+        Commands::Card(args) => card::run(args, &access_token),
+        Commands::Deck(args) => deck::run(args, &access_token),
+        Commands::Token => {
+            println!("{}", access_token);
+            Ok(())
         }
-    } else if let Some(deck_string) = mode.deck {
-        // Deck Code
-        let res = ureq::get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", "en_us")
-            .query("code", &deck_string)
-            .query("access_token", &access_token)
-            .call()
-            .context("call to deck code API failed")?
-            .into_json::<deck::Deck>()
-            .context("parsing deck code json failed")?;
-
-        println!("{res}");
     }
-
-    Ok(())
 }

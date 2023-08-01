@@ -1,4 +1,7 @@
+use anyhow::{Context, Result};
+use clap::Args;
 use colored::Colorize;
+ use itertools::Itertools;
 use serde::Deserialize;
 use std::{collections::HashSet, fmt::Display, iter};
 
@@ -194,7 +197,7 @@ impl From<CardData> for Card {
                     durability: c.durability.unwrap(),
                 },
                 39 => CardType::Location {
-                    durability: c.durability.unwrap(),
+                    durability: c.health.unwrap(),
                 },
                 _ => CardType::Unknown,
             },
@@ -216,7 +219,53 @@ impl From<CardData> for Card {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardSearchResponse {
-    pub cards: Vec<Card>,
-    pub card_count: usize,
+struct CardSearchResponse {
+    cards: Vec<Card>,
+    card_count: usize,
+}
+
+#[derive(Args)]
+pub struct CardArgs {
+    /// card name to search for
+    card_name: String,
+
+    /// let search include text inside text boxes and flavor text.
+    #[arg(short, long)]
+    text: bool,
+}
+
+pub fn run(args: CardArgs, access_token: &str) -> Result<()> {
+    let search_term = args.card_name;
+
+    let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
+        .query("locale", "en_us")
+        .query("textFilter", &search_term)
+        .query("access_token", access_token)
+        .call()
+        .context("call to card search API failed")?
+        .into_json::<CardSearchResponse>()
+        .context("parsing card search json failed")?;
+
+    if res.card_count > 0 {
+        let cards = res
+            .cards
+            .into_iter()
+            // filtering only cards that include the text in the name, instead of the body.
+            .filter(|c| {
+                if args.text {
+                    true
+                } else {
+                    c.name.to_lowercase().contains(&search_term)
+                }
+            })
+            // cards have copies in different decks
+            .unique_by(|c| c.name.clone());
+        for card in cards {
+            println!("{card:#}");
+        }
+    } else {
+        println!("No card found. Check your spelling.");
+    }
+
+    Ok(())
 }

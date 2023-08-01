@@ -138,8 +138,6 @@ impl Display for Card {
         let class = self
             .class
             .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<_>>()
             .join("/");
 
         let card_info = &self.card_type;

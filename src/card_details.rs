@@ -1,6 +1,7 @@
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, fmt::Display};
+use itertools::Itertools;
 
 #[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Deserialize)]
@@ -264,8 +265,6 @@ impl Display for CardType {
                 } else {
                     let types = minion_types
                         .iter()
-                        .map(|x| x.to_string())
-                        .collect::<Vec<_>>()
                         .join("/");
                     write!(f, "{attack}/{health} {types}")
                 }

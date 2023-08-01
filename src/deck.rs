@@ -29,8 +29,8 @@ impl Display for Deck {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let code = &self.deck_code;
         let class = &self.class.to_string().bold();
-        let format = &self.format;
-        writeln!(f, "{format} {class} deck.\n{code}")?;
+        let format = &self.format.to_uppercase().bold();
+        writeln!(f, "\n{format:>12} {class} deck.")?;
 
         if self.sideboard_cards.is_some() {
             writeln!(f, "Main Deck:")?;
@@ -70,6 +70,7 @@ impl Display for Deck {
             }
         }
 
+        write!(f, "{code}")?;
         Ok(())
     }
 }
@@ -95,30 +96,41 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<()> {
         let counter1 = deck.cards.iter().collect::<Counter<_>>();
         let counter2 = deck2.cards.iter().collect::<Counter<_>>();
 
-        let fst_diff = (counter1.clone() - counter2.clone())
+        let fst_diff = counter1.clone() - counter2.clone();
+        let common_cards = (counter1.clone() - fst_diff.clone())
             .into_iter()
             .collect::<BTreeMap<_, _>>();
 
+        let fst_diff = fst_diff.into_iter().collect::<BTreeMap<_, _>>();
         let snd_diff = (counter2 - counter1)
             .into_iter()
             .collect::<BTreeMap<_, _>>();
 
+        for (card, count) in common_cards {
+            let count = if count == 1 {
+                String::new()
+            } else {
+                format!("{count}x")
+            };
+            println!("{count:>4} {card}");
+        }
+        println!();
         for (card, count) in fst_diff {
             let count = if count == 1 {
                 String::new()
             } else {
                 format!("{count}x")
             };
-            println!("+{count:>4} {card}");
+            println!("+{count:>3} {card}");
         }
-        
+        println!();
         for (card, count) in snd_diff {
             let count = if count == 1 {
                 String::new()
             } else {
                 format!("{count}x")
             };
-            println!("    -{count:>4} {card}");
+            println!("-{count:>3} {card}");
         }
     } else {
         println!("{deck}");

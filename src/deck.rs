@@ -87,7 +87,6 @@ pub struct DeckArgs {
 pub fn run(args: DeckArgs, access_token: &str) -> Result<()> {
     let code = args.code;
 
-    // Deck Code
     let deck = deck_lookup(&code, access_token)?;
 
     if let Some(code) = args.comp {

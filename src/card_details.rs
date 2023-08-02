@@ -1,7 +1,7 @@
 use colored::Colorize;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, fmt::Display};
-use itertools::Itertools;
 
 #[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Deserialize)]
@@ -27,21 +27,21 @@ impl Display for Class {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             // colors from D0nkey's site.
-            Class::DeathKnight => "DeathKnight".truecolor(108, 105, 154),
-            Class::DemonHunter => "DemonHunter".truecolor(37, 111, 61),
-            Class::Druid => "Druid".truecolor(255, 127, 14),
-            Class::Evoker => "Evoker".clear(),
-            Class::Hunter => "Hunter".truecolor(44, 160, 44),
-            Class::Mage => "Mage".truecolor(23, 190, 207),
-            Class::Monk => "Monk".clear(),
-            Class::Paladin => "Paladin".truecolor(240, 189, 39),
-            Class::Priest => "Priest".truecolor(199, 199, 199),
-            Class::Rogue => "Rogue".truecolor(127, 127, 127),
-            Class::Shaman => "Shaman".truecolor(43, 125, 180),
-            Class::Warlock => "Warlock".truecolor(162, 112, 153),
-            Class::Warrior => "Warrior".truecolor(200, 21, 24),
-            Class::Neutral => "Neutral".bright_black(),
-            Class::Unknown => "UNKNOWN".clear(),
+            Class::DeathKnight => "DeathKnight",
+            Class::DemonHunter => "DemonHunter",
+            Class::Druid => "Druid",
+            Class::Evoker => "Evoker",
+            Class::Hunter => "Hunter",
+            Class::Mage => "Mage",
+            Class::Monk => "Monk",
+            Class::Paladin => "Paladin",
+            Class::Priest => "Priest",
+            Class::Rogue => "Rogue",
+            Class::Shaman => "Shaman",
+            Class::Warlock => "Warlock",
+            Class::Warrior => "Warrior",
+            Class::Neutral => "Neutral",
+            Class::Unknown => "UNKNOWN",
         };
         write!(f, "{s}")
     }
@@ -263,9 +263,7 @@ impl Display for CardType {
                 if minion_types.is_empty() {
                     write!(f, "{attack}/{health} minion")
                 } else {
-                    let types = minion_types
-                        .iter()
-                        .join("/");
+                    let types = minion_types.iter().join("/");
                     write!(f, "{attack}/{health} {types}")
                 }
             }

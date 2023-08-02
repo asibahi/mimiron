@@ -150,7 +150,7 @@ impl Display for Card {
         )?;
 
         if f.alternate() {
-            write!(f, "Set {set}.\n{text}\nImage: {img}")?;
+            write!(f, " Set {set}.\n\t{text}\n\tImage: {img}")?;
         }
         Ok(())
     }

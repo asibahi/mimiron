@@ -242,8 +242,10 @@ pub struct BGArgs {
 
 pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
     let search_term = args.card_name.to_lowercase();
+    let agent = ureq::agent();
 
-    let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
+    let res = agent
+        .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
         .query("gameMode", "battlegrounds")
         .query("textFilter", &search_term)
@@ -285,8 +287,10 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
         } = card.card_type
         {
             for id in child_ids {
-                let url = format!("https://us.api.blizzard.com/hearthstone/cards/{id}");
-                let res = ureq::get(&url)
+                let res = agent
+                    .get(&format!(
+                        "https://us.api.blizzard.com/hearthstone/cards/{id}"
+                    ))
                     .query("locale", "en_us")
                     .query("gameMode", "battlegrounds")
                     .query("access_token", access_token)

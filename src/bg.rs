@@ -139,7 +139,6 @@ pub struct Card {
 impl Display for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let name = &self.name.bold();
-        let img = &self.image;
 
         let card_info = &self.card_type;
 
@@ -149,9 +148,6 @@ impl Display for Card {
             write!(f, "{name:25} {card_info}")?;
         }
 
-        if f.alternate() {
-            write!(f, "\n\tImage: {img}")?;
-        }
         Ok(())
     }
 }
@@ -232,16 +228,20 @@ pub struct CardSearchResponse {
 
 #[derive(Args)]
 pub struct BGArgs {
-    /// card name to search for
-    card_name: String,
+    /// Text to search for
+    name: String,
 
-    /// let search include text inside text boxes and flavor text.
+    /// Include text inside text boxes and flavor text.
     #[arg(short, long)]
     text: bool,
+
+    /// Print image links.
+    #[arg(short, long)]
+    image: bool,
 }
 
 pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
-    let search_term = args.card_name.to_lowercase();
+    let search_term = args.name.to_lowercase();
     let agent = ureq::agent();
 
     let res = agent
@@ -299,6 +299,10 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
 
                 writeln!(buffer, "\t{res}")?;
             }
+        }
+
+        if args.image {
+            writeln!(buffer, "\tImage: {}", card.image)?;
         }
     }
 

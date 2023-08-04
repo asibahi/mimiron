@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use clap::Args;
 use colored::Colorize;
 use itertools::Itertools;
@@ -139,15 +139,13 @@ impl Display for Card {
 
         let card_info = &self.card_type;
 
-        let img = &self.image;
-
         write!(
             f,
             "{name:25} {rarity} {class} {runes}{cost} mana {card_info}."
         )?;
 
         if f.alternate() {
-            write!(f, " Set {set}.\n\t{text}\n\tImage: {img}")?;
+            write!(f, " Set {set}.\n\t{text}")?;
         }
         Ok(())
     }
@@ -221,16 +219,20 @@ struct CardSearchResponse {
 
 #[derive(Args)]
 pub struct CardArgs {
-    /// card name to search for
-    card_name: String,
+    /// Text to search for
+    name: String,
 
-    /// let search include text inside text boxes and flavor text.
+    /// Include text inside text boxes and flavor text
     #[arg(short, long)]
     text: bool,
+
+    /// Print image links
+    #[arg(short, long)]
+    image: bool,
 }
 
 pub fn run(args: CardArgs, access_token: &str) -> Result<String> {
-    let search_term = args.card_name.to_lowercase();
+    let search_term = args.name.to_lowercase();
 
     let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
@@ -256,15 +258,18 @@ pub fn run(args: CardArgs, access_token: &str) -> Result<String> {
         .peekable();
 
     if cards.peek().is_none() {
-        return Err(
-            anyhow!("No constructed card found with this name. Expand search to all text boxes with -t."),
-        );
+        return Err(anyhow!(
+            "No constructed card found with this name. Expand search to all text boxes with -t."
+        ));
     }
 
     let mut buffer = String::new();
 
     for card in cards {
         writeln!(buffer, "{card:#}")?;
+        if args.image {
+            writeln!(buffer, "\tImage: {}", card.image)?;
+        }
     }
 
     Ok(buffer)

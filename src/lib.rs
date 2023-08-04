@@ -30,7 +30,7 @@ pub enum Commands {
      /// Search for a Battlegrounds card by name
     ///
     /// Make sure the card's name is surrounded by quotation marks if it includes spaces or non-letter characters.
-    /// For example, "Al'Akir" needs to be surrounded by quotation marks. So does "Ace Hunter".
+    /// For example, "Al'Akir" needs to be surrounded by quotation marks. So does "The Rat King".
     BG(bg::BGArgs),
 
     #[clap(hide = true)]

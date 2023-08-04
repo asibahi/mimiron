@@ -265,8 +265,6 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
         .filter(|c| args.text || c.name.to_lowercase().contains(&search_term))
-        // cards have copies in different sets
-        .unique_by(|c| c.name.clone())
         .peekable();
 
     if cards.peek().is_none() {

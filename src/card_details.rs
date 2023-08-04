@@ -1,10 +1,10 @@
 use colored::Colorize;
 use itertools::Itertools;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{collections::HashSet, fmt::Display};
 
 #[allow(dead_code)]
-#[derive(PartialEq, Eq, Hash, Deserialize)]
+#[derive(PartialEq, Eq, Hash,Clone, Deserialize)]
 #[serde(from = "ClassData")]
 pub enum Class {
     DeathKnight,
@@ -78,7 +78,7 @@ pub struct ClassData {
     id: u8,
 }
 
-#[derive(PartialEq, PartialOrd, Eq, Ord)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Clone)]
 pub enum Rarity {
     Legendary,
     Epic,
@@ -114,7 +114,7 @@ impl From<u8> for Rarity {
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub enum SpellSchool {
     Arcane,
     Fire,
@@ -156,7 +156,7 @@ impl From<u8> for SpellSchool {
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub enum MinionType {
     Undead,
     Murloc,
@@ -215,7 +215,7 @@ impl From<u8> for MinionType {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct RuneCost {
     blood: u8,
     frost: u8,
@@ -230,6 +230,7 @@ impl Display for RuneCost {
     }
 }
 
+#[derive(Clone)]
 pub enum CardType {
     Hero {
         armor: u8,

@@ -1,6 +1,9 @@
 fn main() {
-    if let Err(e) = mimiron::run() {
-        println!("Encountered error: {e}");
-        std::process::exit(1)
+    match mimiron::run() {
+        Err(e) => {
+            println!("Encountered error: {e}");
+            std::process::exit(1)
+        }
+        Ok(msg) => println!("{msg}"),
     }
 }

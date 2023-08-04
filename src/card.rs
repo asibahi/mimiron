@@ -1,9 +1,9 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use clap::Args;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display, iter};
+use std::{collections::HashSet, fmt::Display, fmt::Write, iter};
 
 use crate::card_details::*;
 
@@ -56,7 +56,7 @@ struct CardData {
     //keyword_ids: Option<Vec<i64>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(from = "CardData")]
 pub struct Card {
     pub id: usize,
@@ -135,10 +135,7 @@ impl Display for Card {
 
         let rarity = &self.rarity;
 
-        let class = self
-            .class
-            .iter()
-            .join("/");
+        let class = self.class.iter().join("/");
 
         let card_info = &self.card_type;
 
@@ -232,7 +229,7 @@ pub struct CardArgs {
     text: bool,
 }
 
-pub fn run(args: CardArgs, access_token: &str) -> Result<()> {
+pub fn run(args: CardArgs, access_token: &str) -> Result<String> {
     let search_term = args.card_name.to_lowercase();
 
     let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
@@ -245,8 +242,7 @@ pub fn run(args: CardArgs, access_token: &str) -> Result<()> {
         .context("parsing card search json failed")?;
 
     if res.card_count == 0 {
-        println!("No constructed card found. Check your spelling.");
-        return Ok(());
+        return Err(anyhow!("No constructed card found. Check your spelling."));
     }
 
     let mut cards = res
@@ -259,14 +255,17 @@ pub fn run(args: CardArgs, access_token: &str) -> Result<()> {
         .unique_by(|c| c.name.clone())
         .peekable();
 
-    if cards.peek().is_none(){
-        println!("No constructed card found with this name. Expand search to all text boxes with -t.");
-        return Ok(());
+    if cards.peek().is_none() {
+        return Err(
+            anyhow!("No constructed card found with this name. Expand search to all text boxes with -t."),
+        );
     }
+
+    let mut buffer = String::new();
 
     for card in cards {
-        println!("{card:#}");
+        writeln!(buffer, "{card:#}")?;
     }
 
-    Ok(())
+    Ok(buffer)
 }

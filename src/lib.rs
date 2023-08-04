@@ -30,15 +30,14 @@ pub enum Commands {
     Token,
 }
 
-pub fn run() -> Result<()> {
+pub fn run() -> Result<String> {
     let args = Cli::parse();
     let access_token = authorization::get_access_token().context("failed to get access token.")?;
     match args.command {
         Commands::Card(args) => card::run(args, &access_token),
         Commands::Deck(args) => deck::run(args, &access_token),
         Commands::Token => {
-            println!("{}", access_token);
-            Ok(())
+            Ok(access_token)
         }
     }
 }

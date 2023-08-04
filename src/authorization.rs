@@ -10,11 +10,14 @@ struct Authorization {
 }
 
 pub fn get_access_token() -> Result<String> {
-    dotenvy::dotenv()?;
-    let id =
-        std::env::var("BLIZZARD_CLIENT_ID").context("failed to get BLIZZARD_CLIENT_ID from env")?;
-    let secret = std::env::var("BLIZZARD_CLIENT_SECRET")
-        .context("failed to get BLIZZARD_CLIENT_SECRET from env")?;
+    // need to replace later with something that allows people to input their own creds
+    // dotenvy::dotenv()?;
+    // let id = std::env::var("BLIZZARD_CLIENT_ID").context("failed to get BLIZZARD_CLIENT_ID from env")?;
+    // let secret = std::env::var("BLIZZARD_CLIENT_SECRET").context("failed to get BLIZZARD_CLIENT_SECRET from env")?;
+
+    let id = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_ID");
+    let secret = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_SECRET");
+
     let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{}:{}", id, secret).as_bytes());
 
     let access_token = ureq::post("https://oauth.battle.net/token")

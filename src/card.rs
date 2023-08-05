@@ -131,7 +131,7 @@ impl Display for Card {
         };
 
         let set = self.card_set;
-        let text = crate::prettify::prettify(&self.text).expect("prettify error");
+        let text = crate::prettify::prettify(&self.text);
 
         let rarity = &self.rarity;
 

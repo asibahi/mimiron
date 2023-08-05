@@ -105,7 +105,7 @@ impl Display for BGCardType {
                 minion_types,
                 upgrade_id: _,
             } => {
-                let text = prettify(&text).expect("prettify error");
+                let text = prettify(text);
 
                 write!(f, "Tier {tier} {attack}/{health} ")?;
                 if minion_types.is_empty() {
@@ -123,15 +123,15 @@ impl Display for BGCardType {
                 Ok(())
             }
             BGCardType::Quest { text } => {
-                let text = prettify(&text).expect("prettify error");
+                let text = prettify(text);
                 write!(f, "Battlegrounds Quest: {text}")
             }
             BGCardType::Reward { text } => {
-                let text = prettify(&text).expect("prettify error");
+                let text = prettify(text);
                 write!(f, "Battlegrounds Quest: {text}")
             }
             BGCardType::HeroPower { text, cost } => {
-                let text = prettify(&text).expect("prettify error");
+                let text = prettify(text);
                 write!(f, "{cost}-cost Hero Power: {text}")
             }
         }

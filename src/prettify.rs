@@ -38,7 +38,7 @@ fn parse_line(i: &str) -> IResult<&str, Vec<ColoredString>> {
     Ok((a, b))
 }
 
-pub fn prettify(input: &str) -> Result<String> {
+fn prettify_inner(input: &str) -> Result<String> {
     let mut buffer = String::new();
 
     let (_, parsed) = parse_line(input).map_err(|_| anyhow!("prettify parser failed"))?;
@@ -48,4 +48,8 @@ pub fn prettify(input: &str) -> Result<String> {
     }
 
     Ok(buffer)
+}
+
+pub fn prettify(input: &str) -> String {
+    prettify_inner(input).expect("prettify_error")
 }

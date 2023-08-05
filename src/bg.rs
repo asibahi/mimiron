@@ -10,6 +10,7 @@ use std::{
 };
 
 use crate::card_details::MinionType;
+use crate::prettify::prettify;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -104,6 +105,8 @@ impl Display for BGCardType {
                 minion_types,
                 upgrade_id: _,
             } => {
+                let text = prettify(&text).expect("prettify error");
+
                 write!(f, "Tier {tier} {attack}/{health} ")?;
                 if minion_types.is_empty() {
                     write!(f, "minion")?;
@@ -119,9 +122,16 @@ impl Display for BGCardType {
 
                 Ok(())
             }
-            BGCardType::Quest { text } => write!(f, "Battlegrounds Quest: {text}"),
-            BGCardType::Reward { text } => write!(f, "Battlegrounds Quest Reward: {text}"),
+            BGCardType::Quest { text } => {
+                let text = prettify(&text).expect("prettify error");
+                write!(f, "Battlegrounds Quest: {text}")
+            }
+            BGCardType::Reward { text } => {
+                let text = prettify(&text).expect("prettify error");
+                write!(f, "Battlegrounds Quest: {text}")
+            }
             BGCardType::HeroPower { text, cost } => {
+                let text = prettify(&text).expect("prettify error");
                 write!(f, "{cost}-cost Hero Power: {text}")
             }
         }

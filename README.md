@@ -6,11 +6,13 @@ An overengineered CLI tool to look up Hearthstone cards. It feeds up on the offi
 
 ## Installation
 
-You need to have Rust installed on your system. You can then install this app on your machine with:
+You need to have Rust installed on your system. You can then fork this repositry and install the app on your machine with.
 
 ```sh
-cargo install --git https://github.com/asibahi/mimiron
+cargo install --path .
 ```
+
+However, you need your Blizzard API credentials as environment variables under `BLIZZARD_CLIENT_ID` and `BLIZZARD_CLIENT_SECRET`.
 
 ## Usage
 

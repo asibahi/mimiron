@@ -63,4 +63,18 @@ mimiron bg "N'zoth"
 
 ![Battleground lookup](README/bglookup.png)
 
+## Roadmap
+
+The next item on the agenda is to create a command to add Sideboard cards to a deck. Deck code retrieved from HSReplay, D0nkey, or HearthstoneTopDecks lack the Sideboard data, and I want a simple tool to add them and get an updated code.
+
+Also I want to include search for Duels treasures.
+
+## License
+
+MIT license. Don't care what you do with thism but give credit.
+
+## Contribute
+
+Suggestions and help welcome.
+
 Please play around with it, abuse it, and let me know you things should work.

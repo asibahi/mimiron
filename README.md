@@ -71,7 +71,7 @@ Also I want to include search for Duels treasures.
 
 ## License
 
-MIT license. Don't care what you do with thism but give credit.
+MIT license. Don't care what you do with this, but give credit.
 
 ## Contribute
 

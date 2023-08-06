@@ -12,6 +12,12 @@ You need to have Rust installed on your system. You can then fork this repositry
 cargo install --path .
 ```
 
+or you can immediately install from GitHub with
+
+```sh
+cargo install --git https://github.com/asibahi/mimiron
+```
+
 However, you need your Blizzard API credentials as environment variables under `BLIZZARD_CLIENT_ID` and `BLIZZARD_CLIENT_SECRET`.
 
 ## Usage

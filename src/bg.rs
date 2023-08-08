@@ -107,17 +107,23 @@ impl Display for BGCardType {
             } => {
                 let text = prettify(text);
 
-                write!(f, "Tier {tier} {attack}/{health} ")?;
+                write!(f, "Tier-{tier} {attack}/{health} ")?;
                 if minion_types.is_empty() {
                     write!(f, "minion")?;
                 } else {
                     let types = minion_types.iter().join("/");
                     write!(f, "{types}")?;
                 }
-                if !f.alternate() {
-                    write!(f, ": {text}")?;
+                if f.alternate() {
+                    let text = textwrap::fill(
+                        &text,
+                        textwrap::Options::new(textwrap::termwidth() - 10)
+                            .initial_indent("\t")
+                            .subsequent_indent("\t"),
+                    );
+                    write!(f, ".\n{text}")?;
                 } else {
-                    write!(f, ".\n\t{text}")?;
+                    write!(f, ": {text}")?;
                 }
 
                 Ok(())
@@ -153,9 +159,9 @@ impl Display for Card {
         let card_info = &self.card_type;
 
         if f.alternate() {
-            write!(f, "{name:25} {card_info:#}")?;
+            write!(f, "{name:20} {card_info:#}")?;
         } else {
-            write!(f, "{name:25} {card_info}")?;
+            write!(f, "{name:20} {card_info}")?;
         }
 
         Ok(())
@@ -307,7 +313,14 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     .into_json::<Card>()
                     .context("parsing BG card search by id json failed")?;
 
-                writeln!(buffer, "\t{res}")?;
+                let res = textwrap::fill(
+                    &res.to_string(),
+                    textwrap::Options::new(textwrap::termwidth() - 10)
+                        .initial_indent("\t")
+                        .subsequent_indent(&format!("\t{:<20} ", " ")),
+                );
+
+                writeln!(buffer, "{res}")?;
             }
         }
 

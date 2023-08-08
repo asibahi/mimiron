@@ -132,6 +132,12 @@ impl Display for Card {
 
         let set = self.card_set;
         let text = crate::prettify::prettify(&self.text);
+        let text = textwrap::fill(
+            &text,
+            textwrap::Options::new(textwrap::termwidth() - 10)
+                .initial_indent("\t")
+                .subsequent_indent("\t"),
+        );
 
         let rarity = &self.rarity;
 
@@ -145,7 +151,7 @@ impl Display for Card {
         )?;
 
         if f.alternate() {
-            write!(f, " Set {set}.\n\t{text}")?;
+            write!(f, " Set {set}.\n{text}")?;
         }
         Ok(())
     }

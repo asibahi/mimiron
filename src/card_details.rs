@@ -1,10 +1,10 @@
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display};
+use std::{collections::HashSet, fmt::Display, str::FromStr};
 
 #[allow(dead_code)]
-#[derive(PartialEq, Eq, Hash,Clone, Deserialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
 #[serde(from = "ClassData")]
 pub enum Class {
     DeathKnight,
@@ -212,6 +212,28 @@ impl From<u8> for MinionType {
             92 => MinionType::Naga,
             _ => MinionType::Unknown,
         }
+    }
+}
+impl FromStr for MinionType {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let t = match s.to_lowercase().as_ref() {
+            "undead" => MinionType::Undead,
+            "murloc" => MinionType::Murloc,
+            "demon" => MinionType::Demon,
+            "mech" => MinionType::Mech,
+            "elemental" => MinionType::Elemental,
+            "beast" => MinionType::Beast,
+            "totem" => MinionType::Totem,
+            "pirate" => MinionType::Pirate,
+            "dragon" => MinionType::Dragon,
+            "amalgam" => MinionType::All,
+            "quilboar" => MinionType::Quilboar,
+            "naga" => MinionType::Naga,
+            _ => return Err(anyhow::anyhow!("Not a valid minion type (yet?)")),
+        };
+        Ok(t)
     }
 }
 

@@ -7,6 +7,7 @@ use std::{
     collections::HashSet,
     fmt::{Display, Write},
     iter,
+    str::FromStr,
 };
 
 use crate::card_details::MinionType;
@@ -245,27 +246,45 @@ pub struct CardSearchResponse {
 #[derive(Args)]
 pub struct BGArgs {
     /// Text to search for
-    name: String,
+    name: Option<String>,
 
-    /// Include text inside text boxes and flavor text.
-    #[arg(short, long)]
+    /// Include text inside text boxes.
+    #[arg(long)]
     text: bool,
 
     /// Print image links.
     #[arg(short, long)]
     image: bool,
+
+    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..=6))]
+    tier: Option<u8>,
+
+    #[arg(short = 'T', long = "type", value_parser = MinionType::from_str)]
+    minion_type: Option<MinionType>,
 }
 
 pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
-    let search_term = args.name.to_lowercase();
     let agent = ureq::agent();
 
-    let res = agent
+    let mut res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", "en_us")
-        .query("gameMode", "battlegrounds")
-        .query("textFilter", &search_term)
         .query("access_token", access_token)
+        .query("locale", "en_us")
+        .query("gameMode", "battlegrounds");
+
+    if let Some(t) = &args.name {
+        res = res.query("textFilter", &t);
+    }
+
+    if let Some(t) = args.minion_type {
+        res = res.query("minionType", &t.to_string().to_lowercase());
+    }
+
+    if let Some(t) = args.tier {
+        res = res.query("tier", &t.to_string());
+    }
+
+    let res = res
         .call()
         .context("call to BG card search API failed")?
         .into_json::<CardSearchResponse>()
@@ -280,12 +299,16 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
-        .filter(|c| args.text || c.name.to_lowercase().contains(&search_term))
+        .filter(|c| {
+            args.text
+                || args.name.is_none()
+                || c.name.to_lowercase().contains(args.name.as_ref().unwrap())
+        })
         .peekable();
 
     if cards.peek().is_none() {
         return Err(anyhow!(
-            "No Battlegrounds card found with this name. Expand search to text boxes with -t."
+            "No Battlegrounds card found with this name. Expand search to text boxes with --text."
         ));
     }
 

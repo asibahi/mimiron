@@ -39,9 +39,12 @@ fn parse_line(i: &str) -> IResult<&str, Vec<ColoredString>> {
 }
 
 fn prettify_inner(input: &str) -> Result<String> {
+    // band aid for Eternal Summoner.
+    let input = input.replace("<b><b>", "<b>").replace("</b>.</b>", ".</b>"); 
+
     let mut buffer = String::new();
 
-    let (_, parsed) = parse_line(input).map_err(|_| anyhow!("prettify parser failed"))?;
+    let (_, parsed) = parse_line(&input).map_err(|e| anyhow!(format!("{e}")))?;
 
     for part in parsed {
         write!(buffer, "{part}")?;

@@ -174,7 +174,7 @@ impl From<CardData> for Card {
             if bg.hero {
                 BGCardType::Hero {
                     armor: c.armor.unwrap(),
-                    buddy_id: bg.companion_id.unwrap(),
+                    buddy_id: bg.companion_id.unwrap_or(0),
                     child_ids: c.child_ids.unwrap(),
                 }
             } else if bg.quest {

@@ -248,6 +248,14 @@ pub struct BGArgs {
     /// Text to search for
     name: Option<String>,
 
+    /// Search by Minion Battlegrounds tier
+    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..=6))]
+    tier: Option<u8>,
+
+    // Search by Minion type 
+    #[arg(short = 'T', long = "type", value_parser = MinionType::from_str)]
+    minion_type: Option<MinionType>,
+
     /// Include text inside text boxes.
     #[arg(long)]
     text: bool,
@@ -255,12 +263,6 @@ pub struct BGArgs {
     /// Print image links.
     #[arg(short, long)]
     image: bool,
-
-    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..=6))]
-    tier: Option<u8>,
-
-    #[arg(short = 'T', long = "type", value_parser = MinionType::from_str)]
-    minion_type: Option<MinionType>,
 }
 
 pub fn run(args: BGArgs, access_token: &str) -> Result<String> {

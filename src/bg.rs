@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use clap::Args;
+use clap::{ArgGroup, Args};
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -244,16 +244,18 @@ pub struct CardSearchResponse {
 }
 
 #[derive(Args)]
+#[command(group = ArgGroup::new("search").required(true).multiple(true))]
 pub struct BGArgs {
     /// Text to search for
+    #[arg(group = "search")]
     name: Option<String>,
 
     /// Search by Minion Battlegrounds tier
-    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..=6))]
+    #[arg(short, long, group = "search", value_parser = clap::value_parser!(u8).range(1..=6))]
     tier: Option<u8>,
 
-    // Search by Minion type 
-    #[arg(short = 'T', long = "type", value_parser = MinionType::from_str)]
+    // Search by Minion type
+    #[arg(short = 'T', long = "type", group = "search", value_parser = MinionType::from_str)]
     minion_type: Option<MinionType>,
 
     /// Include text inside text boxes.

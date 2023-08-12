@@ -277,7 +277,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &args.name {
-        res = res.query("textFilter", &t);
+        res = res.query("textFilter", t);
     }
 
     if let Some(t) = args.minion_type {

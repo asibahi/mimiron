@@ -37,9 +37,8 @@ fn prettify_inner(input: &str) -> Result<String> {
 }
 
 pub fn prettify(input: &str) -> String {
-    let pass1 = match prettify_inner(input) {
-        Ok(ret) => ret,
-        Err(_) => return input.to_owned(),
+    let Ok(pass1) = prettify_inner(input) else {
+        return input.to_owned() 
     };
 
     match prettify_inner(&pass1) {

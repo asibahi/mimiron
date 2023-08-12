@@ -41,8 +41,5 @@ pub fn prettify(input: &str) -> String {
         return input.to_owned() 
     };
 
-    match prettify_inner(&pass1) {
-        Ok(ret) => ret,
-        Err(_) => input.to_owned(),
-    }
+    prettify_inner(&pass1).unwrap_or(input.to_owned())
 }

@@ -158,7 +158,7 @@ impl Display for Card {
 }
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
-        Card {
+        Self {
             id: c.id,
             card_set: c.card_set_id,
             name: c.name,

@@ -27,7 +27,7 @@ pub struct Deck {
     sideboard_cards: Option<Vec<Sideboard>>,
 }
 impl Deck {
-    fn compare_with(&self, other: &Deck) -> DeckDifference {
+    fn compare_with(&self, other: &Self) -> DeckDifference {
         let counter1 = self.cards.clone().into_iter().collect::<Counter<_>>();
         let counter2 = other.cards.clone().into_iter().collect::<Counter<_>>();
 

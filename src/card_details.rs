@@ -27,21 +27,21 @@ impl Display for Class {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             // colors from D0nkey's site.
-            Class::DeathKnight => "DeathKnight",
-            Class::DemonHunter => "DemonHunter",
-            Class::Druid => "Druid",
-            Class::Evoker => "Evoker",
-            Class::Hunter => "Hunter",
-            Class::Mage => "Mage",
-            Class::Monk => "Monk",
-            Class::Paladin => "Paladin",
-            Class::Priest => "Priest",
-            Class::Rogue => "Rogue",
-            Class::Shaman => "Shaman",
-            Class::Warlock => "Warlock",
-            Class::Warrior => "Warrior",
-            Class::Neutral => "Neutral",
-            Class::Unknown => "UNKNOWN",
+            Self::DeathKnight => "DeathKnight",
+            Self::DemonHunter => "DemonHunter",
+            Self::Druid => "Druid",
+            Self::Evoker => "Evoker",
+            Self::Hunter => "Hunter",
+            Self::Mage => "Mage",
+            Self::Monk => "Monk",
+            Self::Paladin => "Paladin",
+            Self::Priest => "Priest",
+            Self::Rogue => "Rogue",
+            Self::Shaman => "Shaman",
+            Self::Warlock => "Warlock",
+            Self::Warrior => "Warrior",
+            Self::Neutral => "Neutral",
+            Self::Unknown => "UNKNOWN",
         };
         write!(f, "{s}")
     }
@@ -49,21 +49,21 @@ impl Display for Class {
 impl From<u8> for Class {
     fn from(value: u8) -> Self {
         match value {
-            1 => Class::DeathKnight,
-            14 => Class::DemonHunter,
-            2 => Class::Druid,
+            1 => Self::DeathKnight,
+            14 => Self::DemonHunter,
+            2 => Self::Druid,
             // placeholder => Class::Evoker,
-            3 => Class::Hunter,
-            4 => Class::Mage,
+            3 => Self::Hunter,
+            4 => Self::Mage,
             // placeholder => Class::Monk,
-            5 => Class::Paladin,
-            6 => Class::Priest,
-            7 => Class::Rogue,
-            8 => Class::Shaman,
-            9 => Class::Warlock,
-            10 => Class::Warrior,
-            12 => Class::Neutral,
-            _ => Class::Unknown,
+            5 => Self::Paladin,
+            6 => Self::Priest,
+            7 => Self::Rogue,
+            8 => Self::Shaman,
+            9 => Self::Warlock,
+            10 => Self::Warrior,
+            12 => Self::Neutral,
+            _ => Self::Unknown,
         }
     }
 }
@@ -90,12 +90,12 @@ pub enum Rarity {
 impl Display for Rarity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let r = match self {
-            Rarity::Common => "common".white(),
-            Rarity::Free => "free".white(),
-            Rarity::Rare => "rare".blue(),
-            Rarity::Epic => "epic".purple(),
-            Rarity::Legendary => "LEGENDARY".bright_yellow().bold(),
-            Rarity::Unknown => "UNKNOWN".clear(),
+            Self::Common => "common".white(),
+            Self::Free => "free".white(),
+            Self::Rare => "rare".blue(),
+            Self::Epic => "epic".purple(),
+            Self::Legendary => "LEGENDARY".bright_yellow().bold(),
+            Self::Unknown => "UNKNOWN".clear(),
         }
         .italic();
         write!(f, "{r}")
@@ -104,12 +104,12 @@ impl Display for Rarity {
 impl From<u8> for Rarity {
     fn from(value: u8) -> Self {
         match value {
-            1 => Rarity::Common,
-            2 => Rarity::Free,
-            3 => Rarity::Rare,
-            4 => Rarity::Epic,
-            5 => Rarity::Legendary,
-            _ => Rarity::Unknown,
+            1 => Self::Common,
+            2 => Self::Free,
+            3 => Self::Rare,
+            4 => Self::Epic,
+            5 => Self::Legendary,
+            _ => Self::Unknown,
         }
     }
 }
@@ -128,14 +128,14 @@ pub enum SpellSchool {
 impl Display for SpellSchool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            SpellSchool::Arcane => "Arcane",
-            SpellSchool::Fire => "Fire",
-            SpellSchool::Frost => "Frost",
-            SpellSchool::Nature => "Nature",
-            SpellSchool::Holy => "Holy",
-            SpellSchool::Shadow => "Shadow",
-            SpellSchool::Fel => "Fel",
-            SpellSchool::Unknown => "UNKNOWN",
+            Self::Arcane => "Arcane",
+            Self::Fire => "Fire",
+            Self::Frost => "Frost",
+            Self::Nature => "Nature",
+            Self::Holy => "Holy",
+            Self::Shadow => "Shadow",
+            Self::Fel => "Fel",
+            Self::Unknown => "UNKNOWN",
         };
 
         write!(f, "{s}")
@@ -144,14 +144,14 @@ impl Display for SpellSchool {
 impl From<u8> for SpellSchool {
     fn from(value: u8) -> Self {
         match value {
-            1 => SpellSchool::Arcane,
-            2 => SpellSchool::Fire,
-            3 => SpellSchool::Frost,
-            4 => SpellSchool::Nature,
-            5 => SpellSchool::Holy,
-            6 => SpellSchool::Shadow,
-            7 => SpellSchool::Fel,
-            _ => SpellSchool::Unknown,
+            1 => Self::Arcane,
+            2 => Self::Fire,
+            3 => Self::Frost,
+            4 => Self::Nature,
+            5 => Self::Holy,
+            6 => Self::Shadow,
+            7 => Self::Fel,
+            _ => Self::Unknown,
         }
     }
 }
@@ -175,19 +175,19 @@ pub enum MinionType {
 impl Display for MinionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let t = match self {
-            MinionType::Undead => "Undead",
-            MinionType::Murloc => "Murloc",
-            MinionType::Demon => "Demon",
-            MinionType::Mech => "Mech",
-            MinionType::Elemental => "Elemental",
-            MinionType::Beast => "Beast",
-            MinionType::Totem => "Totem",
-            MinionType::Pirate => "Pirate",
-            MinionType::Dragon => "Dragon",
-            MinionType::All => "Amalgam",
-            MinionType::Quilboar => "Quilboar",
-            MinionType::Naga => "Naga",
-            MinionType::Unknown => "UNKNOWN",
+            Self::Undead => "Undead",
+            Self::Murloc => "Murloc",
+            Self::Demon => "Demon",
+            Self::Mech => "Mech",
+            Self::Elemental => "Elemental",
+            Self::Beast => "Beast",
+            Self::Totem => "Totem",
+            Self::Pirate => "Pirate",
+            Self::Dragon => "Dragon",
+            Self::All => "Amalgam",
+            Self::Quilboar => "Quilboar",
+            Self::Naga => "Naga",
+            Self::Unknown => "UNKNOWN",
         };
 
         write!(f, "{t}")
@@ -198,19 +198,19 @@ impl From<u8> for MinionType {
 
     fn from(value: u8) -> Self {
         match value {
-            11 => MinionType::Undead,
-            14 => MinionType::Murloc,
-            15 => MinionType::Demon,
-            17 => MinionType::Mech,
-            18 => MinionType::Elemental,
-            20 => MinionType::Beast,
-            21 => MinionType::Totem,
-            23 => MinionType::Pirate,
-            24 => MinionType::Dragon,
-            26 => MinionType::All,
-            43 => MinionType::Quilboar,
-            92 => MinionType::Naga,
-            _ => MinionType::Unknown,
+            11 => Self::Undead,
+            14 => Self::Murloc,
+            15 => Self::Demon,
+            17 => Self::Mech,
+            18 => Self::Elemental,
+            20 => Self::Beast,
+            21 => Self::Totem,
+            23 => Self::Pirate,
+            24 => Self::Dragon,
+            26 => Self::All,
+            43 => Self::Quilboar,
+            92 => Self::Naga,
+            _ => Self::Unknown,
         }
     }
 }
@@ -219,18 +219,18 @@ impl FromStr for MinionType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let t = match s.to_lowercase().as_ref() {
-            "undead" => MinionType::Undead,
-            "murloc" => MinionType::Murloc,
-            "demon" => MinionType::Demon,
-            "mech" => MinionType::Mech,
-            "elemental" => MinionType::Elemental,
-            "beast" => MinionType::Beast,
-            "totem" => MinionType::Totem,
-            "pirate" => MinionType::Pirate,
-            "dragon" => MinionType::Dragon,
-            "amalgam" => MinionType::All,
-            "quilboar" => MinionType::Quilboar,
-            "naga" => MinionType::Naga,
+            "undead" => Self::Undead,
+            "murloc" => Self::Murloc,
+            "demon" => Self::Demon,
+            "mech" => Self::Mech,
+            "elemental" => Self::Elemental,
+            "beast" => Self::Beast,
+            "totem" => Self::Totem,
+            "pirate" => Self::Pirate,
+            "dragon" => Self::Dragon,
+            "amalgam" => Self::All,
+            "quilboar" => Self::Quilboar,
+            "naga" => Self::Naga,
             _ => return Err(anyhow::anyhow!("Not a valid minion type (yet?)")),
         };
         Ok(t)
@@ -277,8 +277,8 @@ pub enum CardType {
 impl Display for CardType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CardType::Hero { armor } => write!(f, "Hero card with {armor} armor"),
-            CardType::Minion {
+            Self::Hero { armor } => write!(f, "Hero card with {armor} armor"),
+            Self::Minion {
                 attack,
                 health,
                 minion_types,
@@ -290,13 +290,13 @@ impl Display for CardType {
                     write!(f, "{attack}/{health} {types}")
                 }
             }
-            CardType::Spell { school } => match school {
+            Self::Spell { school } => match school {
                 Some(s) => write!(f, "{s} spell"),
                 None => write!(f, "spell"),
             },
-            CardType::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon"),
-            CardType::Location { durability } => write!(f, "{durability} durability location"),
-            CardType::Unknown => write!(f, "UNKNOWN"),
+            Self::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon"),
+            Self::Location { durability } => write!(f, "{durability} durability location"),
+            Self::Unknown => write!(f, "UNKNOWN"),
         }
     }
 }

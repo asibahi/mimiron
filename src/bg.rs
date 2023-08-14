@@ -93,12 +93,12 @@ pub enum BGCardType {
 impl Display for BGCardType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BGCardType::Hero {
+            Self::Hero {
                 armor,
                 buddy_id: _,
                 child_ids: _,
             } => write!(f, "Hero with {armor} armor."),
-            BGCardType::Minion {
+            Self::Minion {
                 tier,
                 attack,
                 health,
@@ -129,15 +129,15 @@ impl Display for BGCardType {
 
                 Ok(())
             }
-            BGCardType::Quest { text } => {
+            Self::Quest { text } => {
                 let text = prettify(text);
                 write!(f, "Battlegrounds Quest: {text}")
             }
-            BGCardType::Reward { text } => {
+            Self::Reward { text } => {
                 let text = prettify(text);
                 write!(f, "Battlegrounds Reward: {text}")
             }
-            BGCardType::HeroPower { text, cost } => {
+            Self::HeroPower { text, cost } => {
                 let text = prettify(text);
                 write!(f, "{cost}-cost Hero Power: {text}")
             }
@@ -221,7 +221,7 @@ impl From<CardData> for Card {
             }
         };
 
-        Card {
+        Self {
             id: c.id,
             name: c.name,
             image: {

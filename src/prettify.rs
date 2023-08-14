@@ -40,6 +40,5 @@ pub fn prettify(input: &str) -> String {
     let Ok(pass1) = prettify_inner(input) else {
         return input.to_owned() 
     };
-
-    prettify_inner(&pass1).unwrap_or(input.to_owned())
+    prettify_inner(&pass1).unwrap_or_else(|_| input.to_owned())
 }

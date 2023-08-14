@@ -18,10 +18,10 @@ pub fn get_access_token() -> Result<String> {
     // let id = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_ID");
     // let secret = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_SECRET");
 
-    let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{}:{}", id, secret).as_bytes());
+    let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 
     let access_token = ureq::post("https://oauth.battle.net/token")
-        .set("Authorization", &format!("Basic {}", creds))
+        .set("Authorization", &format!("Basic {creds}"))
         .query("grant_type", "client_credentials")
         .call()
         .context("call to get access_token failed")?

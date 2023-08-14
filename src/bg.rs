@@ -135,7 +135,7 @@ impl Display for BGCardType {
             }
             BGCardType::Reward { text } => {
                 let text = prettify(text);
-                write!(f, "Battlegrounds Quest: {text}")
+                write!(f, "Battlegrounds Reward: {text}")
             }
             BGCardType::HeroPower { text, cost } => {
                 let text = prettify(text);

@@ -251,7 +251,7 @@ pub struct BGArgs {
     name: Option<String>,
 
     /// Search by Minion Battlegrounds tier
-    #[arg(short, long, group = "search", value_parser = clap::value_parser!(u8).range(1..=6))]
+    #[arg(short, long, group = "search", value_parser = clap::value_parser!(u8).range(1..=7))]
     tier: Option<u8>,
 
     // Search by Minion type

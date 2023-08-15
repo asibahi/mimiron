@@ -44,7 +44,6 @@ pub fn prettify(input: &str) -> String {
             Ok(s) => pass = s,
             Err(_) => return input.to_owned(),
         }
-        println!("one pass done");
     }
 
     pass

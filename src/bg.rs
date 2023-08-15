@@ -306,7 +306,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
         .filter(|c| {
             args.text
                 || args.name.is_none()
-                || c.name.to_lowercase().contains(args.name.as_ref().unwrap())
+                || c.name
+                    .to_lowercase()
+                    .contains(&args.name.as_ref().unwrap().to_lowercase())
         })
         .peekable();
 

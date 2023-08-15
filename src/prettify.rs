@@ -37,8 +37,15 @@ fn prettify_inner(input: &str) -> Result<String> {
 }
 
 pub fn prettify(input: &str) -> String {
-    let Ok(pass1) = prettify_inner(input) else {
-        return input.to_owned() 
-    };
-    prettify_inner(&pass1).unwrap_or_else(|_| input.to_owned())
+    let mut pass = input.to_owned();
+
+    while pass.contains("<b>") || pass.contains("<i>") {
+        match prettify_inner(&pass) {
+            Ok(s) => pass = s,
+            Err(_) => return input.to_owned(),
+        }
+        println!("one pass done");
+    }
+
+    pass
 }

@@ -42,7 +42,7 @@ pub fn prettify(input: &str) -> String {
     while pass.contains("<b>") || pass.contains("<i>") {
         match prettify_inner(&pass) {
             Ok(s) => pass = s,
-            Err(_) => return input.to_owned(),
+            Err(_) => break,
         }
     }
 

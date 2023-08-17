@@ -73,7 +73,7 @@ pub fn get_deck_image(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
 
     // class cards
     let class_title = get_title_slug(format!(
-        "{} - {} format",
+        "{} - {}",
         deck.class,
         deck.format.to_uppercase()
     ))?;

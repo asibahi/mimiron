@@ -186,7 +186,7 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
             "{} {} {}.png",
             deck.class,
             deck.format.to_uppercase(),
-            Local::now().format("%Y%m%d %H-%M")
+            Local::now().format("%Y%m%d %H%M")
         );
 
         let save_file = if let Some(p) = args.output {

@@ -28,7 +28,7 @@ You can look up a card with:
 mimiron card ragnaros
 ```
 
-You can add image links with `--image`:
+You can add image links with `--image` (works with Battlegrounds look ups as well):
 
 ```sh
 mimiron card ragnaros --image

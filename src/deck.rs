@@ -20,11 +20,11 @@ pub struct Sideboard {
 #[serde(rename_all = "camelCase")]
 pub struct Deck {
     deck_code: String,
-    format: String,
-    class: Class,
-    cards: Vec<Card>,
+    pub format: String,
+    pub class: Class,
+    pub cards: Vec<Card>,
     // card_count: usize,
-    sideboard_cards: Option<Vec<Sideboard>>,
+    pub sideboard_cards: Option<Vec<Sideboard>>,
 }
 impl Deck {
     fn compare_with(&self, other: &Self) -> DeckDifference {
@@ -35,7 +35,9 @@ impl Deck {
 
         DeckDifference {
             shared_cards: (counter1.clone() - deck1_uniques.clone()).into_map(),
+            deck1_code: self.deck_code.clone(),
             deck1_uniques: deck1_uniques.into_map(),
+            deck2_code: other.deck_code.clone(),
             deck2_uniques: (counter2 - counter1).into_map(),
         }
     }
@@ -92,7 +94,9 @@ impl Display for Deck {
 
 pub struct DeckDifference {
     pub shared_cards: HashMap<Card, usize>,
+    deck1_code: String,
     pub deck1_uniques: HashMap<Card, usize>,
+    deck2_code: String,
     pub deck2_uniques: HashMap<Card, usize>,
 }
 impl Display for DeckDifference {
@@ -105,7 +109,8 @@ impl Display for DeckDifference {
             };
             writeln!(f, "{count:>4} {card}")?;
         }
-        writeln!(f)?;
+
+        writeln!(f, "\n{}", self.deck1_code)?;
         for (card, count) in &self.deck1_uniques.iter().collect::<BTreeMap<_, _>>() {
             let count = if **count == 1 {
                 String::new()
@@ -114,7 +119,8 @@ impl Display for DeckDifference {
             };
             writeln!(f, "+{count:>3} {card}")?;
         }
-        writeln!(f)?;
+
+        writeln!(f, "\n{}", self.deck2_code)?;
         for (card, count) in &self.deck2_uniques.iter().collect::<BTreeMap<_, _>>() {
             let count = if **count == 1 {
                 String::new()

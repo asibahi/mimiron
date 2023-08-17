@@ -1,9 +1,12 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
+use chrono::Local;
 use clap::Args;
 use colored::Colorize;
 use counter::Counter;
+use directories::UserDirs;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::{collections::BTreeMap, fmt::Display};
 
 use crate::card::Card;
@@ -12,8 +15,8 @@ use crate::card_details::Class;
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Sideboard {
-    sideboard_card: Card,
-    cards_in_sideboard: Vec<Card>,
+    pub sideboard_card: Card,
+    pub cards_in_sideboard: Vec<Card>,
 }
 
 #[derive(Deserialize)]
@@ -57,6 +60,7 @@ impl Display for Deck {
             .collect::<BTreeMap<_, _>>();
 
         for (card, count) in cards {
+            // crate::card_image::get_slug(&card, count).ok();
             let count = if count == 1 {
                 String::new()
             } else {
@@ -152,6 +156,14 @@ pub struct DeckArgs {
     /// Compare with a second deck
     #[arg(short, long, name = "DECK2")]
     comp: Option<String>,
+
+    /// Save deck image
+    #[arg(short, long, conflicts_with("DECK2"))]
+    image: bool,
+
+    /// Choose deck image output. Defaults to your Downloads folder.
+    #[arg(short, long, requires("image"))]
+    output: Option<PathBuf>,
 }
 
 pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
@@ -166,6 +178,29 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
     } else {
         format!("{deck}")
     };
+
+    if args.image {
+        let img = crate::card_image::get_deck_image(&deck, ureq::agent())?;
+
+        let name = format!(
+            "{} {} {}.png",
+            deck.class,
+            deck.format.to_uppercase(),
+            Local::now().format("%Y%m%d %H-%M")
+        );
+
+        let save_file = if let Some(p) = args.output {
+            p.join(name)
+        } else {
+            UserDirs::new()
+                .ok_or(anyhow!("couldn't get user directories"))?
+                .download_dir()
+                .ok_or(anyhow!("couldn't get downloads directory"))?
+                .join(name)
+        };
+
+        img.save(save_file)?;
+    }
 
     Ok(answer)
 }

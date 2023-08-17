@@ -44,9 +44,9 @@ struct CardData {
 
     // Flavor
     image: String,
+    crop_image: Option<String>,
     //artist_name: String,
     //flavor_text: String,
-    //crop_image: Option<String>,
 
     // Related cards
     //copy_of_card_id: Option<usize>,
@@ -74,9 +74,9 @@ pub struct Card {
     pub text: String,
 
     pub image: String,
-    /*
-    crop_image: String,
 
+    pub crop_image: Option<String>,
+    /*
     tokens: HashSet<usize>,
 
     flavor_text: String,
@@ -204,8 +204,9 @@ impl From<CardData> for Card {
             text: c.text,
 
             image: c.image,
-            /*
+
             crop_image: c.crop_image,
+            /*
             tokens: match c.child_ids {
                 Some(v) => HashSet::from_iter(v),
                 None => HashSet::new(),

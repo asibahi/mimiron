@@ -121,7 +121,7 @@ impl Display for DeckDifference {
             } else {
                 format!("{count}x")
             };
-            writeln!(f, "+{count:>3} {card}")?;
+            writeln!(f, "{}{count:>3} {card}", "+".green())?;
         }
 
         writeln!(f, "\n{}", self.deck2_code)?;
@@ -131,7 +131,7 @@ impl Display for DeckDifference {
             } else {
                 format!("{count}x")
             };
-            writeln!(f, "-{count:>3} {card}")?;
+            writeln!(f, "{}{count:>3} {card}", "-".red())?;
         }
         Ok(())
     }

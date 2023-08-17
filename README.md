@@ -25,8 +25,16 @@ However, you need your Blizzard API credentials as environment variables under `
 You can look up a card with:
 
 ```sh
-mimiron card Ragnaros
+mimiron card ragnaros
 ```
+
+You can add image links with `--image`:
+
+```sh
+mimiron card ragnaros --image
+```
+
+![Card look up with image links](README/cardimagelookup.png)
 
 If the text you're looking up includes spaces or apostrophes they need to be in quotation marks (or the shell trips up), or you can escape them.
 
@@ -41,7 +49,7 @@ mimiron card Ace\ Hunter
 You can also search in card text boxes (which is the default mode for Blizzard's API).
 
 ```sh
-mimiron card ragnaros -t
+mimiron card ragnaros --text
 ```
 
 ![Card text box search](README/cardtextlookup.png)
@@ -50,10 +58,17 @@ You can look up a deck with:
 
 ```
 mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA==
-
 ```
 
 ![Deck look up in terminal](README/decklookup.png)
+
+You can save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`. (Yes, it looks like the [Hearthstone Top Decks](https://www.hearthstonetopdecks.com) format. I am a fan.)
+
+```
+mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image
+```
+
+![Deck image](README/deckimage.png)
 
 You can also compare two decks.
 
@@ -71,11 +86,21 @@ mimiron bg "N'zoth"
 
 ![Battleground lookup](README/bglookup.png)
 
+You can look up by tier and/or type.
+
+```sh
+mimiron bg --tier 1 --type mech
+```
+
+![Battleground lookup](README/bgtiertypelookup.png)
+
 ## Roadmap
 
-The next item on the agenda is to create a command to add Sideboard cards to a deck. Deck code retrieved from HSReplay, D0nkey, or HearthstoneTopDecks lack the Sideboard data, and I want a simple tool to add them and get an updated code.
+Nothing in particular, however some ideas are:
 
-Also I want to include search for Duels treasures.
+- add the sideboard cards to decks that should have them but miss them, and give the new code. Not sure how the command would look like.
+- get deck code from list of cards. Also not sure how this should look like.
+- Duels support. However, Duels info seems to be incomplete in the API.
 
 ## License
 

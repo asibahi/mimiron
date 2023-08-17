@@ -90,10 +90,10 @@ impl PartialEq for Card {
 }
 impl PartialOrd for Card {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match self.rarity.partial_cmp(&other.rarity) {
+        /* match self.rarity.partial_cmp(&other.rarity) {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
-        }
+        } */
         match self.cost.partial_cmp(&other.cost) {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
@@ -109,10 +109,10 @@ impl std::hash::Hash for Card {
 impl Eq for Card {}
 impl Ord for Card {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match self.rarity.cmp(&other.rarity) {
+        /* match self.rarity.cmp(&other.rarity) {
             core::cmp::Ordering::Equal => {}
             ord => return ord,
-        }
+        } */
         match self.cost.cmp(&other.cost) {
             core::cmp::Ordering::Equal => {}
             ord => return ord,

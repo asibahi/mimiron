@@ -1,8 +1,5 @@
-#![allow(unused)]
-
 use anyhow::{anyhow, Result};
 use counter::Counter;
-use directories::UserDirs;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rusttype::{Font, Scale};
@@ -22,28 +19,98 @@ const MARGIN: u32 = 5;
 
 const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
 
-pub fn get_deck_image(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
-    let counter = deck
+pub enum DeckImageShape {
+    // HSTopDecksStyle
+    MultipleColumns,
+
+    // Regular Style
+    SingleColumn,
+}
+
+pub fn get_deck_image(
+    deck: &Deck,
+    shape: DeckImageShape,
+    agent: ureq::Agent,
+) -> Result<DynamicImage> {
+    match shape {
+        DeckImageShape::MultipleColumns => image_multiple_columns(deck, agent),
+        DeckImageShape::SingleColumn => image_single_column(deck, agent),
+    }
+}
+
+fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
+    let ordered_cards = deck
         .cards
         .iter()
         .collect::<Counter<_>>()
         .into_iter()
         .collect::<BTreeMap<_, _>>();
 
-    // deck image width
-    // assumes decks will always have class cards
-    let mut columns = 1;
-    if deck.cards.iter().any(|c| c.class.contains(&Class::Neutral)) {
-        columns += 1;
-    }
-    if let Some(sideboards) = &deck.sideboard_cards {
-        columns += sideboards.len();
-    }
-    let columns = columns as u32;
-    let column_width = MARGIN + SLUG_WIDTH;
-    let deck_img_width = MARGIN + columns * column_width;
+    let deck_img_width = MARGIN * 2 + SLUG_WIDTH;
 
-    // deck image height
+    let deck_img_height = {
+        let main_deck_length = ordered_cards.len() + 1;
+
+        let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
+            sbs.iter()
+                .fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc)
+        });
+
+        let length = main_deck_length + sideboards_length;
+
+        MARGIN + (length as u32 * (MARGIN + CROP_HEIGHT))
+    };
+
+    // main canvas
+    let mut img = ImageBuffer::new(deck_img_width, deck_img_height);
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(0, 0).of_size(deck_img_width, deck_img_height),
+        Rgba([255, 255, 255, 255]),
+    );
+
+    //  cards
+    let title = get_title_slug(format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
+    img.copy_from(&title, MARGIN, MARGIN)?;
+
+    for (i, (card, count)) in ordered_cards.iter().enumerate() {
+        let slug = get_slug(card, *count, agent.clone())?;
+        let i = 1 + i as u32;
+
+        img.copy_from(&slug, MARGIN, MARGIN + i * (MARGIN + CROP_HEIGHT))?;
+    }
+
+    // sideboard cards
+    if let Some(sideboards) = &deck.sideboard_cards {
+        let mut sb_pos_tracker = ordered_cards.len() + 1;
+
+        for sb in sideboards {
+            let sb_start = sb_pos_tracker as u32 * (CROP_HEIGHT + MARGIN);
+            let sb_title = get_title_slug(format!("Sideboard: {}", sb.sideboard_card.name))?;
+            img.copy_from(&sb_title, MARGIN, sb_start)?;
+
+            let cards_in_sb = sb
+                .cards_in_sideboard
+                .iter()
+                .collect::<Counter<_>>()
+                .into_iter()
+                .collect::<BTreeMap<_, _>>();
+
+            for (i, (card, count)) in cards_in_sb.iter().enumerate() {
+                let slug = get_slug(card, *count, agent.clone())?;
+                let i = 1 + i as u32;
+
+                img.copy_from(&slug, MARGIN, sb_start + i * (MARGIN + CROP_HEIGHT))?;
+            }
+
+            sb_pos_tracker += cards_in_sb.len() + 1;
+        }
+    }
+
+    Ok(DynamicImage::ImageRgba8(img))
+}
+
+fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
     let class_cards = deck
         .cards
         .iter()
@@ -60,8 +127,29 @@ pub fn get_deck_image(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
         .into_iter()
         .collect::<BTreeMap<_, _>>();
 
-    let length = 1 + class_cards.len().max(neutral_cards.len()) as u32;
-    let deck_img_height = MARGIN + (length * (MARGIN + CROP_HEIGHT));
+    // deck image width
+    // assumes decks will always have class cards
+    let column_width = MARGIN + SLUG_WIDTH;
+
+    let deck_img_width = {
+        let mut columns = 1;
+        if !neutral_cards.is_empty() {
+            columns += 1;
+        }
+        if let Some(sideboards) = &deck.sideboard_cards {
+            columns += sideboards.len();
+        }
+        let columns = columns as u32;
+
+        MARGIN + columns * column_width
+    };
+
+    // deck image height
+    // ignores length of sideboards. unlikely to be larger than either class_cards or neutral_cards
+    let deck_img_height = {
+        let length = 1 + class_cards.len().max(neutral_cards.len()) as u32;
+        MARGIN + (length * (MARGIN + CROP_HEIGHT))
+    };
 
     // main canvas
     let mut img = ImageBuffer::new(deck_img_width, deck_img_height);
@@ -72,11 +160,7 @@ pub fn get_deck_image(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
     );
 
     // class cards
-    let class_title = get_title_slug(format!(
-        "{} - {}",
-        deck.class,
-        deck.format.to_uppercase()
-    ))?;
+    let class_title = get_title_slug(format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
     img.copy_from(&class_title, MARGIN, MARGIN)?;
 
     for (i, (card, count)) in class_cards.into_iter().enumerate() {

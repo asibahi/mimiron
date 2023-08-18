@@ -11,6 +11,7 @@ use std::{collections::BTreeMap, fmt::Display};
 
 use crate::card::Card;
 use crate::card_details::Class;
+use crate::deck_image::{get_deck_image, DeckImageShape};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -164,6 +165,10 @@ pub struct DeckArgs {
     /// Choose deck image output. Defaults to your Downloads folder.
     #[arg(short, long, requires("image"))]
     output: Option<PathBuf>,
+
+    /// Fomat the deck in a single column.
+    #[arg(short, long, requires("image"))]
+    single: bool,
 }
 
 pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
@@ -180,7 +185,12 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
     };
 
     if args.image {
-        let img = crate::deck_image::get_deck_image(&deck, ureq::agent())?;
+        let shape = if args.single {
+            DeckImageShape::SingleColumn
+        } else {
+            DeckImageShape::MultipleColumns
+        };
+        let img = get_deck_image(&deck, shape, ureq::agent())?;
 
         let name = format!(
             "{} {} {}.png",

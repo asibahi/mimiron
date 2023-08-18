@@ -180,7 +180,7 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
     };
 
     if args.image {
-        let img = crate::card_image::get_deck_image(&deck, ureq::agent())?;
+        let img = crate::deck_image::get_deck_image(&deck, ureq::agent())?;
 
         let name = format!(
             "{} {} {}.png",

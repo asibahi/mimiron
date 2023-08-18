@@ -1,12 +1,9 @@
 use anyhow::{anyhow, Context, Result};
-use chrono::Local;
 use clap::Args;
 use colored::Colorize;
 use counter::Counter;
-use directories::UserDirs;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::{collections::BTreeMap, fmt::Display};
 
 use crate::card::Card;
@@ -164,7 +161,7 @@ pub struct DeckArgs {
 
     /// Choose deck image output. Defaults to your Downloads folder.
     #[arg(short, long, requires("image"))]
-    output: Option<PathBuf>,
+    output: Option<std::path::PathBuf>,
 
     /// Fomat the deck in a single column.
     #[arg(short, long, requires("image"))]
@@ -196,13 +193,13 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
             "{} {} {}.png",
             deck.class,
             deck.format.to_uppercase(),
-            Local::now().format("%Y%m%d %H%M")
+            chrono::Local::now().format("%Y%m%d %H%M")
         );
 
         let save_file = if let Some(p) = args.output {
             p.join(name)
         } else {
-            UserDirs::new()
+            directories::UserDirs::new()
                 .ok_or(anyhow!("couldn't get user directories"))?
                 .download_dir()
                 .ok_or(anyhow!("couldn't get downloads directory"))?

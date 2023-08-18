@@ -2,7 +2,6 @@ use anyhow::{anyhow, Result};
 use counter::Counter;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
-use rusttype::{Font, Scale};
 use std::collections::BTreeMap;
 
 use crate::{
@@ -348,8 +347,8 @@ pub fn get_title_slug(name: String) -> Result<DynamicImage> {
 }
 
 #[inline]
-fn get_font_and_scale() -> Result<(Font<'static>, Scale)> {
-    let font = Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
-    let scale = Scale::uniform(40.0);
+fn get_font_and_scale() -> Result<(rusttype::Font<'static>, rusttype::Scale)> {
+    let font = rusttype::Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
+    let scale = rusttype::Scale::uniform(40.0);
     Ok((font, scale))
 }

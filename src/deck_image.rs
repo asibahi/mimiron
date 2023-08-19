@@ -86,11 +86,10 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
 
     ordered_cards
         .par_iter()
-        .map(|(card, count)| get_slug(card, *count, agent.clone()))
         .enumerate()
-        .try_for_each(|(i, s)| -> Result<()> {
+        .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
-            let slug = s?;
+            let slug = get_slug(card, *count, &agent)?;
             let mut img = par_img
                 .lock()
                 .map_err(|_| anyhow!("failed to get mutex lock"))?;
@@ -121,19 +120,17 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
                 .into_iter()
                 .collect::<Vec<_>>();
 
-            cards_in_sb
-                .par_iter()
-                .map(|(card, count)| get_slug(card, *count, agent.clone()))
-                .enumerate()
-                .try_for_each(|(i, s)| -> Result<()> {
+            cards_in_sb.par_iter().enumerate().try_for_each(
+                |(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
-                    let slug = s?;
+                    let slug = get_slug(card, *count, &agent)?;
                     let mut img = par_img
                         .lock()
                         .map_err(|_| anyhow!("failed to get mutex lock"))?;
                     img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
                     Ok(())
-                })?;
+                },
+            )?;
 
             sb_pos_tracker += cards_in_sb.len() + 1;
         }
@@ -203,11 +200,10 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
 
     class_cards
         .par_iter()
-        .map(|(card, count)| get_slug(card, **count, agent.clone()))
         .enumerate()
-        .try_for_each(|(i, s)| -> Result<()> {
+        .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
-            let slug = s?;
+            let slug = get_slug(card, **count, &agent)?;
             let mut img = par_image
                 .lock()
                 .map_err(|_| anyhow!("failed to get mutex lock"))?;
@@ -218,10 +214,8 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     // neutral cards
     neutral_cards
         .par_iter()
-        .map(|(card, count)| get_slug(card, **count, agent.clone()))
         .enumerate()
-        .try_for_each(|(i, s)| -> Result<()> {
-            let slug = s?;
+        .try_for_each(|(i, (card, count))| -> Result<()> {
             let mut img = par_image
                 .lock()
                 .map_err(|_| anyhow!("failed to get mutex lock"))?;
@@ -231,6 +225,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
             }
 
             let i = i as u32 + 1;
+            let slug = get_slug(card, **count, &agent)?;
             img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -257,19 +252,17 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
                 .into_iter()
                 .collect::<Vec<_>>();
 
-            cards_in_sb
-                .par_iter()
-                .map(|(card, count)| get_slug(card, *count, agent.clone()))
-                .enumerate()
-                .try_for_each(|(i, s)| -> Result<()> {
+            cards_in_sb.par_iter().enumerate().try_for_each(
+                |(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
-                    let slug = s?;
+                    let slug = get_slug(card, *count, &agent)?;
                     let mut img = par_image
                         .lock()
                         .map_err(|_| anyhow!("failed to get mutex lock"))?;
                     img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
                     Ok(())
-                })?;
+                },
+            )?;
         }
     }
 
@@ -281,7 +274,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<DynamicImage> {
+pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<DynamicImage> {
     assert!(count > 0);
 
     let name = &card.name;
@@ -414,7 +407,7 @@ fn get_title_slug(title: &str) -> Result<DynamicImage> {
 fn get_crop_image(
     img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
     card: &Card,
-    agent: ureq::Agent,
+    agent: &ureq::Agent,
 ) -> Result<()> {
     let link = card
         .crop_image

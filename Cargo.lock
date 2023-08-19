@@ -719,6 +719,7 @@ dependencies = [
  "imageproc",
  "itertools 0.11.0",
  "nom",
+ "rayon",
  "rusttype",
  "serde",
  "serde_json",

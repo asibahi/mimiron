@@ -187,7 +187,12 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
         } else {
             DeckImageShape::MultipleColumns
         };
-        let img = get_deck_image(&deck, shape, ureq::agent())?;
+
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(std::time::Duration::from_secs(2))
+            .build();
+
+        let img = get_deck_image(&deck, shape, agent)?;
 
         let name = format!(
             "{} {} {}.png",

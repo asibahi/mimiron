@@ -1,8 +1,12 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use counter::Counter;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
-use std::collections::BTreeMap;
+use rayon::prelude::*;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
 
 use crate::{
     card::Card,
@@ -47,7 +51,9 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         .iter()
         .collect::<Counter<_>>()
         .into_iter()
-        .collect::<BTreeMap<_, _>>();
+        .collect::<BTreeMap<_, _>>()
+        .into_iter()
+        .collect::<Vec<_>>();
 
     let deck_img_width = MARGIN * 2 + SLUG_WIDTH;
 
@@ -73,15 +79,24 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
     );
 
     //  cards
-    let title = get_title_slug(format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
+    let title = get_title_slug(&format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
     img.copy_from(&title, MARGIN, MARGIN)?;
 
-    for (i, (card, count)) in ordered_cards.iter().enumerate() {
-        let slug = get_slug(card, *count, agent.clone())?;
-        let i = 1 + i as u32;
+    let par_img = Arc::new(Mutex::new(img));
 
-        img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
-    }
+    ordered_cards
+        .par_iter()
+        .map(|(card, count)| get_slug(card, *count, agent.clone()))
+        .enumerate()
+        .try_for_each(|(i, s)| -> Result<()> {
+            let i = i as u32 + 1;
+            let slug = s?;
+            let mut img = par_img
+                .lock()
+                .map_err(|_| anyhow!("failed to get mutex lock"))?;
+            img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
+            Ok(())
+        })?;
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
@@ -89,46 +104,66 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
 
         for sb in sideboards {
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
-            let sb_title = get_title_slug(format!("Sideboard: {}", sb.sideboard_card.name))?;
-            img.copy_from(&sb_title, MARGIN, sb_start)?;
+            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name))?;
+            {
+                let mut img = par_img
+                    .lock()
+                    .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                img.copy_from(&sb_title, MARGIN, sb_start)?;
+            }
 
             let cards_in_sb = sb
                 .cards_in_sideboard
                 .iter()
                 .collect::<Counter<_>>()
                 .into_iter()
-                .collect::<BTreeMap<_, _>>();
+                .collect::<BTreeMap<_, _>>()
+                .into_iter()
+                .collect::<Vec<_>>();
 
-            for (i, (card, count)) in cards_in_sb.iter().enumerate() {
-                let slug = get_slug(card, *count, agent.clone())?;
-                let i = 1 + i as u32;
-
-                img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
-            }
+            cards_in_sb
+                .par_iter()
+                .map(|(card, count)| get_slug(card, *count, agent.clone()))
+                .enumerate()
+                .try_for_each(|(i, s)| -> Result<()> {
+                    let i = i as u32 + 1;
+                    let slug = s?;
+                    let mut img = par_img
+                        .lock()
+                        .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                    img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
+                    Ok(())
+                })?;
 
             sb_pos_tracker += cards_in_sb.len() + 1;
         }
     }
 
+    let img = par_img
+        .lock()
+        .map_err(|_| anyhow!("failed to lock mutex on exit"))?
+        .to_owned();
+
     Ok(DynamicImage::ImageRgba8(img))
 }
 
 fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
-    let class_cards = deck
+    let ordered_cards = deck
         .cards
         .iter()
-        .filter(|c| !c.class.contains(&Class::Neutral))
         .collect::<Counter<_>>()
         .into_iter()
         .collect::<BTreeMap<_, _>>();
 
-    let neutral_cards = deck
-        .cards
+    let class_cards = ordered_cards
         .iter()
-        .filter(|c| c.class.contains(&Class::Neutral))
-        .collect::<Counter<_>>()
-        .into_iter()
-        .collect::<BTreeMap<_, _>>();
+        .filter(|(c, _)| !c.class.contains(&Class::Neutral))
+        .collect::<Vec<_>>();
+
+    let neutral_cards = ordered_cards
+        .iter()
+        .filter(|(c, _)| c.class.contains(&Class::Neutral))
+        .collect::<Vec<_>>();
 
     // deck image width
     // assumes decks will always have class cards
@@ -161,52 +196,87 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     );
 
     // class cards
-    let class_title = get_title_slug(format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
+    let class_title = get_title_slug(&format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
     img.copy_from(&class_title, MARGIN, MARGIN)?;
 
-    for (i, (card, count)) in class_cards.into_iter().enumerate() {
-        let slug = get_slug(card, count, agent.clone())?;
-        let i = 1 + i as u32;
+    let par_image = Arc::new(Mutex::new(img));
 
-        img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
-    }
+    class_cards
+        .par_iter()
+        .map(|(card, count)| get_slug(card, **count, agent.clone()))
+        .enumerate()
+        .try_for_each(|(i, s)| -> Result<()> {
+            let i = i as u32 + 1;
+            let slug = s?;
+            let mut img = par_image
+                .lock()
+                .map_err(|_| anyhow!("failed to get mutex lock"))?;
+            img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
+            Ok(())
+        })?;
 
     // neutral cards
-    for (i, (card, count)) in neutral_cards.into_iter().enumerate() {
-        if i == 0 {
-            let neutrals_title = get_title_slug(String::from("Neutrals"))?;
-            img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
-        }
+    neutral_cards
+        .par_iter()
+        .map(|(card, count)| get_slug(card, **count, agent.clone()))
+        .enumerate()
+        .try_for_each(|(i, s)| -> Result<()> {
+            let slug = s?;
+            let mut img = par_image
+                .lock()
+                .map_err(|_| anyhow!("failed to get mutex lock"))?;
+            if i == 0 {
+                let neutrals_title = get_title_slug("Neutrals")?;
+                img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
+            }
 
-        let slug = get_slug(card, count, agent.clone())?;
-        let i = 1 + i as u32;
-
-        img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
-    }
+            let i = i as u32 + 1;
+            img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
+            Ok(())
+        })?;
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
-            let sb_title = get_title_slug(format!("Sideboard: {}", sb.sideboard_card.name))?;
-            img.copy_from(&sb_title, column_start, MARGIN)?;
+            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name))?;
 
-            for (i, (card, count)) in sb
+            {
+                let mut img = par_image
+                    .lock()
+                    .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                img.copy_from(&sb_title, column_start, MARGIN)?;
+            }
+
+            let cards_in_sb = sb
                 .cards_in_sideboard
                 .iter()
                 .collect::<Counter<_>>()
                 .into_iter()
                 .collect::<BTreeMap<_, _>>()
                 .into_iter()
-                .enumerate()
-            {
-                let slug = get_slug(card, count, agent.clone())?;
-                let i = 1 + i as u32;
+                .collect::<Vec<_>>();
 
-                img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
-            }
+            cards_in_sb
+                .par_iter()
+                .map(|(card, count)| get_slug(card, *count, agent.clone()))
+                .enumerate()
+                .try_for_each(|(i, s)| -> Result<()> {
+                    let i = i as u32 + 1;
+                    let slug = s?;
+                    let mut img = par_image
+                        .lock()
+                        .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                    img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
+                    Ok(())
+                })?;
         }
     }
+
+    let img = par_image
+        .lock()
+        .map_err(|_| anyhow!("wtf is going on"))?
+        .to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
 }
@@ -232,23 +302,13 @@ pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<Dynamic
         Rgba([10u8, 10, 10, 255]),
     );
 
-    if let Some(link) = &card.crop_image {
-        let mut buf = Vec::new();
-        agent
-            .get(link)
-            .call()?
-            .into_reader()
-            .read_to_end(&mut buf)?;
-
-        let crop = image::load_from_memory(&buf)?;
-
-        img.copy_from(&crop, CROP_WIDTH, 0)?;
-    } else {
+    if let Err(e) = get_crop_image(&mut img, card, agent) {
+        eprintln!("Failed to get image of {}: {e}", card.name);
         drawing::draw_filled_rect_mut(
             &mut img,
             Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
             Rgba([r_color.0, r_color.1, r_color.2, 255]),
-        )
+        );
     }
 
     // gradient
@@ -322,7 +382,7 @@ pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<Dynamic
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_title_slug(title: String) -> Result<DynamicImage> {
+fn get_title_slug(title: &str) -> Result<DynamicImage> {
     // main canvas
     let mut img = ImageBuffer::new(SLUG_WIDTH, CROP_HEIGHT);
     drawing::draw_filled_rect_mut(
@@ -341,12 +401,38 @@ fn get_title_slug(title: String) -> Result<DynamicImage> {
     drawing::draw_text_mut(
         &mut img,
         Rgba([10, 10, 10, 255]),
-        CROP_HEIGHT as i32 + 10,
+        15,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
-        &title, //.to_uppercase(),
+        title, //.to_uppercase(),
     );
 
     Ok(DynamicImage::ImageRgba8(img))
+}
+
+fn get_crop_image(
+    img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
+    card: &Card,
+    agent: ureq::Agent,
+) -> Result<()> {
+    let link = card
+        .crop_image
+        .as_ref()
+        .ok_or(anyhow!("Card {} has no crop image", card.name))?;
+
+    let mut buf = Vec::new();
+    agent
+        .get(link)
+        .call()
+        .context("Could not connect to image link")?
+        .into_reader()
+        .read_to_end(&mut buf)
+        .context("Could not read image link")?;
+
+    let crop = image::load_from_memory(&buf)?;
+
+    img.copy_from(&crop, CROP_WIDTH, 0)?;
+
+    Ok(())
 }

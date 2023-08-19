@@ -6,8 +6,8 @@ mod bg;
 mod card;
 mod card_details;
 mod deck;
-mod prettify;
 mod deck_image;
+mod prettify;
 
 #[derive(Parser)]
 #[command(author, version)]

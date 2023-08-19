@@ -12,8 +12,10 @@ struct Authorization {
 pub fn get_access_token() -> Result<String> {
     // need to replace later with something that allows people to input their own creds
     dotenvy::dotenv().ok();
-    let id = std::env::var("BLIZZARD_CLIENT_ID").context("failed to get BLIZZARD_CLIENT_ID from env")?;
-    let secret = std::env::var("BLIZZARD_CLIENT_SECRET").context("failed to get BLIZZARD_CLIENT_SECRET from env")?;
+    let id =
+        std::env::var("BLIZZARD_CLIENT_ID").context("failed to get BLIZZARD_CLIENT_ID from env")?;
+    let secret = std::env::var("BLIZZARD_CLIENT_SECRET")
+        .context("failed to get BLIZZARD_CLIENT_SECRET from env")?;
 
     // let id = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_ID");
     // let secret = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_SECRET");

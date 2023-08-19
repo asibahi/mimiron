@@ -13,8 +13,12 @@ use crate::{
 //  Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
 const CROP_HEIGHT: u32 = 64;
-const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
+
 const MARGIN: u32 = 5;
+
+const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
+const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
+const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
 const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
 
@@ -57,7 +61,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
 
         let length = main_deck_length + sideboards_length;
 
-        MARGIN + (length as u32 * (MARGIN + CROP_HEIGHT))
+        (length as u32 * ROW_HEIGHT) + MARGIN
     };
 
     // main canvas
@@ -76,7 +80,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         let slug = get_slug(card, *count, agent.clone())?;
         let i = 1 + i as u32;
 
-        img.copy_from(&slug, MARGIN, MARGIN + i * (MARGIN + CROP_HEIGHT))?;
+        img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
     }
 
     // sideboard cards
@@ -84,7 +88,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         let mut sb_pos_tracker = ordered_cards.len() + 1;
 
         for sb in sideboards {
-            let sb_start = sb_pos_tracker as u32 * (CROP_HEIGHT + MARGIN);
+            let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
             let sb_title = get_title_slug(format!("Sideboard: {}", sb.sideboard_card.name))?;
             img.copy_from(&sb_title, MARGIN, sb_start)?;
 
@@ -99,7 +103,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
                 let slug = get_slug(card, *count, agent.clone())?;
                 let i = 1 + i as u32;
 
-                img.copy_from(&slug, MARGIN, sb_start + i * (MARGIN + CROP_HEIGHT))?;
+                img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
             }
 
             sb_pos_tracker += cards_in_sb.len() + 1;
@@ -128,8 +132,6 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
 
     // deck image width
     // assumes decks will always have class cards
-    let column_width = MARGIN + SLUG_WIDTH;
-
     let deck_img_width = {
         let mut columns = 1;
         if !neutral_cards.is_empty() {
@@ -140,14 +142,14 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         }
         let columns = columns as u32;
 
-        MARGIN + columns * column_width
+        columns * COLUMN_WIDTH + MARGIN
     };
 
     // deck image height
     // ignores length of sideboards. unlikely to be larger than either class_cards or neutral_cards
     let deck_img_height = {
         let length = 1 + class_cards.len().max(neutral_cards.len()) as u32;
-        MARGIN + (length * (MARGIN + CROP_HEIGHT))
+        (length * ROW_HEIGHT) + MARGIN
     };
 
     // main canvas
@@ -166,30 +168,26 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         let slug = get_slug(card, count, agent.clone())?;
         let i = 1 + i as u32;
 
-        img.copy_from(&slug, MARGIN, MARGIN + i * (MARGIN + CROP_HEIGHT))?;
+        img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
     }
 
     // neutral cards
     for (i, (card, count)) in neutral_cards.into_iter().enumerate() {
         if i == 0 {
             let neutrals_title = get_title_slug(String::from("Neutrals"))?;
-            img.copy_from(&neutrals_title, column_width + MARGIN, MARGIN)?;
+            img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
         }
 
         let slug = get_slug(card, count, agent.clone())?;
         let i = 1 + i as u32;
 
-        img.copy_from(
-            &slug,
-            column_width + MARGIN,
-            MARGIN + i * (MARGIN + CROP_HEIGHT),
-        )?;
+        img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
     }
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
-            let column_start = column_width * (2 + sb_i as u32) + MARGIN;
+            let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
             let sb_title = get_title_slug(format!("Sideboard: {}", sb.sideboard_card.name))?;
             img.copy_from(&sb_title, column_start, MARGIN)?;
 
@@ -205,7 +203,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
                 let slug = get_slug(card, count, agent.clone())?;
                 let i = 1 + i as u32;
 
-                img.copy_from(&slug, column_start, MARGIN + i * (MARGIN + CROP_HEIGHT))?;
+                img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
             }
         }
     }
@@ -226,20 +224,6 @@ pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<Dynamic
         _ => (157, 157, 157),
     };
 
-    let link = card
-        .crop_image
-        .clone()
-        .ok_or(anyhow!("No crop image for {}", name))?;
-
-    let mut buf = Vec::new();
-    agent
-        .get(&link)
-        .call()?
-        .into_reader()
-        .read_to_end(&mut buf)?;
-
-    let crop = image::load_from_memory(&buf)?;
-
     // main canvas
     let mut img = ImageBuffer::new(SLUG_WIDTH, CROP_HEIGHT);
     drawing::draw_filled_rect_mut(
@@ -248,7 +232,24 @@ pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<Dynamic
         Rgba([10u8, 10, 10, 255]),
     );
 
-    img.copy_from(&crop, CROP_WIDTH, 0)?;
+    if let Some(link) = &card.crop_image {
+        let mut buf = Vec::new();
+        agent
+            .get(link)
+            .call()?
+            .into_reader()
+            .read_to_end(&mut buf)?;
+
+        let crop = image::load_from_memory(&buf)?;
+
+        img.copy_from(&crop, CROP_WIDTH, 0)?;
+    } else {
+        drawing::draw_filled_rect_mut(
+            &mut img,
+            Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
+            Rgba([r_color.0, r_color.1, r_color.2, 255]),
+        )
+    }
 
     // gradient
     let mut gradient = RgbaImage::new(CROP_WIDTH, CROP_HEIGHT);
@@ -274,7 +275,8 @@ pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<Dynamic
     );
 
     // font and size
-    let (font, scale) = get_font_and_scale()?;
+    let font = rusttype::Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
+    let scale = rusttype::Scale::uniform(40.0);
 
     // card name
     drawing::draw_text_mut(
@@ -320,7 +322,7 @@ pub fn get_slug(card: &Card, count: usize, agent: ureq::Agent) -> Result<Dynamic
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-pub fn get_title_slug(name: String) -> Result<DynamicImage> {
+fn get_title_slug(title: String) -> Result<DynamicImage> {
     // main canvas
     let mut img = ImageBuffer::new(SLUG_WIDTH, CROP_HEIGHT);
     drawing::draw_filled_rect_mut(
@@ -330,25 +332,21 @@ pub fn get_title_slug(name: String) -> Result<DynamicImage> {
     );
 
     // font and size
-    let (font, scale) = get_font_and_scale()?;
+    let font = rusttype::Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
+    let scale = rusttype::Scale::uniform(50.0);
+
+    let (_, th) = drawing::text_size(scale, &font, "E");
 
     // title
     drawing::draw_text_mut(
         &mut img,
         Rgba([10, 10, 10, 255]),
         CROP_HEIGHT as i32 + 10,
-        15,
+        (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
-        &name, //.to_uppercase(),
+        &title, //.to_uppercase(),
     );
 
     Ok(DynamicImage::ImageRgba8(img))
-}
-
-#[inline]
-fn get_font_and_scale() -> Result<(rusttype::Font<'static>, rusttype::Scale)> {
-    let font = rusttype::Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
-    let scale = rusttype::Scale::uniform(40.0);
-    Ok((font, scale))
 }

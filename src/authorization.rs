@@ -1,6 +1,9 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use base64::{engine::general_purpose, Engine};
 use serde::Deserialize;
+
+const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
+const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
 
 #[allow(unused)]
 #[derive(Deserialize)]
@@ -12,13 +15,9 @@ struct Authorization {
 pub fn get_access_token() -> Result<String> {
     // need to replace later with something that allows people to input their own creds
     dotenvy::dotenv().ok();
-    let id =
-        std::env::var("BLIZZARD_CLIENT_ID").context("failed to get BLIZZARD_CLIENT_ID from env")?;
-    let secret = std::env::var("BLIZZARD_CLIENT_SECRET")
-        .context("failed to get BLIZZARD_CLIENT_SECRET from env")?;
-
-    // let id = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_ID");
-    // let secret = dotenvy_macro::dotenv!("BLIZZARD_CLIENT_SECRET");
+    let id = std::env::var(ID_KEY).map_err(|e| anyhow!("Failed to get {ID_KEY}: {e}"))?;
+    let secret =
+        std::env::var(SECRET_KEY).map_err(|e| anyhow!("Failed to get {SECRET_KEY}: {e}"))?;
 
     let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 

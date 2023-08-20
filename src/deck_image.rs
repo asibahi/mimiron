@@ -24,7 +24,7 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const FONT_DATA: &[u8] = include_path::include_path_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
+const FONT_DATA: &[u8] = include_path::include_path_bytes!("..","data","YanoneKaffeesatz-Medium.ttf");
 
 pub enum DeckImageShape {
     // HSTopDecksStyle
@@ -90,9 +90,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
             let slug = get_slug(card, *count, &agent)?;
-            let mut img = par_img
-                .lock()
-                .map_err(|_| anyhow!("failed to get mutex lock"))?;
+            let mut img = par_img.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -105,9 +103,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
             let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name))?;
             {
-                let mut img = par_img
-                    .lock()
-                    .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, MARGIN, sb_start)?;
             }
 
@@ -124,9 +120,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
                 |(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
                     let slug = get_slug(card, *count, &agent)?;
-                    let mut img = par_img
-                        .lock()
-                        .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                    let mut img = par_img.lock().unwrap();
                     img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
                     Ok(())
                 },
@@ -136,10 +130,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         }
     }
 
-    let img = par_img
-        .lock()
-        .map_err(|_| anyhow!("failed to lock mutex on exit"))?
-        .to_owned();
+    let img = par_img.lock().unwrap().to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
 }
@@ -204,9 +195,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
             let slug = get_slug(card, **count, &agent)?;
-            let mut img = par_image
-                .lock()
-                .map_err(|_| anyhow!("failed to get mutex lock"))?;
+            let mut img = par_image.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -216,9 +205,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         .par_iter()
         .enumerate()
         .try_for_each(|(i, (card, count))| -> Result<()> {
-            let mut img = par_image
-                .lock()
-                .map_err(|_| anyhow!("failed to get mutex lock"))?;
+            let mut img = par_image.lock().unwrap();
             if i == 0 {
                 let neutrals_title = get_title_slug("Neutrals")?;
                 img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
@@ -237,9 +224,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
             let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name))?;
 
             {
-                let mut img = par_image
-                    .lock()
-                    .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                let mut img = par_image.lock().unwrap();
                 img.copy_from(&sb_title, column_start, MARGIN)?;
             }
 
@@ -256,9 +241,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
                 |(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
                     let slug = get_slug(card, *count, &agent)?;
-                    let mut img = par_image
-                        .lock()
-                        .map_err(|_| anyhow!("failed to get mutex lock"))?;
+                    let mut img = par_image.lock().unwrap();
                     img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
                     Ok(())
                 },
@@ -266,10 +249,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         }
     }
 
-    let img = par_image
-        .lock()
-        .map_err(|_| anyhow!("wtf is going on"))?
-        .to_owned();
+    let img = par_image.lock().unwrap().to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
 }
@@ -295,7 +275,7 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<Dynami
         Rgba([10u8, 10, 10, 255]),
     );
 
-    if let Err(e) = get_crop_image(&mut img, card, agent) {
+    if let Err(e) = draw_crop_image(&mut img, card, agent) {
         eprintln!("Failed to get image of {}: {e}", card.name);
         drawing::draw_filled_rect_mut(
             &mut img,
@@ -328,7 +308,7 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<Dynami
     );
 
     // font and size
-    let font = rusttype::Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
+    let font = rusttype::Font::try_from_bytes(FONT_DATA).unwrap();
     let scale = rusttype::Scale::uniform(40.0);
 
     // card name
@@ -385,7 +365,7 @@ fn get_title_slug(title: &str) -> Result<DynamicImage> {
     );
 
     // font and size
-    let font = rusttype::Font::try_from_bytes(FONT_DATA).ok_or(anyhow!("couldn't load font"))?;
+    let font = rusttype::Font::try_from_bytes(FONT_DATA).unwrap();
     let scale = rusttype::Scale::uniform(50.0);
 
     let (_, th) = drawing::text_size(scale, &font, "E");
@@ -404,7 +384,7 @@ fn get_title_slug(title: &str) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_crop_image(
+fn draw_crop_image(
     img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
     card: &Card,
     agent: &ureq::Agent,

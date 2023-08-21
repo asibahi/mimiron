@@ -25,9 +25,9 @@ pub fn get_access_token() -> Result<String> {
         .set("Authorization", &format!("Basic {creds}"))
         .query("grant_type", "client_credentials")
         .call()
-        .context("call to get access_token failed")?
+        .with_context(|| "call to get access_token failed")?
         .into_json::<Authorization>()
-        .context("parsing authorization json failed")?
+        .with_context(|| "parsing authorization json failed")?
         .access_token;
     Ok(access_token)
 }

@@ -290,9 +290,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
 
     let res = res
         .call()
-        .context("call to BG card search API failed")?
+        .with_context(|| "call to BG card search API failed")?
         .into_json::<CardSearchResponse>()
-        .context("parsing BG card search json failed")?;
+        .with_context(|| "parsing BG card search json failed")?;
 
     if res.card_count == 0 {
         return Err(anyhow!("No Battlegrounds card found. Check your spelling."));
@@ -340,9 +340,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     .query("gameMode", "battlegrounds")
                     .query("access_token", access_token)
                     .call()
-                    .context("call to card by id API failed")?
+                    .with_context(|| "call to card by id API failed")?
                     .into_json::<Card>()
-                    .context("parsing BG card search by id json failed")?;
+                    .with_context(|| "parsing BG card search by id json failed")?;
 
                 let res = textwrap::fill(
                     &res.to_string(),
@@ -370,9 +370,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     .query("gameMode", "battlegrounds")
                     .query("access_token", access_token)
                     .call()
-                    .context("call to card by id API failed")?
+                    .with_context(|| "call to card by id API failed")?
                     .into_json::<Card>()
-                    .context("parsing BG card search by id json failed")?;
+                    .with_context(|| "parsing BG card search by id json failed")?;
 
                 let BGCardType::Minion {
                     tier: _,

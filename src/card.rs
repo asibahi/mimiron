@@ -246,9 +246,9 @@ pub fn run(args: CardArgs, access_token: &str) -> Result<String> {
         .query("textFilter", &search_term)
         .query("access_token", access_token)
         .call()
-        .context("call to card search API failed")?
+        .with_context(|| "call to card search API failed")?
         .into_json::<CardSearchResponse>()
-        .context("parsing card search json failed")?;
+        .with_context(|| "parsing card search json failed")?;
 
     if res.card_count == 0 {
         return Err(anyhow!("No constructed card found. Check your spelling."));

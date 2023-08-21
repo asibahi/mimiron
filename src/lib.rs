@@ -41,7 +41,8 @@ pub enum Commands {
 
 pub fn run() -> Result<String> {
     let args = Cli::parse();
-    let access_token = authorization::get_access_token().context("failed to get access token.")?;
+    let access_token =
+        authorization::get_access_token().with_context(|| "failed to get access token.")?;
     match args.command {
         Commands::Card(args) => card::run(args, &access_token),
         Commands::Deck(args) => deck::run(args, &access_token),

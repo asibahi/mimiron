@@ -141,9 +141,9 @@ fn deck_lookup(code: &str, access_token: &str) -> Result<Deck> {
         .query("code", code)
         .query("access_token", access_token)
         .call()
-        .context("call to deck code API failed")?
+        .with_context(|| "call to deck code API failed")?
         .into_json::<Deck>()
-        .context("parsing deck code json failed")
+        .with_context(|| "parsing deck code json failed")
 }
 
 #[derive(Args)]

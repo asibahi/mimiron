@@ -24,7 +24,8 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const FONT_DATA: &[u8] = include_path::include_path_bytes!("..","data","YanoneKaffeesatz-Medium.ttf");
+const FONT_DATA: &[u8] =
+    include_path::include_path_bytes!("..", "data", "YanoneKaffeesatz-Medium.ttf");
 
 pub enum DeckImageShape {
     // HSTopDecksStyle
@@ -398,10 +399,10 @@ fn draw_crop_image(
     agent
         .get(link)
         .call()
-        .context("Could not connect to image link")?
+        .with_context(|| "Could not connect to image link")?
         .into_reader()
         .read_to_end(&mut buf)
-        .context("Could not read image link")?;
+        .with_context(|| "Could not read image link")?;
 
     let crop = image::load_from_memory(&buf)?;
 

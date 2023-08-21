@@ -323,13 +323,15 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
     for card in cards {
         writeln!(buffer, "{card:#}")?;
 
-        if let BGCardType::Hero {
-            armor: _,
-            buddy_id: _,
-            child_ids,
-        } = card.card_type
-        {
-            for id in child_ids {
+        match &card.card_type {
+            BGCardType::Hero {
+                armor: _,
+                buddy_id: _,
+                child_ids,
+            } if !child_ids.is_empty() => {
+                // Getting the starting hero power only. API keeps old
+                // versions of hero powers below that for some reason.
+                let id = child_ids[0];
                 let res = agent
                     .get(&format!(
                         "https://us.api.blizzard.com/hearthstone/cards/{id}"
@@ -347,10 +349,58 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     textwrap::Options::new(textwrap::termwidth() - 10)
                         .initial_indent("\t")
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
-                );
+                )
+                .blue();
 
                 writeln!(buffer, "{res}")?;
             }
+            BGCardType::Minion {
+                tier: _,
+                attack: _,
+                health: _,
+                text: _,
+                minion_types: _,
+                upgrade_id: Some(id),
+            } => {
+                let res = agent
+                    .get(&format!(
+                        "https://us.api.blizzard.com/hearthstone/cards/{id}"
+                    ))
+                    .query("locale", "en_us")
+                    .query("gameMode", "battlegrounds")
+                    .query("access_token", access_token)
+                    .call()
+                    .context("call to card by id API failed")?
+                    .into_json::<Card>()
+                    .context("parsing BG card search by id json failed")?;
+
+                let BGCardType::Minion {
+                    tier: _,
+                    attack,
+                    health,
+                    text,
+                    minion_types: _,
+                    upgrade_id: _,
+                } = res.card_type
+                else {
+                    return Err(anyhow!("Upgraded minion is apparently not a minion."));
+                };
+
+                let upgraded = format!("\tUpgraded: {attack}/{health}").italic().yellow();
+
+                writeln!(buffer, "{upgraded}")?;
+
+                let res = textwrap::fill(
+                    &prettify(&text),
+                    textwrap::Options::new(textwrap::termwidth() - 10)
+                        .initial_indent("\t")
+                        .subsequent_indent(&format!("\t")),
+                )
+                .yellow();
+
+                writeln!(buffer, "{res}")?;
+            }
+            _ => (),
         }
 
         if args.image {

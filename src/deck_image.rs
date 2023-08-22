@@ -24,7 +24,11 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
+#[cfg(unix)]
 const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
+
+#[cfg(windows)]
+const FONT_DATA: &[u8] = include_bytes!("..\\data\\YanoneKaffeesatz-Medium.ttf");
 
 pub enum DeckImageShape {
     // HSTopDecksStyle

@@ -46,14 +46,7 @@ pub fn get_deck_image(
 }
 
 fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
-    let ordered_cards = deck
-        .cards
-        .iter()
-        .collect::<Counter<_>>()
-        .into_iter()
-        .collect::<BTreeMap<_, _>>()
-        .into_iter()
-        .collect::<Vec<_>>();
+    let ordered_cards = order_cards(&deck.cards);
 
     let deck_img_width = MARGIN * 2 + SLUG_WIDTH;
 
@@ -71,23 +64,17 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
     };
 
     // main canvas
-    let mut img = ImageBuffer::new(deck_img_width, deck_img_height);
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(deck_img_width, deck_img_height),
-        Rgba([255, 255, 255, 255]),
-    );
+    let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     // cards
-    draw_class_title(&mut img, &deck, &agent)?;
+    draw_deck_title(&mut img, &deck, &agent)?;
 
     let par_img = Arc::new(Mutex::new(img));
 
     ordered_cards
         .par_iter()
-        .enumerate()
         .try_for_each(|(i, (card, count))| -> Result<()> {
-            let i = i as u32 + 1;
+            let i = *i as u32 + 1;
             let slug = get_slug(card, *count, &agent)?;
             let mut img = par_img.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
@@ -100,21 +87,14 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
 
         for sb in sideboards {
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
-            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
             {
+                let sb_title =
+                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
                 let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, MARGIN, sb_start)?;
             }
 
-            let cards_in_sb = sb
-                .cards_in_sideboard
-                .iter()
-                .collect::<Counter<_>>()
-                .into_iter()
-                .collect::<BTreeMap<_, _>>()
-                .into_iter()
-                .enumerate()
-                .collect::<Vec<_>>();
+            let cards_in_sb = order_cards(&sb.cards_in_sideboard);
 
             sb_pos_tracker += cards_in_sb.len() + 1;
 
@@ -178,14 +158,9 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     };
 
     // main canvas
-    let mut img = ImageBuffer::new(deck_img_width, deck_img_height);
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(deck_img_width, deck_img_height),
-        Rgba([255, 255, 255, 255]),
-    );
+    let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_class_title(&mut img, &deck, &agent)?;
+    draw_deck_title(&mut img, &deck, &agent)?;
 
     // class cards
     let par_image = Arc::new(Mutex::new(img));
@@ -220,37 +195,41 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
-            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
-
             {
+                let sb_title =
+                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
                 let mut img = par_image.lock().unwrap();
                 img.copy_from(&sb_title, column_start, MARGIN)?;
             }
 
-            let cards_in_sb = sb
-                .cards_in_sideboard
-                .iter()
-                .collect::<Counter<_>>()
-                .into_iter()
-                .collect::<BTreeMap<_, _>>()
-                .into_iter()
-                .collect::<Vec<_>>();
+            let cards_in_sb = order_cards(&sb.cards_in_sideboard);
 
-            cards_in_sb.par_iter().enumerate().try_for_each(
-                |(i, (card, count))| -> Result<()> {
+            cards_in_sb
+                .into_par_iter()
+                .try_for_each(|(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
-                    let slug = get_slug(card, *count, &agent)?;
+                    let slug = get_slug(card, count, &agent)?;
                     let mut img = par_image.lock().unwrap();
                     img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
                     Ok(())
-                },
-            )?;
+                })?;
         }
     }
 
     let img = par_image.lock().unwrap().to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
+}
+
+fn order_cards(cards: &Vec<Card>) -> Vec<(usize, (&Card, usize))> {
+    cards
+        .iter()
+        .collect::<Counter<_>>()
+        .into_iter()
+        .collect::<BTreeMap<_, _>>()
+        .into_iter()
+        .enumerate()
+        .collect::<Vec<_>>()
 }
 
 pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<DynamicImage> {
@@ -267,12 +246,7 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<Dynami
     };
 
     // main canvas
-    let mut img = ImageBuffer::new(SLUG_WIDTH, CROP_HEIGHT);
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(SLUG_WIDTH, CROP_HEIGHT),
-        Rgba([10u8, 10, 10, 255]),
-    );
+    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (10, 10, 10));
 
     if let Err(e) = draw_crop_image(&mut img, card, agent) {
         eprintln!("Failed to get image of {}: {e}", card.name);
@@ -356,12 +330,7 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<Dynami
 
 fn get_title_slug(title: &str, margin: i32) -> Result<DynamicImage> {
     // main canvas
-    let mut img = ImageBuffer::new(SLUG_WIDTH, CROP_HEIGHT);
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(SLUG_WIDTH, CROP_HEIGHT),
-        Rgba([255, 255, 255, 255]),
-    );
+    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
     // font and size
     let font = rusttype::Font::try_from_bytes(FONT_DATA).unwrap();
@@ -383,7 +352,17 @@ fn get_title_slug(title: &str, margin: i32) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn draw_class_title(
+fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> image::RgbaImage {
+    let mut img = ImageBuffer::new(width, height);
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(0, 0).of_size(width, height),
+        Rgba([color.0, color.1, color.2, 255]),
+    );
+    img
+}
+
+fn draw_deck_title(
     img: &mut image::RgbaImage,
     deck: &Deck,
     agent: &ureq::Agent,
@@ -393,13 +372,17 @@ fn draw_class_title(
         CROP_HEIGHT as i32,
     )?;
     img.copy_from(&title, MARGIN, MARGIN)?;
+    draw_class_icon(img, &deck.class, agent).ok();
+    Ok(())
+}
 
-    let class = deck.class.to_string().to_lowercase();
-    let link = format!("https://render.worldofwarcraft.com/us/icons/56/classicon_{class}.jpg");
+fn draw_class_icon(img: &mut image::RgbaImage, class: &Class, agent: &ureq::Agent) -> Result<()> {
+    let class = class.to_string().to_lowercase();
+
     let class_img = {
         let mut buf = Vec::new();
         agent
-            .get(&link)
+            .get(&(format!("https://render.worldofwarcraft.com/us/icons/56/classicon_{class}.jpg")))
             .call()
             .with_context(|| "Could not connect to class image link")?
             .into_reader()

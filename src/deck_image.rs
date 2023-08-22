@@ -352,7 +352,7 @@ fn get_title_slug(title: &str, margin: i32) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> image::RgbaImage {
+fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
     let mut img = ImageBuffer::new(width, height);
     drawing::draw_filled_rect_mut(
         &mut img,
@@ -363,7 +363,7 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> image::Rgba
 }
 
 fn draw_deck_title(
-    img: &mut image::RgbaImage,
+    img: &mut RgbaImage,
     deck: &Deck,
     agent: &ureq::Agent,
 ) -> Result<(), anyhow::Error> {
@@ -376,7 +376,7 @@ fn draw_deck_title(
     Ok(())
 }
 
-fn draw_class_icon(img: &mut image::RgbaImage, class: &Class, agent: &ureq::Agent) -> Result<()> {
+fn draw_class_icon(img: &mut RgbaImage, class: &Class, agent: &ureq::Agent) -> Result<()> {
     let class = class.to_string().to_lowercase();
 
     let class_img = {
@@ -397,7 +397,7 @@ fn draw_class_icon(img: &mut image::RgbaImage, class: &Class, agent: &ureq::Agen
     Ok(())
 }
 
-fn draw_crop_image(img: &mut image::RgbaImage, card: &Card, agent: &ureq::Agent) -> Result<()> {
+fn draw_crop_image(img: &mut RgbaImage, card: &Card, agent: &ureq::Agent) -> Result<()> {
     let link = card
         .crop_image
         .as_ref()

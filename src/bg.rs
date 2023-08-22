@@ -26,7 +26,7 @@ pub struct CardData {
     // collectible: u8,
     // class_id: u8,
     // multi_class_ids: Vec<Option<serde_json::Value>>,
-    // card_type_id: u8,
+    card_type_id: u8,
     // card_set_id: u8,
     // rarity_id: Option<u8>,
 
@@ -85,6 +85,9 @@ pub enum BGCardType {
     Reward {
         text: String,
     },
+    Anomaly {
+        text: String,
+    },
     HeroPower {
         cost: u8,
         text: String,
@@ -92,6 +95,22 @@ pub enum BGCardType {
 }
 impl Display for BGCardType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn inner(text: &str, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let text = prettify(text);
+
+            if f.alternate() {
+                let text = textwrap::fill(
+                    &text,
+                    textwrap::Options::new(textwrap::termwidth() - 10)
+                        .initial_indent("\t")
+                        .subsequent_indent("\t"),
+                );
+                write!(f, "\n{text}")
+            } else {
+                write!(f, ": {text}")
+            }
+        }
+
         match self {
             Self::Hero {
                 armor,
@@ -106,8 +125,6 @@ impl Display for BGCardType {
                 minion_types,
                 upgrade_id: _,
             } => {
-                let text = prettify(text);
-
                 write!(f, "Tier-{tier} {attack}/{health} ")?;
                 if minion_types.is_empty() {
                     write!(f, "minion")?;
@@ -115,27 +132,19 @@ impl Display for BGCardType {
                     let types = minion_types.iter().join("/");
                     write!(f, "{types}")?;
                 }
-                if f.alternate() {
-                    let text = textwrap::fill(
-                        &text,
-                        textwrap::Options::new(textwrap::termwidth() - 10)
-                            .initial_indent("\t")
-                            .subsequent_indent("\t"),
-                    );
-                    write!(f, ".\n{text}")?;
-                } else {
-                    write!(f, ": {text}")?;
-                }
-
-                Ok(())
+                inner(text, f)
             }
             Self::Quest { text } => {
-                let text = prettify(text);
-                write!(f, "Battlegrounds Quest: {text}")
+                write!(f, "Battlegrounds Quest")?;
+                inner(text, f)
             }
             Self::Reward { text } => {
-                let text = prettify(text);
-                write!(f, "Battlegrounds Reward: {text}")
+                write!(f, "Battlegrounds Reward")?;
+                inner(text, f)
+            }
+            Self::Anomaly { text } => {
+                write!(f, "Battlegrounds Anomaly")?;
+                inner(text, f)
             }
             Self::HeroPower { text, cost } => {
                 let text = prettify(text);
@@ -197,6 +206,8 @@ impl From<CardData> for Card {
                     },
                     upgrade_id: bg.upgrade_id,
                 }
+            } else if c.card_type_id == 43 {
+                BGCardType::Anomaly { text: c.text }
             } else {
                 BGCardType::HeroPower {
                     text: c.text,

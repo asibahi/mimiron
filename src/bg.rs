@@ -394,7 +394,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     &prettify(&text),
                     textwrap::Options::new(textwrap::termwidth() - 10)
                         .initial_indent("\t")
-                        .subsequent_indent(&format!("\t")),
+                        .subsequent_indent("\t"),
                 )
                 .yellow();
 

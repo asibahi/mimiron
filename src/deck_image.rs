@@ -67,7 +67,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     // cards
-    draw_deck_title(&mut img, &deck, &agent)?;
+    draw_deck_title(&mut img, deck, &agent)?;
 
     let par_img = Arc::new(Mutex::new(img));
 
@@ -160,7 +160,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, &deck, &agent)?;
+    draw_deck_title(&mut img, deck, &agent)?;
 
     // class cards
     let par_image = Arc::new(Mutex::new(img));
@@ -221,7 +221,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn order_cards(cards: &Vec<Card>) -> Vec<(usize, (&Card, usize))> {
+fn order_cards(cards: &[Card]) -> Vec<(usize, (&Card, usize))> {
     cards
         .iter()
         .collect::<Counter<_>>()

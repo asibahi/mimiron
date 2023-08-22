@@ -100,7 +100,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
 
         for sb in sideboards {
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
-            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name))?;
+            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
             {
                 let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, MARGIN, sb_start)?;
@@ -206,7 +206,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let mut img = par_image.lock().unwrap();
             if i == 0 {
-                let neutrals_title = get_title_slug("Neutrals")?;
+                let neutrals_title = get_title_slug("Neutrals", 0)?;
                 img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
             }
 
@@ -220,7 +220,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
-            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name))?;
+            let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
 
             {
                 let mut img = par_image.lock().unwrap();
@@ -354,7 +354,7 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<Dynami
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_title_slug(title: &str) -> Result<DynamicImage> {
+fn get_title_slug(title: &str, margin: i32) -> Result<DynamicImage> {
     // main canvas
     let mut img = ImageBuffer::new(SLUG_WIDTH, CROP_HEIGHT);
     drawing::draw_filled_rect_mut(
@@ -373,7 +373,7 @@ fn get_title_slug(title: &str) -> Result<DynamicImage> {
     drawing::draw_text_mut(
         &mut img,
         Rgba([10, 10, 10, 255]),
-        15,
+        15 + margin,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
@@ -388,6 +388,12 @@ fn draw_class_title(
     deck: &Deck,
     agent: &ureq::Agent,
 ) -> Result<(), anyhow::Error> {
+    let title = get_title_slug(
+        &format!("{} - {}", deck.class, deck.format.to_uppercase()),
+        CROP_HEIGHT as i32,
+    )?;
+    img.copy_from(&title, MARGIN, MARGIN)?;
+
     let class = deck.class.to_string().to_lowercase();
     let link = format!("https://render.worldofwarcraft.com/us/icons/56/classicon_{class}.jpg");
     let class_img = {
@@ -405,8 +411,6 @@ fn draw_class_title(
 
     img.copy_from(&class_img, MARGIN, MARGIN)?;
 
-    let title = get_title_slug(&format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
-    img.copy_from(&title, CROP_HEIGHT + MARGIN, MARGIN)?;
     Ok(())
 }
 

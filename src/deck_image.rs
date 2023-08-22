@@ -78,9 +78,8 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         Rgba([255, 255, 255, 255]),
     );
 
-    //  cards
-    let title = get_title_slug(&format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
-    img.copy_from(&title, MARGIN, MARGIN)?;
+    // cards
+    draw_class_title(&mut img, &deck, &agent)?;
 
     let par_img = Arc::new(Mutex::new(img));
 
@@ -114,19 +113,20 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
                 .into_iter()
                 .collect::<BTreeMap<_, _>>()
                 .into_iter()
+                .enumerate()
                 .collect::<Vec<_>>();
 
-            cards_in_sb.par_iter().enumerate().try_for_each(
-                |(i, (card, count))| -> Result<()> {
+            sb_pos_tracker += cards_in_sb.len() + 1;
+
+            cards_in_sb
+                .into_par_iter()
+                .try_for_each(|(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
-                    let slug = get_slug(card, *count, &agent)?;
+                    let slug = get_slug(card, count, &agent)?;
                     let mut img = par_img.lock().unwrap();
                     img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
                     Ok(())
-                },
-            )?;
-
-            sb_pos_tracker += cards_in_sb.len() + 1;
+                })?;
         }
     }
 
@@ -146,11 +146,13 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     let class_cards = ordered_cards
         .iter()
         .filter(|(c, _)| !c.class.contains(&Class::Neutral))
+        .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
         .filter(|(c, _)| c.class.contains(&Class::Neutral))
+        .enumerate()
         .collect::<Vec<_>>();
 
     // deck image width
@@ -183,18 +185,16 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         Rgba([255, 255, 255, 255]),
     );
 
-    // class cards
-    let class_title = get_title_slug(&format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
-    img.copy_from(&class_title, MARGIN, MARGIN)?;
+    draw_class_title(&mut img, &deck, &agent)?;
 
+    // class cards
     let par_image = Arc::new(Mutex::new(img));
 
     class_cards
-        .par_iter()
-        .enumerate()
+        .into_par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
-            let slug = get_slug(card, **count, &agent)?;
+            let slug = get_slug(card, *count, &agent)?;
             let mut img = par_image.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
@@ -202,8 +202,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
 
     // neutral cards
     neutral_cards
-        .par_iter()
-        .enumerate()
+        .into_par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let mut img = par_image.lock().unwrap();
             if i == 0 {
@@ -212,7 +211,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
             }
 
             let i = i as u32 + 1;
-            let slug = get_slug(card, **count, &agent)?;
+            let slug = get_slug(card, *count, &agent)?;
             img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -384,11 +383,34 @@ fn get_title_slug(title: &str) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn draw_crop_image(
-    img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
-    card: &Card,
+fn draw_class_title(
+    img: &mut image::RgbaImage,
+    deck: &Deck,
     agent: &ureq::Agent,
-) -> Result<()> {
+) -> Result<(), anyhow::Error> {
+    let class = deck.class.to_string().to_lowercase();
+    let link = format!("https://render.worldofwarcraft.com/us/icons/56/classicon_{class}.jpg");
+    let class_img = {
+        let mut buf = Vec::new();
+        agent
+            .get(&link)
+            .call()
+            .with_context(|| "Could not connect to class image link")?
+            .into_reader()
+            .read_to_end(&mut buf)
+            .with_context(|| "Could not read  class image link")?;
+        image::load_from_memory(&buf)?
+    }
+    .resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian);
+
+    img.copy_from(&class_img, MARGIN, MARGIN)?;
+
+    let title = get_title_slug(&format!("{} - {}", deck.class, deck.format.to_uppercase()))?;
+    img.copy_from(&title, CROP_HEIGHT + MARGIN, MARGIN)?;
+    Ok(())
+}
+
+fn draw_crop_image(img: &mut image::RgbaImage, card: &Card, agent: &ureq::Agent) -> Result<()> {
     let link = card
         .crop_image
         .as_ref()

@@ -26,7 +26,6 @@ pub enum Class {
 impl Display for Class {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            // colors from D0nkey's site.
             Self::DeathKnight => "DeathKnight",
             Self::DemonHunter => "DemonHunter",
             Self::Druid => "Druid",

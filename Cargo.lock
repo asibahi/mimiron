@@ -569,15 +569,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "include_path"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6259e6c697973f2b71f03a5af7d94ca6de0f1efa96c398c1a2e170952abfd0ca"
-dependencies = [
- "litrs",
-]
-
-[[package]]
 name = "io-lifetimes"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -672,15 +663,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
-name = "litrs"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9275e0933cf8bb20f008924c0cb07a0692fe54d8064996520bf998de9eb79aa"
-dependencies = [
- "proc-macro2",
-]
-
-[[package]]
 name = "lock_api"
 version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -735,7 +717,6 @@ dependencies = [
  "dotenvy",
  "image",
  "imageproc",
- "include_path",
  "itertools 0.11.0",
  "nom",
  "rayon",

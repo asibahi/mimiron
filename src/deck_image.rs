@@ -26,7 +26,7 @@ const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
 const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
 
-pub enum DeckImageShape {
+pub enum Shape {
     // HSTopDecksStyle
     MultipleColumns,
 
@@ -34,18 +34,18 @@ pub enum DeckImageShape {
     SingleColumn,
 }
 
-pub fn get_deck_image(
+pub fn get(
     deck: &Deck,
-    shape: DeckImageShape,
-    agent: ureq::Agent,
+    shape: Shape,
+    agent: &ureq::Agent,
 ) -> Result<DynamicImage> {
     match shape {
-        DeckImageShape::MultipleColumns => image_multiple_columns(deck, agent),
-        DeckImageShape::SingleColumn => image_single_column(deck, agent),
+        Shape::MultipleColumns => image_multiple_columns(deck, agent),
+        Shape::SingleColumn => image_single_column(deck, agent),
     }
 }
 
-fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
+fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     let ordered_cards = order_cards(&deck.cards);
 
     let deck_img_width = MARGIN * 2 + SLUG_WIDTH;
@@ -67,7 +67,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     // cards
-    draw_deck_title(&mut img, deck, &agent)?;
+    draw_deck_title(&mut img, deck, agent)?;
 
     let par_img = Arc::new(Mutex::new(img));
 
@@ -75,7 +75,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
         .par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = *i as u32 + 1;
-            let slug = get_slug(card, *count, &agent)?;
+            let slug = get_slug(card, *count, agent);
             let mut img = par_img.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
@@ -89,7 +89,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
             {
                 let sb_title =
-                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
+                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, MARGIN, sb_start)?;
             }
@@ -102,7 +102,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
                 .into_par_iter()
                 .try_for_each(|(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
-                    let slug = get_slug(card, count, &agent)?;
+                    let slug = get_slug(card, count, agent);
                     let mut img = par_img.lock().unwrap();
                     img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
                     Ok(())
@@ -115,7 +115,7 @@ fn image_single_column(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> 
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImage> {
+fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     let ordered_cards = deck
         .cards
         .iter()
@@ -160,7 +160,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, deck, &agent)?;
+    draw_deck_title(&mut img, deck, agent)?;
 
     // class cards
     let par_image = Arc::new(Mutex::new(img));
@@ -169,7 +169,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         .into_par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
-            let slug = get_slug(card, *count, &agent)?;
+            let slug = get_slug(card, *count, agent);
             let mut img = par_image.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
@@ -181,12 +181,12 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let mut img = par_image.lock().unwrap();
             if i == 0 {
-                let neutrals_title = get_title_slug("Neutrals", 0)?;
+                let neutrals_title = get_title_slug("Neutrals", 0);
                 img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
             }
 
             let i = i as u32 + 1;
-            let slug = get_slug(card, *count, &agent)?;
+            let slug = get_slug(card, *count, agent);
             img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -197,7 +197,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
             {
                 let sb_title =
-                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0)?;
+                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_image.lock().unwrap();
                 img.copy_from(&sb_title, column_start, MARGIN)?;
             }
@@ -208,7 +208,7 @@ fn image_multiple_columns(deck: &Deck, agent: ureq::Agent) -> Result<DynamicImag
                 .into_par_iter()
                 .try_for_each(|(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
-                    let slug = get_slug(card, count, &agent)?;
+                    let slug = get_slug(card, count, agent);
                     let mut img = par_image.lock().unwrap();
                     img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
                     Ok(())
@@ -232,7 +232,7 @@ fn order_cards(cards: &[Card]) -> Vec<(usize, (&Card, usize))> {
         .collect::<Vec<_>>()
 }
 
-pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<DynamicImage> {
+pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
@@ -325,10 +325,10 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> Result<Dynami
         &count,
     );
 
-    Ok(DynamicImage::ImageRgba8(img))
+    DynamicImage::ImageRgba8(img)
 }
 
-fn get_title_slug(title: &str, margin: i32) -> Result<DynamicImage> {
+fn get_title_slug(title: &str, margin: i32) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
@@ -349,7 +349,7 @@ fn get_title_slug(title: &str, margin: i32) -> Result<DynamicImage> {
         title, //.to_uppercase(),
     );
 
-    Ok(DynamicImage::ImageRgba8(img))
+    DynamicImage::ImageRgba8(img)
 }
 
 fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
@@ -370,7 +370,7 @@ fn draw_deck_title(
     let title = get_title_slug(
         &format!("{} - {}", deck.class, deck.format.to_uppercase()),
         CROP_HEIGHT as i32,
-    )?;
+    );
     img.copy_from(&title, MARGIN, MARGIN)?;
     draw_class_icon(img, &deck.class, agent).ok();
     Ok(())

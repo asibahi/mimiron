@@ -343,17 +343,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 // Getting the starting hero power only. API keeps old
                 // versions of hero powers below that for some reason.
                 let id = child_ids[0];
-                let res = agent
-                    .get(&format!(
-                        "https://us.api.blizzard.com/hearthstone/cards/{id}"
-                    ))
-                    .query("locale", "en_us")
-                    .query("gameMode", "battlegrounds")
-                    .query("access_token", access_token)
-                    .call()
-                    .with_context(|| "call to card by id API failed")?
-                    .into_json::<Card>()
-                    .with_context(|| "parsing BG card search by id json failed")?;
+                let res = get_card_by_id(id, &agent, access_token)?;
 
                 let res = textwrap::fill(
                     &res.to_string(),
@@ -373,18 +363,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 minion_types: _,
                 upgrade_id: Some(id),
             } => {
-                let res = agent
-                    .get(&format!(
-                        "https://us.api.blizzard.com/hearthstone/cards/{id}"
-                    ))
-                    .query("locale", "en_us")
-                    .query("gameMode", "battlegrounds")
-                    .query("access_token", access_token)
-                    .call()
-                    .with_context(|| "call to card by id API failed")?
-                    .into_json::<Card>()
-                    .with_context(|| "parsing BG card search by id json failed")?;
-
+                let res = get_card_by_id(*id, &agent, access_token)?;
                 let BGCardType::Minion {
                     tier: _,
                     attack,
@@ -394,7 +373,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     upgrade_id: _,
                 } = res.card_type
                 else {
-                    return Err(anyhow!("Upgraded minion is apparently not a minion."));
+                    panic!()
                 };
 
                 let upgraded = format!("\tUpgraded: {attack}/{health}").italic().yellow();
@@ -420,4 +399,19 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
     }
 
     Ok(buffer)
+}
+
+fn get_card_by_id( id: usize,agent: &ureq::Agent, access_token: &str) -> Result<Card, anyhow::Error> {
+    let res = agent
+        .get(&format!(
+            "https://us.api.blizzard.com/hearthstone/cards/{id}"
+        ))
+        .query("locale", "en_us")
+        .query("gameMode", "battlegrounds")
+        .query("access_token", access_token)
+        .call()
+        .with_context(|| "call to card by id API failed")?
+        .into_json::<Card>()
+        .with_context(|| "parsing BG card search by id json failed")?;
+    Ok(res)
 }

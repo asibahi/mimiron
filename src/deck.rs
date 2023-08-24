@@ -8,7 +8,7 @@ use std::{collections::BTreeMap, fmt::Display};
 
 use crate::card::Card;
 use crate::card_details::Class;
-use crate::deck_image::{get_deck_image, DeckImageShape};
+use crate::deck_image;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -183,16 +183,16 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
 
     if args.image {
         let shape = if args.single {
-            DeckImageShape::SingleColumn
+            deck_image::Shape::SingleColumn
         } else {
-            DeckImageShape::MultipleColumns
+            deck_image::Shape::MultipleColumns
         };
 
         let agent = ureq::AgentBuilder::new()
             .timeout_connect(std::time::Duration::from_secs(2))
             .build();
 
-        let img = get_deck_image(&deck, shape, agent)?;
+        let img = deck_image::get(&deck, shape, &agent)?;
 
         let name = format!(
             "{} {} {}.png",

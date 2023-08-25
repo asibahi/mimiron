@@ -333,6 +333,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
 
     for card in cards {
         writeln!(buffer, "{card:#}")?;
+        if args.image {
+            writeln!(buffer, "\tImage: {}", card.image)?;
+        }
 
         match &card.card_type {
             BGCardType::Hero {
@@ -343,8 +346,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 // Getting the starting hero power only. API keeps old
                 // versions of hero powers below that for some reason.
                 let id = child_ids[0];
-                let res = get_card_by_id(id, &agent, access_token)?;
-
+                let Ok(res) = get_card_by_id(id, &agent, access_token) else {
+                    continue;
+                };
                 let res = textwrap::fill(
                     &res.to_string(),
                     textwrap::Options::new(textwrap::termwidth() - 10)
@@ -363,7 +367,9 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 minion_types: _,
                 upgrade_id: Some(id),
             } => {
-                let res = get_card_by_id(*id, &agent, access_token)?;
+                let Ok(res) = get_card_by_id(*id, &agent, access_token) else {
+                    continue;
+                };
                 let BGCardType::Minion {
                     tier: _,
                     attack,
@@ -376,7 +382,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     panic!()
                 };
 
-                let upgraded = format!("\tUpgraded: {attack}/{health}").italic().yellow();
+                let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
 
                 writeln!(buffer, "{upgraded}")?;
 
@@ -391,10 +397,6 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 writeln!(buffer, "{res}")?;
             }
             _ => (),
-        }
-
-        if args.image {
-            writeln!(buffer, "\tImage: {}", card.image)?;
         }
     }
 

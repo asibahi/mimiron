@@ -34,11 +34,7 @@ pub enum Shape {
     SingleColumn,
 }
 
-pub fn get(
-    deck: &Deck,
-    shape: Shape,
-    agent: &ureq::Agent,
-) -> Result<DynamicImage> {
+pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImage> {
     match shape {
         Shape::MultipleColumns => image_multiple_columns(deck, agent),
         Shape::SingleColumn => image_single_column(deck, agent),
@@ -88,8 +84,7 @@ fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage>
         for sb in sideboards {
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
             {
-                let sb_title =
-                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
+                let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, MARGIN, sb_start)?;
             }
@@ -196,8 +191,7 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
         for (sb_i, sb) in sideboards.iter().enumerate() {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
             {
-                let sb_title =
-                    get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
+                let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_image.lock().unwrap();
                 img.copy_from(&sb_title, column_start, MARGIN)?;
             }

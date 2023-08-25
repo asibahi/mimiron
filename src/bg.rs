@@ -401,7 +401,11 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
     Ok(buffer)
 }
 
-fn get_card_by_id( id: usize,agent: &ureq::Agent, access_token: &str) -> Result<Card, anyhow::Error> {
+fn get_card_by_id(
+    id: usize,
+    agent: &ureq::Agent,
+    access_token: &str,
+) -> Result<Card, anyhow::Error> {
     let res = agent
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"

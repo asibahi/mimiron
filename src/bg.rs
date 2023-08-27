@@ -68,7 +68,7 @@ pub struct BattlegroundsData {
 pub enum BGCardType {
     Hero {
         armor: u8,
-        buddy_id: usize,
+        buddy_id: Option<usize>,
         child_ids: Vec<usize>,
     },
     Minion {
@@ -183,7 +183,7 @@ impl From<CardData> for Card {
             if bg.hero {
                 BGCardType::Hero {
                     armor: c.armor.unwrap(),
-                    buddy_id: bg.companion_id.unwrap_or(0),
+                    buddy_id: bg.companion_id.filter(|x| *x != 0),
                     child_ids: c.child_ids.unwrap(),
                 }
             } else if bg.quest {
@@ -235,12 +235,9 @@ impl From<CardData> for Card {
         Self {
             id: c.id,
             name: c.name,
-            image: {
-                if let Some(bg) = &c.battlegrounds {
-                    bg.image.clone()
-                } else {
-                    c.image
-                }
+            image: match &c.battlegrounds {
+                Some(bg) => bg.image.clone(),
+                _ => c.image,
             },
             card_type,
         }
@@ -343,24 +340,34 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 buddy_id,
                 child_ids,
             } => {
-                if !child_ids.is_empty() {
+                'heropower: {
+                    if child_ids.is_empty() {
+                        break 'heropower;
+                    }
                     // Getting the starting hero power only. API keeps old
                     // versions of hero powers below that for some reason.
                     let id = child_ids[0];
-                    if let Ok(res) = get_card_by_id(id, &agent, access_token) {
-                        let res = textwrap::fill(
-                            &res.to_string(),
-                            textwrap::Options::new(textwrap::termwidth() - 10)
-                                .initial_indent("\t")
-                                .subsequent_indent(&format!("\t{:<20} ", " ")),
-                        )
-                        .blue();
+                    let Ok(res) = get_card_by_id(id, &agent, access_token) else {
+                        break 'heropower;
+                    };
+                    let res = textwrap::fill(
+                        &res.to_string(),
+                        textwrap::Options::new(textwrap::termwidth() - 10)
+                            .initial_indent("\t")
+                            .subsequent_indent(&format!("\t{:<20} ", " ")),
+                    )
+                    .blue();
 
-                        writeln!(buffer, "{res}")?;
-                    }
+                    writeln!(buffer, "{res}")?;
                 }
 
-                if let Ok(res) = get_card_by_id(*buddy_id, &agent, access_token) {
+                'buddy: {
+                    let Some(buddy_id) = buddy_id else {
+                        break 'buddy;
+                    };
+                    let Ok(res) = get_card_by_id(*buddy_id, &agent, access_token) else {
+                        break 'buddy;
+                    };
                     let res = textwrap::fill(
                         &res.to_string(),
                         textwrap::Options::new(textwrap::termwidth() - 10)
@@ -379,35 +386,38 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 text: _,
                 minion_types: _,
                 upgrade_id: Some(id),
-            } => {
-                if let Ok(res) = get_card_by_id(*id, &agent, access_token) {
-                    let BGCardType::Minion {
-                        tier: _,
-                        attack,
-                        health,
-                        text,
-                        minion_types: _,
-                        upgrade_id: _,
-                    } = res.card_type
-                    else {
-                        panic!()
-                    };
+            } => 'golden: {
+                let Ok(res) = get_card_by_id(*id, &agent, access_token) else {
+                    break 'golden;
+                };
 
-                    let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
+                let BGCardType::Minion {
+                    tier: _,
+                    attack,
+                    health,
+                    text,
+                    minion_types: _,
+                    upgrade_id: _,
+                } = res.card_type
+                else {
+                    break 'golden;
+                };
 
-                    writeln!(buffer, "{upgraded}")?;
+                let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
 
-                    let res = textwrap::fill(
-                        &prettify(&text),
-                        textwrap::Options::new(textwrap::termwidth() - 10)
-                            .initial_indent("\t")
-                            .subsequent_indent("\t"),
-                    )
-                    .yellow();
+                writeln!(buffer, "{upgraded}")?;
 
-                    writeln!(buffer, "{res}")?;
-                }
+                let res = textwrap::fill(
+                    &prettify(&text),
+                    textwrap::Options::new(textwrap::termwidth() - 10)
+                        .initial_indent("\t")
+                        .subsequent_indent("\t"),
+                )
+                .yellow();
+
+                writeln!(buffer, "{res}")?;
             }
+
             _ => (),
         }
     }

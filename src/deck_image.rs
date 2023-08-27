@@ -359,12 +359,8 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, agent: &ureq::Agent) -> Res
         CROP_HEIGHT as i32,
     );
     img.copy_from(&title, MARGIN, MARGIN)?;
-    draw_class_icon(img, &deck.class, agent).ok();
-    Ok(())
-}
 
-fn draw_class_icon(img: &mut RgbaImage, class: &Class, agent: &ureq::Agent) -> Result<()> {
-    let class = class.to_string().to_lowercase();
+    let class = &deck.class.to_string().to_lowercase();
 
     let class_img = {
         let mut buf = Vec::new();

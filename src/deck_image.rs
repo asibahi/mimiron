@@ -3,10 +3,7 @@ use counter::Counter;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::BTreeMap, sync::Mutex};
 
 use crate::{
     card::Card,
@@ -65,7 +62,7 @@ fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage>
     // cards
     draw_deck_title(&mut img, deck, agent)?;
 
-    let par_img = Arc::new(Mutex::new(img));
+    let par_img = Mutex::new(img);
 
     ordered_cards
         .par_iter()
@@ -83,7 +80,7 @@ fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage>
 
         for sb in sideboards {
             let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
-            {
+            '_mutex_block: {
                 let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, MARGIN, sb_start)?;
@@ -158,7 +155,7 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
     draw_deck_title(&mut img, deck, agent)?;
 
     // class cards
-    let par_image = Arc::new(Mutex::new(img));
+    let par_image = Mutex::new(img);
 
     class_cards
         .into_par_iter()
@@ -174,14 +171,14 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
     neutral_cards
         .into_par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
+            let slug = get_slug(card, *count, agent);
+
             let mut img = par_image.lock().unwrap();
             if i == 0 {
                 let neutrals_title = get_title_slug("Neutrals", 0);
                 img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
             }
-
             let i = i as u32 + 1;
-            let slug = get_slug(card, *count, agent);
             img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -190,7 +187,7 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
-            {
+            '_mutex_block: {
                 let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_image.lock().unwrap();
                 img.copy_from(&sb_title, column_start, MARGIN)?;

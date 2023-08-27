@@ -155,14 +155,14 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
     draw_deck_title(&mut img, deck, agent)?;
 
     // class cards
-    let par_image = Mutex::new(img);
+    let par_img = Mutex::new(img);
 
     class_cards
         .into_par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let i = i as u32 + 1;
             let slug = get_slug(card, *count, agent);
-            let mut img = par_image.lock().unwrap();
+            let mut img = par_img.lock().unwrap();
             img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
             Ok(())
         })?;
@@ -173,7 +173,7 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
         .try_for_each(|(i, (card, count))| -> Result<()> {
             let slug = get_slug(card, *count, agent);
 
-            let mut img = par_image.lock().unwrap();
+            let mut img = par_img.lock().unwrap();
             if i == 0 {
                 let neutrals_title = get_title_slug("Neutrals", 0);
                 img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
@@ -189,7 +189,7 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
             '_mutex_block: {
                 let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
-                let mut img = par_image.lock().unwrap();
+                let mut img = par_img.lock().unwrap();
                 img.copy_from(&sb_title, column_start, MARGIN)?;
             }
 
@@ -200,14 +200,14 @@ fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicIma
                 .try_for_each(|(i, (card, count))| -> Result<()> {
                     let i = i as u32 + 1;
                     let slug = get_slug(card, count, agent);
-                    let mut img = par_image.lock().unwrap();
+                    let mut img = par_img.lock().unwrap();
                     img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
                     Ok(())
                 })?;
         }
     }
 
-    let img = par_image.lock().unwrap().to_owned();
+    let img = par_img.lock().unwrap().to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
 }
@@ -300,7 +300,7 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicImage 
     );
 
     // card count
-    let count = if count == 1 && card.rarity == Rarity::Legendary {
+    let count = if card.rarity == Rarity::Legendary && count == 1 {
         String::new()
     } else {
         count.to_string()
@@ -353,11 +353,7 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(
-    img: &mut RgbaImage,
-    deck: &Deck,
-    agent: &ureq::Agent,
-) -> Result<(), anyhow::Error> {
+fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, agent: &ureq::Agent) -> Result<()> {
     let title = get_title_slug(
         &format!("{} - {}", deck.class, deck.format.to_uppercase()),
         CROP_HEIGHT as i32,

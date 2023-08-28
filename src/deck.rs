@@ -166,6 +166,10 @@ pub struct DeckArgs {
     /// Fomat the deck in a single column.
     #[arg(short, long, requires("image"))]
     single: bool,
+
+    /// Fomat the deck in three columns.
+    #[arg(short, long, requires("image"), conflicts_with("single"))]
+    wide: bool,
 }
 
 pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
@@ -182,10 +186,10 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
     };
 
     if args.image {
-        let shape = if args.single {
-            deck_image::Shape::SingleColumn
-        } else {
-            deck_image::Shape::MultipleColumns
+        let shape = match (args.single, args.wide) {
+            (true, _) => deck_image::Shape::Single,
+            (_, true) => deck_image::Shape::Wide,
+            _ => deck_image::Shape::Separated,
         };
 
         let agent = ureq::AgentBuilder::new()

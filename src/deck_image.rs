@@ -24,37 +24,47 @@ const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
 
 pub enum Shape {
-    // HSTopDecksStyle
-    MultipleColumns,
+    // Each category in its own column. (HS Top Decks)
+    Separated,
 
-    // Regular Style
-    SingleColumn,
+    // Regular Style over one column
+    Single,
+
+    // Regular Style over three columns
+    Wide,
 }
 
 pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImage> {
     match shape {
-        Shape::MultipleColumns => image_multiple_columns(deck, agent),
-        Shape::SingleColumn => image_single_column(deck, agent),
+        Shape::Separated => img_separated_format(deck, agent),
+        Shape::Wide => img_columns_format(deck, 3, agent),
+        Shape::Single => img_columns_format(deck, 1, agent),
     }
 }
 
-fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
+fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Result<DynamicImage> {
     let ordered_cards = order_cards(&deck.cards);
 
-    let deck_img_width = MARGIN * 2 + SLUG_WIDTH;
+    let deck_img_width = COLUMN_WIDTH * col_count + MARGIN;
 
-    let deck_img_height = {
-        let main_deck_length = ordered_cards.len() + 1;
+    let cards_in_col = {
+        let main_deck_length = ordered_cards.len();
 
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
             sbs.iter()
                 .fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc)
         });
 
-        let length = main_deck_length + sideboards_length;
+        let length = (main_deck_length + sideboards_length) as u32;
 
-        (length as u32 * ROW_HEIGHT) + MARGIN
+        if length % col_count == 0 {
+            length / col_count
+        } else {
+            length / col_count + 1
+        }
     };
+
+    let deck_img_height = (cards_in_col + 1) * ROW_HEIGHT + MARGIN;
 
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
@@ -67,23 +77,38 @@ fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage>
     ordered_cards
         .par_iter()
         .try_for_each(|(i, (card, count))| -> Result<()> {
-            let i = *i as u32 + 1;
             let slug = get_slug(card, *count, agent);
+
+            let i = *i as u32;
+            let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+
             let mut img = par_img.lock().unwrap();
-            img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
+            img.copy_from(
+                &slug,
+                col * COLUMN_WIDTH + MARGIN,
+                row * ROW_HEIGHT + MARGIN,
+            )?;
             Ok(())
         })?;
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_pos_tracker = ordered_cards.len() + 1;
+        let mut sb_pos_tracker = ordered_cards.len();
 
         for sb in sideboards {
-            let sb_start = sb_pos_tracker as u32 * ROW_HEIGHT;
+            let current_tracker_pos = sb_pos_tracker as u32;
+            let (col, row) = (
+                current_tracker_pos / cards_in_col,
+                current_tracker_pos % cards_in_col + 1,
+            );
             '_mutex_block: {
                 let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_img.lock().unwrap();
-                img.copy_from(&sb_title, MARGIN, sb_start)?;
+                img.copy_from(
+                    &sb_title,
+                    col * COLUMN_WIDTH + MARGIN,
+                    row * ROW_HEIGHT + MARGIN,
+                )?;
             }
 
             let cards_in_sb = order_cards(&sb.cards_in_sideboard);
@@ -93,10 +118,18 @@ fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage>
             cards_in_sb
                 .into_par_iter()
                 .try_for_each(|(i, (card, count))| -> Result<()> {
-                    let i = i as u32 + 1;
                     let slug = get_slug(card, count, agent);
+
+                    let i = i as u32 + current_tracker_pos + 1;
+                    let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+
                     let mut img = par_img.lock().unwrap();
-                    img.copy_from(&slug, MARGIN, sb_start + i * ROW_HEIGHT)?;
+                    img.copy_from(
+                        &slug,
+                        col * COLUMN_WIDTH + MARGIN,
+                        row * ROW_HEIGHT + MARGIN,
+                    )?;
+
                     Ok(())
                 })?;
         }
@@ -107,7 +140,7 @@ fn image_single_column(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage>
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn image_multiple_columns(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
+fn img_separated_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     let ordered_cards = deck
         .cards
         .iter()

@@ -163,11 +163,11 @@ pub struct DeckArgs {
     #[arg(short, long, requires("image"))]
     output: Option<std::path::PathBuf>,
 
-    /// Fomat the deck in a single column.
+    /// Format the deck in one column.
     #[arg(short, long, requires("image"))]
     single: bool,
 
-    /// Fomat the deck in three columns.
+    /// Format the deck in three columns.
     #[arg(short, long, requires("image"), conflicts_with("single"))]
     wide: bool,
 }

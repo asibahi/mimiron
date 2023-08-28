@@ -97,11 +97,11 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
 
         for sb in sideboards {
             let current_tracker_pos = sb_pos_tracker as u32;
-            let (col, row) = (
-                current_tracker_pos / cards_in_col,
-                current_tracker_pos % cards_in_col + 1,
-            );
             '_mutex_block: {
+                let (col, row) = (
+                    current_tracker_pos / cards_in_col,
+                    current_tracker_pos % cards_in_col + 1,
+                );
                 let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
                 let mut img = par_img.lock().unwrap();
                 img.copy_from(

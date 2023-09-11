@@ -276,7 +276,9 @@ pub struct BGArgs {
 }
 
 pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
-    let agent = ureq::agent();
+    let agent = ureq::AgentBuilder::new()
+        .user_agent("mimiron cli/Abdul Rahman Sibahi")
+        .build();
 
     let mut res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")

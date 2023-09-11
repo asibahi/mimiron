@@ -189,11 +189,12 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
         let shape = match (args.single, args.wide) {
             (true, _) => deck_image::Shape::Single,
             (_, true) => deck_image::Shape::Wide,
-            _ => deck_image::Shape::Separated,
+            _ => deck_image::Shape::Groups,
         };
 
         let agent = ureq::AgentBuilder::new()
             .timeout_connect(std::time::Duration::from_secs(2))
+            .user_agent("mimiron cli/Abdul Rahman Sibahi")
             .build();
 
         let img = deck_image::get(&deck, shape, &agent)?;

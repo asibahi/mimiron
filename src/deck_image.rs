@@ -24,8 +24,8 @@ const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz-Medium.ttf");
 
 pub enum Shape {
-    // Each category in its own column. (HS Top Decks)
-    Separated,
+    // Each group in its own column. (HS Top Decks)
+    Groups,
 
     // Regular Style over one column
     Single,
@@ -36,7 +36,7 @@ pub enum Shape {
 
 pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImage> {
     match shape {
-        Shape::Separated => img_separated_format(deck, agent),
+        Shape::Groups => img_groups_format(deck, agent),
         Shape::Wide => img_columns_format(deck, 3, agent),
         Shape::Single => img_columns_format(deck, 1, agent),
     }
@@ -140,7 +140,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_separated_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
+fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     let ordered_cards = deck
         .cards
         .iter()

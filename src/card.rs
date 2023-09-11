@@ -85,7 +85,7 @@ pub struct Card {
 
 impl PartialEq for Card {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        self.name == other.name
     }
 }
 impl PartialOrd for Card {
@@ -94,16 +94,12 @@ impl PartialOrd for Card {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
         } */
-        match self.cost.partial_cmp(&other.cost) {
-            Some(core::cmp::Ordering::Equal) => {}
-            ord => return ord,
-        }
-        self.name.partial_cmp(&other.name)
+        Some(self.cost.cmp(&other.cost).then(self.name.cmp(&other.name)))
     }
 }
 impl std::hash::Hash for Card {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.name.hash(state);
     }
 }
 impl Eq for Card {}
@@ -113,11 +109,7 @@ impl Ord for Card {
             core::cmp::Ordering::Equal => {}
             ord => return ord,
         } */
-        match self.cost.cmp(&other.cost) {
-            core::cmp::Ordering::Equal => {}
-            ord => return ord,
-        }
-        self.name.cmp(&other.name)
+        self.cost.cmp(&other.cost).then(self.name.cmp(&other.name))
     }
 }
 impl Display for Card {

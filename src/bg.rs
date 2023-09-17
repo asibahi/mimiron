@@ -343,13 +343,13 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 child_ids,
             } => {
                 'heropower: {
-                    if child_ids.is_empty() {
-                        break 'heropower;
-                    }
                     // Getting the starting hero power only. API keeps old
                     // versions of hero powers below that for some reason.
-                    let id = child_ids[0];
-                    let Ok(res) = get_card_by_id(id, &agent, access_token) else {
+                    // First hero power is usually the smallest ID.
+                    let Some(id) = child_ids.iter().min() else {
+                        break 'heropower;
+                    };
+                    let Ok(res) = get_card_by_id(*id, &agent, access_token) else {
                         break 'heropower;
                     };
                     let res = textwrap::fill(

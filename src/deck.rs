@@ -155,6 +155,10 @@ pub struct DeckArgs {
     #[arg(short, long, name = "DECK2")]
     comp: Option<String>,
 
+    /// Override format provided by code (For Twist, Duels, Tavern Brawl, etc.)
+    #[arg(short, long, conflicts_with("DECK2"))]
+    format: Option<String>,
+
     /// Save deck image
     #[arg(short, long, conflicts_with("DECK2"))]
     image: bool,
@@ -173,9 +177,13 @@ pub struct DeckArgs {
 }
 
 pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
-    let code = args.code;
-
-    let deck = deck_lookup(&code, access_token)?;
+    let deck = {
+        let mut deck = deck_lookup(&args.code, access_token)?;
+        if let Some(format) = args.format {
+            deck.format = format;
+        }
+        deck
+    };
 
     let answer = if let Some(code) = args.comp {
         let deck2 = deck_lookup(&code, access_token)?;

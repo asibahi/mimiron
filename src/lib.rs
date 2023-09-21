@@ -41,12 +41,19 @@ pub enum Commands {
 
 pub fn run() -> Result<String> {
     let args = Cli::parse();
+
+    let agent = ureq::AgentBuilder::new()
+        .timeout_connect(std::time::Duration::from_secs(2))
+        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
+        .build();
+
     let access_token =
-        authorization::get_access_token().with_context(|| "failed to get access token.")?;
+        authorization::get_access_token(&agent).with_context(|| "failed to get access token.")?;
+
     match args.command {
-        Commands::Card(args) => card::run(args, &access_token),
-        Commands::Deck(args) => deck::run(args, &access_token),
-        Commands::BG(args) => bg::run(args, &access_token),
+        Commands::Card(args) => card::run(args, &access_token, &agent),
+        Commands::Deck(args) => deck::run(args, &access_token, &agent),
+        Commands::BG(args) => bg::run(args, &access_token, &agent),
         Commands::Token => Ok(access_token),
     }
 }

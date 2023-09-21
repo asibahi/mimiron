@@ -275,11 +275,7 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
-    let agent = ureq::AgentBuilder::new()
-        .user_agent("mimiron cli/Abdul Rahman Sibahi")
-        .build();
-
+pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<String> {
     let mut res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", access_token)
@@ -349,7 +345,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     let Some(id) = child_ids.iter().min() else {
                         break 'heropower;
                     };
-                    let Ok(res) = get_card_by_id(*id, &agent, access_token) else {
+                    let Ok(res) = get_card_by_id(*id, access_token, &agent) else {
                         break 'heropower;
                     };
                     let res = textwrap::fill(
@@ -367,7 +363,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                     let Some(buddy_id) = buddy_id else {
                         break 'buddy;
                     };
-                    let Ok(res) = get_card_by_id(*buddy_id, &agent, access_token) else {
+                    let Ok(res) = get_card_by_id(*buddy_id, access_token, &agent) else {
                         break 'buddy;
                     };
                     let res = textwrap::fill(
@@ -389,7 +385,7 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
                 minion_types: _,
                 upgrade_id: Some(id),
             } => 'golden: {
-                let Ok(res) = get_card_by_id(*id, &agent, access_token) else {
+                let Ok(res) = get_card_by_id(*id, access_token, &agent) else {
                     break 'golden;
                 };
 
@@ -429,8 +425,8 @@ pub fn run(args: BGArgs, access_token: &str) -> Result<String> {
 
 fn get_card_by_id(
     id: usize,
-    agent: &ureq::Agent,
     access_token: &str,
+    agent: &ureq::Agent,
 ) -> Result<Card, anyhow::Error> {
     let res = agent
         .get(&format!(

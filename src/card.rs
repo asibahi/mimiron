@@ -230,10 +230,11 @@ pub struct CardArgs {
     image: bool,
 }
 
-pub fn run(args: CardArgs, access_token: &str) -> Result<String> {
+pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<String> {
     let search_term = args.name.to_lowercase();
 
-    let res = ureq::get("https://us.api.blizzard.com/hearthstone/cards")
+    let res = agent
+        .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
         .query("textFilter", &search_term)
         .query("access_token", access_token)

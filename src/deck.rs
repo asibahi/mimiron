@@ -135,8 +135,9 @@ impl Display for DeckDifference {
     }
 }
 
-fn deck_lookup(code: &str, access_token: &str) -> Result<Deck> {
-    ureq::get("https://us.api.blizzard.com/hearthstone/deck")
+fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<Deck> {
+    agent
+        .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en_us")
         .query("code", code)
         .query("access_token", access_token)
@@ -176,9 +177,9 @@ pub struct DeckArgs {
     wide: bool,
 }
 
-pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
+pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<String> {
     let deck = {
-        let mut deck = deck_lookup(&args.code, access_token)?;
+        let mut deck = deck_lookup(&args.code, access_token, &agent)?;
         if let Some(format) = args.format {
             deck.format = format;
         }
@@ -186,7 +187,7 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
     };
 
     let answer = if let Some(code) = args.comp {
-        let deck2 = deck_lookup(&code, access_token)?;
+        let deck2 = deck_lookup(&code, access_token, &agent)?;
         let deck_diff = deck.compare_with(&deck2);
         format!("{deck_diff}")
     } else {
@@ -199,11 +200,6 @@ pub fn run(args: DeckArgs, access_token: &str) -> Result<String> {
             (_, true) => deck_image::Shape::Wide,
             _ => deck_image::Shape::Groups,
         };
-
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(std::time::Duration::from_secs(2))
-            .user_agent("mimiron cli/Abdul Rahman Sibahi")
-            .build();
 
         let img = deck_image::get(&deck, shape, &agent)?;
 

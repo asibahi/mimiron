@@ -11,13 +11,13 @@ mod prettify;
 
 #[derive(Parser)]
 #[command(author, version)]
-pub struct Cli {
+struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
 
 #[derive(Subcommand)]
-pub enum Commands {
+enum Commands {
     /// Search for a constructed card by name
     ///
     /// Make sure the card's name is surrounded by quotation marks if it includes spaces or non-letter characters.
@@ -39,7 +39,7 @@ pub enum Commands {
     Token,
 }
 
-pub fn run() -> Result<()> {
+pub fn run_cli() -> Result<()> {
     let args = Cli::parse();
 
     let agent = ureq::AgentBuilder::new()

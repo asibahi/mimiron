@@ -206,7 +206,10 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
         let name = format!(
             "{} {} {}.png",
             deck.class,
-            deck.format.to_uppercase(),
+            deck.format
+                .chars()
+                .filter_map(|c| c.is_alphanumeric().then(|| c.to_ascii_uppercase()))
+                .collect::<String>(),
             chrono::Local::now().format("%Y%m%d %H%M")
         );
 

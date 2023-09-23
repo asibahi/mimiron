@@ -22,6 +22,8 @@ However, you need your Blizzard API credentials as environment variables under `
 
 ## Usage
 
+### Card Lookup
+
 Look up a card:
 
 ```sh
@@ -54,6 +56,8 @@ mimiron card ragnaros --text
 
 ![Card text box search](README/cardtextlookup.png)
 
+### Deck Lookup
+
 Look up a deck:
 
 ```sh
@@ -61,6 +65,13 @@ mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS
 ```
 
 ![Deck look up in terminal](README/decklookup.png)
+
+If the deck has E.T.C., Band Manager, you can add the band members with `--addband` argument. The card names should be exact, or at least give a unique card. This gives you the updated deck code in the output.
+
+```sh
+mimiron deck AAECAZ8FBsvEBf3EBcHGBYv+BY3+BdiBBgzJoATquQTavQTA4gSgmQXBxAXu6QWt7QWK/gXCggaOlQaGowYA --addband "Holy Maki Roll" "Melted Maker" "Anachronos"
+```
+
 
 Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`:
 
@@ -88,6 +99,8 @@ mimiron deck -c AAECAa0GCoSfBOWwBKi2BP/hBJfvBO+RBeKkBf3EBc/GBc2eBg+i6AOhtgSktgSW
 
 ![Deck comparison in terminal](README/deckcompare.png)
 
+### Battlegrounds Lookup
+
 Look up Battlegrounds minions and Heroes:
 
 ```sh
@@ -108,9 +121,9 @@ mimiron bg --tier 1 --type beast
 
 Nothing in particular, however some ideas are:
 
-- add the sideboard cards to decks that should have them but miss them, and give the new code. Not sure how the command would look like.
-- get deck code from list of cards. Also not sure how this should look like.
+- get deck code from list of cards. This could work like the `--addband` flag, but this makes a lot of requests for one command, more than I'd like.
 - Duels support. However, Duels info seems to be incomplete in the API.
+- If you would like Mercenaries support, let me know.
 
 ## License
 

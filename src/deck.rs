@@ -2,11 +2,12 @@ use anyhow::{anyhow, Context, Result};
 use clap::Args;
 use colored::Colorize;
 use counter::Counter;
+use itertools::Itertools;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
 
-use crate::card::Card;
+use crate::card::{get_cards_by_text, Card};
 use crate::card_details::Class;
 use crate::deck_image;
 
@@ -96,8 +97,10 @@ impl Display for Deck {
 
 pub struct DeckDifference {
     pub shared_cards: HashMap<Card, usize>,
+
     deck1_code: String,
     pub deck1_uniques: HashMap<Card, usize>,
+
     deck2_code: String,
     pub deck2_uniques: HashMap<Card, usize>,
 }
@@ -153,18 +156,28 @@ pub struct DeckArgs {
     code: String,
 
     /// Compare with a second deck
-    #[arg(short, long, name = "DECK2")]
+    #[arg(short, long, value_name("DECK2"))]
     comp: Option<String>,
 
+    /// Add Sideboard cards for E.T.C., Band Manager if the deck code lacks them. Make sure card names are exact.
+    #[arg(
+        short,
+        long("addband"),
+        value_name("BAND_MEMBER"),
+        num_args(3),
+        conflicts_with("comp")
+    )]
+    band: Option<Vec<String>>,
+
     /// Override format/game mode provided by code (For Twist, Duels, Tavern Brawl, etc.)
-    #[arg(short, long, conflicts_with("DECK2"))]
+    #[arg(short, long)]
     mode: Option<String>,
 
-    /// Save deck image
-    #[arg(short, long, conflicts_with("DECK2"))]
+    /// Save deck image. Defaults to your downloads folder unless --output is set
+    #[arg(short, long, conflicts_with("comp"))]
     image: bool,
 
-    /// Choose deck image output. Defaults to your Downloads folder.
+    /// Choose deck image output.
     #[arg(short, long, requires("image"))]
     output: Option<std::path::PathBuf>,
 
@@ -178,14 +191,57 @@ pub struct DeckArgs {
 }
 
 pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
-    let deck = {
-        let mut deck = deck_lookup(&args.code, access_token, agent)?;
-        if let Some(format) = args.mode {
-            deck.format = format;
-        }
-        deck
-    };
+    // Get the main deck
+    let mut deck = deck_lookup(&args.code, access_token, agent)?;
 
+    if let Some(format) = args.mode {
+        deck.format = format;
+    }
+
+    // Add Band resolution.
+    // Function WILL need to be updated if new sideboard cards are printed.
+    if let Some(band) = args.band {
+        // Constants that might change should ETC be added to core.
+        const ETC_NAME: &str = "E.T.C., Band Manager";
+        const ETC_ID: usize = 90749;
+
+        if !deck.cards.iter().any(|c| c.id == ETC_ID) {
+            return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
+        }
+
+        if deck.sideboard_cards.is_some() {
+            return Err(anyhow!("Deck already has a Sideboard."));
+        }
+
+        let card_ids = deck.cards.into_iter().map(|c| c.id).join(",");
+
+        let band_ids = band
+            .into_iter()
+            .map(|name| -> Result<String> {
+                let card_id = get_cards_by_text(name, false, access_token, agent)?
+                    .next()
+                    .unwrap()
+                    .id;
+
+                // Undocumented API Found by looking through playhearthstone.com card library
+                Ok(format!("{card_id}:{ETC_ID}"))
+            })
+            .collect::<Result<Vec<String>>>()?
+            .join(",");
+
+        deck = agent
+            .get("https://us.api.blizzard.com/hearthstone/deck")
+            .query("locale", "en_us")
+            .query("access_token", access_token)
+            .query("ids", &card_ids)
+            .query("sideboardCards", &band_ids)
+            .call()
+            .with_context(|| "call to deck API by card ids failed.")?
+            .into_json::<Deck>()
+            .with_context(|| "parsing deck json failed")?;
+    }
+
+    // Deck compare and/or printing
     if let Some(code) = args.comp {
         let deck2 = deck_lookup(&code, access_token, agent)?;
         let deck_diff = deck.compare_with(&deck2);
@@ -194,6 +250,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
         println!("{deck}");
     }
 
+    // Generate and save image
     if args.image {
         let shape = match (args.single, args.wide) {
             (true, _) => deck_image::Shape::Single,

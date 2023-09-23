@@ -194,10 +194,6 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
     // Get the main deck
     let mut deck = deck_lookup(&args.code, access_token, agent)?;
 
-    if let Some(format) = args.mode {
-        deck.format = format;
-    }
-
     // Add Band resolution.
     // Function WILL need to be updated if new sideboard cards are printed.
     if let Some(band) = args.band {
@@ -239,6 +235,11 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
             .with_context(|| "call to deck API by card ids failed.")?
             .into_json::<Deck>()
             .with_context(|| "parsing deck json failed")?;
+    }
+
+    // Deck format/mode override
+    if let Some(format) = args.mode {
+        deck.format = format;
     }
 
     // Deck compare and/or printing

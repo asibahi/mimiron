@@ -338,7 +338,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                     let Some(id) = child_ids.iter().min() else {
                         break 'heropower;
                     };
-                    let Ok(res) = get_card_by_id(*id, access_token, &agent) else {
+                    let Ok(res) = get_card_by_id(*id, access_token, agent) else {
                         break 'heropower;
                     };
                     let res = textwrap::fill(
@@ -356,7 +356,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                     let Some(buddy_id) = buddy_id else {
                         break 'buddy;
                     };
-                    let Ok(res) = get_card_by_id(*buddy_id, access_token, &agent) else {
+                    let Ok(res) = get_card_by_id(*buddy_id, access_token, agent) else {
                         break 'buddy;
                     };
                     let res = textwrap::fill(
@@ -378,7 +378,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                 minion_types: _,
                 upgrade_id: Some(id),
             } => 'golden: {
-                let Ok(res) = get_card_by_id(*id, access_token, &agent) else {
+                let Ok(res) = get_card_by_id(*id, access_token, agent) else {
                     break 'golden;
                 };
 

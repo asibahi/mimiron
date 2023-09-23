@@ -179,7 +179,7 @@ pub struct DeckArgs {
 
 pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
     let deck = {
-        let mut deck = deck_lookup(&args.code, access_token, &agent)?;
+        let mut deck = deck_lookup(&args.code, access_token, agent)?;
         if let Some(format) = args.mode {
             deck.format = format;
         }
@@ -187,7 +187,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
     };
 
     if let Some(code) = args.comp {
-        let deck2 = deck_lookup(&code, access_token, &agent)?;
+        let deck2 = deck_lookup(&code, access_token, agent)?;
         let deck_diff = deck.compare_with(&deck2);
         println!("{deck_diff}");
     } else {
@@ -201,7 +201,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
             _ => deck_image::Shape::Groups,
         };
 
-        let img = deck_image::get(&deck, shape, &agent)?;
+        let img = deck_image::get(&deck, shape, agent)?;
 
         let name = format!(
             "{} {} {}.png",

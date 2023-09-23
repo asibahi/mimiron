@@ -233,6 +233,24 @@ pub struct CardArgs {
 pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
     let search_term = args.name.to_lowercase();
 
+    let cards = get_cards_by_text(search_term, args.text, access_token, agent)?;
+
+    for card in cards {
+        println!("{card:#}");
+        if args.image {
+            println!("\tImage: {}", card.image);
+        }
+    }
+
+    Ok(())
+}
+
+pub(crate) fn get_cards_by_text(
+    search_term: String,
+    include_body: bool,
+    access_token: &str,
+    agent: &ureq::Agent,
+) -> Result<impl Iterator<Item = Card>> {
     let res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
@@ -244,31 +262,28 @@ pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
         .with_context(|| "parsing card search json failed")?;
 
     if res.card_count == 0 {
-        return Err(anyhow!("No constructed card found. Check your spelling."));
+        return Err(anyhow!(
+            "No constructed card found with text {search_term}. Check your spelling."
+        ));
     }
+
+    let work_around_borrow_checker = search_term.clone();
 
     let mut cards = res
         .cards
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
-        .filter(|c| args.text || c.name.to_lowercase().contains(&search_term))
+        .filter(move |c| include_body || c.name.eq_ignore_ascii_case(&work_around_borrow_checker))
         // cards have copies in different sets
         .unique_by(|c| c.name.clone())
         .peekable();
 
     if cards.peek().is_none() {
         return Err(anyhow!(
-            "No constructed card found with this name. Expand search to all text boxes with -t."
+            "No constructed card found with name {search_term}. Expand search to all text boxes with -t."
         ));
     }
 
-    for card in cards {
-        println!("{card:#}");
-        if args.image {
-            println!("\tImage: {}", card.image);
-        }
-    }
-
-    Ok(())
+    Ok(cards)
 }

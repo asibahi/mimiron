@@ -307,9 +307,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
         .filter(|c| {
             args.text
                 || args.name.is_none()
-                || c.name
-                    .to_lowercase()
-                    .contains(&args.name.as_ref().unwrap().to_lowercase())
+                || c.name.eq_ignore_ascii_case(&args.name.as_ref().unwrap())
         })
         .peekable();
 

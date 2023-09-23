@@ -3,7 +3,7 @@ use clap::Args;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display, fmt::Write, iter};
+use std::{collections::HashSet, fmt::Display, iter};
 
 use crate::card_details::*;
 
@@ -230,7 +230,7 @@ pub struct CardArgs {
     image: bool,
 }
 
-pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<String> {
+pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
     let search_term = args.name.to_lowercase();
 
     let res = agent
@@ -263,14 +263,12 @@ pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<St
         ));
     }
 
-    let mut buffer = String::new();
-
     for card in cards {
-        writeln!(buffer, "{card:#}")?;
+        println!("{card:#}");
         if args.image {
-            writeln!(buffer, "\tImage: {}", card.image)?;
+            println!("\tImage: {}", card.image);
         }
     }
 
-    Ok(buffer)
+    Ok(())
 }

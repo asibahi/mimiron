@@ -39,7 +39,7 @@ pub enum Commands {
     Token,
 }
 
-pub fn run() -> Result<String> {
+pub fn run() -> Result<()> {
     let args = Cli::parse();
 
     let agent = ureq::AgentBuilder::new()
@@ -51,9 +51,11 @@ pub fn run() -> Result<String> {
         authorization::get_access_token(&agent).with_context(|| "failed to get access token.")?;
 
     match args.command {
-        Commands::Card(args) => card::run(args, &access_token, &agent),
-        Commands::Deck(args) => deck::run(args, &access_token, &agent),
-        Commands::BG(args) => bg::run(args, &access_token, &agent),
-        Commands::Token => Ok(access_token),
+        Commands::Card(args) => card::run(args, &access_token, &agent)?,
+        Commands::Deck(args) => deck::run(args, &access_token, &agent)?,
+        Commands::BG(args) => bg::run(args, &access_token, &agent)?,
+        Commands::Token => println!("{access_token}"),
     }
+
+    Ok(())
 }

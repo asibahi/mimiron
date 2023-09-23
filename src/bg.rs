@@ -3,12 +3,7 @@ use clap::{ArgGroup, Args};
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{
-    collections::HashSet,
-    fmt::{Display, Write},
-    iter,
-    str::FromStr,
-};
+use std::{collections::HashSet, fmt::Display, iter, str::FromStr};
 
 use crate::card_details::MinionType;
 use crate::prettify::prettify;
@@ -275,7 +270,7 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<String> {
+pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
     let mut res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", access_token)
@@ -324,12 +319,10 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<Stri
         ));
     }
 
-    let mut buffer = String::new();
-
     for card in cards {
-        writeln!(buffer, "{card:#}")?;
+        println!("{card:#}");
         if args.image {
-            writeln!(buffer, "\tImage: {}", card.image)?;
+            println!("\tImage: {}", card.image);
         }
 
         match &card.card_type {
@@ -356,7 +349,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<Stri
                     )
                     .blue();
 
-                    writeln!(buffer, "{res}")?;
+                    println!("{res}");
                 }
 
                 'buddy: {
@@ -374,7 +367,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<Stri
                     )
                     .green();
 
-                    writeln!(buffer, "{res}")?;
+                    println!("{res}");
                 }
             }
             BGCardType::Minion {
@@ -403,7 +396,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<Stri
 
                 let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
 
-                writeln!(buffer, "{upgraded}")?;
+                println!("{upgraded}");
 
                 let res = textwrap::fill(
                     &prettify(&text),
@@ -413,14 +406,14 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<Stri
                 )
                 .yellow();
 
-                writeln!(buffer, "{res}")?;
+                println!("{res}");
             }
 
             _ => (),
         }
     }
 
-    Ok(buffer)
+    Ok(())
 }
 
 fn get_card_by_id(

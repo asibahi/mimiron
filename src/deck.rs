@@ -142,7 +142,7 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
         .query("code", code)
         .query("access_token", access_token)
         .call()
-        .with_context(|| "call to deck code API failed")?
+        .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
         .into_json::<Deck>()
         .with_context(|| "parsing deck code json failed")
 }
@@ -156,9 +156,9 @@ pub struct DeckArgs {
     #[arg(short, long, name = "DECK2")]
     comp: Option<String>,
 
-    /// Override format provided by code (For Twist, Duels, Tavern Brawl, etc.)
+    /// Override format/game mode provided by code (For Twist, Duels, Tavern Brawl, etc.)
     #[arg(short, long, conflicts_with("DECK2"))]
-    format: Option<String>,
+    mode: Option<String>,
 
     /// Save deck image
     #[arg(short, long, conflicts_with("DECK2"))]
@@ -177,22 +177,22 @@ pub struct DeckArgs {
     wide: bool,
 }
 
-pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<String> {
+pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
     let deck = {
         let mut deck = deck_lookup(&args.code, access_token, &agent)?;
-        if let Some(format) = args.format {
+        if let Some(format) = args.mode {
             deck.format = format;
         }
         deck
     };
 
-    let answer = if let Some(code) = args.comp {
+    if let Some(code) = args.comp {
         let deck2 = deck_lookup(&code, access_token, &agent)?;
         let deck_diff = deck.compare_with(&deck2);
-        format!("{deck_diff}")
+        println!("{deck_diff}");
     } else {
-        format!("{deck}")
-    };
+        println!("{deck}");
+    }
 
     if args.image {
         let shape = match (args.single, args.wide) {
@@ -223,5 +223,5 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<St
         img.save(save_file)?;
     }
 
-    Ok(answer)
+    Ok(())
 }

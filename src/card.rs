@@ -267,14 +267,16 @@ pub(crate) fn get_cards_by_text(
         ));
     }
 
-    let work_around_borrow_checker = search_term.clone();
+    let work_around_borrow_checker = search_term.to_lowercase();
 
     let mut cards = res
         .cards
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
-        .filter(move |c| include_body || c.name.eq_ignore_ascii_case(&work_around_borrow_checker))
+        .filter(move |c| {
+            include_body || c.name.to_lowercase().contains(&work_around_borrow_checker)
+        })
         // cards have copies in different sets
         .unique_by(|c| c.name.clone())
         .peekable();

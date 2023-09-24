@@ -49,7 +49,7 @@ impl Display for Deck {
         let code = &self.deck_code;
         let class = &self.class.to_string().bold();
         let format = &self.format.to_uppercase().bold();
-        writeln!(f, "\n{format:>10} {class} deck.")?;
+        writeln!(f, "{format:>10} {class} deck.")?;
 
         let cards = self
             .cards

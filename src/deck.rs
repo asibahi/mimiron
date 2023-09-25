@@ -213,14 +213,12 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
 
         let band_ids = band
             .into_iter()
-            .map(|name| -> Result<String> {
-                let card_id = get_cards_by_text(name, false, access_token, agent)?
+            .map(|name| {
+                get_cards_by_text(name, false, access_token, agent)?
+                    // Undocumented API Found by looking through playhearthstone.com card library
+                    .map(|c| Ok(format!("{id}:{ETC_ID}", id = c.id)))
                     .next()
                     .unwrap()
-                    .id;
-
-                // Undocumented API Found by looking through playhearthstone.com card library
-                Ok(format!("{card_id}:{ETC_ID}"))
             })
             .collect::<Result<Vec<String>>>()?
             .join(",");

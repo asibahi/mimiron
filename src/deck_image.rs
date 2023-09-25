@@ -3,7 +3,7 @@ use counter::Counter;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
-use std::{collections::BTreeMap, sync::Mutex};
+use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     card::Card,
@@ -44,6 +44,13 @@ pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImag
 
 fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Result<DynamicImage> {
     let ordered_cards = order_cards(&deck.cards);
+    let slug_map = ordered_cards
+        .par_iter()
+        .map(|(_, (card, count))| {
+            let slug = get_slug(card, *count, agent);
+            (card, slug)
+        })
+        .collect::<HashMap<_, _>>();
 
     let deck_img_width = COLUMN_WIDTH * col_count + MARGIN;
 
@@ -69,27 +76,17 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    // cards
     draw_deck_title(&mut img, deck, agent)?;
 
-    let par_img = Mutex::new(img);
+    // Main deck
+    for (i, (card, _)) in ordered_cards.iter() {
+        let slug = &slug_map[card];
 
-    ordered_cards
-        .par_iter()
-        .try_for_each(|(i, (card, count))| -> Result<()> {
-            let slug = get_slug(card, *count, agent);
+        let i = *i as u32;
+        let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
 
-            let i = *i as u32;
-            let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
-
-            let mut img = par_img.lock().unwrap();
-            img.copy_from(
-                &slug,
-                col * COLUMN_WIDTH + MARGIN,
-                row * ROW_HEIGHT + MARGIN,
-            )?;
-            Ok(())
-        })?;
+        img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+    }
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
@@ -97,66 +94,60 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
 
         for sb in sideboards {
             let current_tracker_pos = sb_pos_tracker as u32;
-            '_mutex_block: {
-                let (col, row) = (
-                    current_tracker_pos / cards_in_col,
-                    current_tracker_pos % cards_in_col + 1,
-                );
-                let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
-                let mut img = par_img.lock().unwrap();
-                img.copy_from(
-                    &sb_title,
-                    col * COLUMN_WIDTH + MARGIN,
-                    row * ROW_HEIGHT + MARGIN,
-                )?;
-            }
 
-            let cards_in_sb = order_cards(&sb.cards_in_sideboard);
+            let (col, row) = (
+                current_tracker_pos / cards_in_col,
+                current_tracker_pos % cards_in_col + 1,
+            );
 
-            sb_pos_tracker += cards_in_sb.len() + 1;
+            img.copy_from(
+                &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
+                col * COLUMN_WIDTH + MARGIN,
+                row * ROW_HEIGHT + MARGIN,
+            )?;
 
-            cards_in_sb
+            sb_pos_tracker += sb.cards_in_sideboard.len() + 1;
+
+            let slugs_of_sb = order_cards(&sb.cards_in_sideboard)
                 .into_par_iter()
-                .try_for_each(|(i, (card, count))| -> Result<()> {
+                .map(|(i, (card, count))| {
                     let slug = get_slug(card, count, agent);
 
                     let i = i as u32 + current_tracker_pos + 1;
                     let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
 
-                    let mut img = par_img.lock().unwrap();
-                    img.copy_from(
-                        &slug,
-                        col * COLUMN_WIDTH + MARGIN,
-                        row * ROW_HEIGHT + MARGIN,
-                    )?;
+                    (slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)
+                })
+                .collect::<Vec<_>>();
 
-                    Ok(())
-                })?;
+            for (slug, x, y) in slugs_of_sb {
+                img.copy_from(&slug, x, y)?;
+            }
         }
     }
-
-    let img = par_img.lock().unwrap().to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
 }
 
 fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
-    let ordered_cards = deck
-        .cards
-        .iter()
-        .collect::<Counter<_>>()
-        .into_iter()
-        .collect::<BTreeMap<_, _>>();
+    let ordered_cards = order_cards(&deck.cards);
+    let slug_map = ordered_cards
+        .par_iter()
+        .map(|(_, (card, count))| {
+            let slug = get_slug(card, *count, agent);
+            (card, slug)
+        })
+        .collect::<HashMap<_, _>>();
 
     let class_cards = ordered_cards
         .iter()
-        .filter(|(c, _)| !c.class.contains(&Class::Neutral))
+        .filter_map(|(_, (c, _))| (!c.class.contains(&Class::Neutral)).then(|| &slug_map[c]))
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
-        .filter(|(c, _)| c.class.contains(&Class::Neutral))
+        .filter_map(|(_, (c, _))| c.class.contains(&Class::Neutral).then(|| &slug_map[c]))
         .enumerate()
         .collect::<Vec<_>>();
 
@@ -176,7 +167,7 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     };
 
     // deck image height
-    // ignores length of sideboards. unlikely to be larger than either class_cards or neutral_cards
+    // ignores length of sideboards. unlikely to be larger than both class_cards and neutral_cards
     let deck_img_height = {
         let length = 1 + class_cards.len().max(neutral_cards.len()) as u32;
         (length * ROW_HEIGHT) + MARGIN
@@ -186,61 +177,49 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     draw_deck_title(&mut img, deck, agent)?;
+    if !neutral_cards.is_empty() {
+        let neutrals_title = get_title_slug("Neutrals", 0);
+        img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
+    }
 
     // class cards
-    let par_img = Mutex::new(img);
-
-    class_cards
-        .into_par_iter()
-        .try_for_each(|(i, (card, count))| -> Result<()> {
-            let i = i as u32 + 1;
-            let slug = get_slug(card, *count, agent);
-            let mut img = par_img.lock().unwrap();
-            img.copy_from(&slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
-            Ok(())
-        })?;
+    for (i, slug) in class_cards {
+        let i = i as u32 + 1;
+        img.copy_from(slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
+    }
 
     // neutral cards
-    neutral_cards
-        .into_par_iter()
-        .try_for_each(|(i, (card, count))| -> Result<()> {
-            let slug = get_slug(card, *count, agent);
-
-            let mut img = par_img.lock().unwrap();
-            if i == 0 {
-                let neutrals_title = get_title_slug("Neutrals", 0);
-                img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
-            }
-            let i = i as u32 + 1;
-            img.copy_from(&slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
-            Ok(())
-        })?;
+    for (i, slug) in neutral_cards {
+        let i = i as u32 + 1;
+        img.copy_from(slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
+    }
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
-            '_mutex_block: {
-                let sb_title = get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0);
-                let mut img = par_img.lock().unwrap();
-                img.copy_from(&sb_title, column_start, MARGIN)?;
-            }
 
-            let cards_in_sb = order_cards(&sb.cards_in_sideboard);
+            img.copy_from(
+                &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
+                column_start,
+                MARGIN,
+            )?;
 
-            cards_in_sb
+            let slugs_of_sb = order_cards(&sb.cards_in_sideboard)
                 .into_par_iter()
-                .try_for_each(|(i, (card, count))| -> Result<()> {
+                .map(|(i, (card, count))| {
                     let i = i as u32 + 1;
                     let slug = get_slug(card, count, agent);
-                    let mut img = par_img.lock().unwrap();
-                    img.copy_from(&slug, column_start, i * ROW_HEIGHT + MARGIN)?;
-                    Ok(())
-                })?;
+
+                    (slug, column_start, i * ROW_HEIGHT + MARGIN)
+                })
+                .collect::<Vec<_>>();
+
+            for (slug, x, y) in slugs_of_sb {
+                img.copy_from(&slug, x, y)?;
+            }
         }
     }
-
-    let img = par_img.lock().unwrap().to_owned();
 
     Ok(DynamicImage::ImageRgba8(img))
 }

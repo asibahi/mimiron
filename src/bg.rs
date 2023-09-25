@@ -306,10 +306,9 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
         // depending on the args.text variable
         .filter(|c| {
             args.text
-                || args.name.is_none()
-                || c.name
-                    .to_lowercase()
-                    .contains(&args.name.as_ref().unwrap().to_lowercase())
+                || args.name.as_ref().map_or(true, |name| {
+                    c.name.to_lowercase().contains(&name.to_lowercase())
+                })
         })
         .peekable();
 

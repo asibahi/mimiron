@@ -3,7 +3,7 @@ use clap::Args;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display, iter};
+use std::{collections::HashSet, fmt::Display};
 
 use crate::card_details::*;
 
@@ -171,14 +171,12 @@ impl From<CardData> for Card {
                 4 => CardType::Minion {
                     attack: c.attack.unwrap(),
                     health: c.health.unwrap(),
-                    minion_types: match (c.minion_type_id, c.multi_type_ids) {
-                        (None, _) => HashSet::new(),
-                        (Some(t), None) => HashSet::from([t.into()]),
-                        (Some(t), Some(v)) => iter::once(t)
-                            .chain(v)
-                            .map(MinionType::from)
-                            .collect::<HashSet<_>>(),
-                    },
+                    minion_types: c
+                        .minion_type_id
+                        .into_iter()
+                        .chain(c.multi_type_ids.into_iter().flatten())
+                        .map(MinionType::from)
+                        .collect(),
                 },
                 5 => CardType::Spell {
                     school: c.spell_school_id.map(SpellSchool::from),

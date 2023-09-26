@@ -3,7 +3,7 @@ use clap::{ArgGroup, Args};
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display, iter, str::FromStr};
+use std::{collections::HashSet, fmt::Display, str::FromStr};
 
 use crate::card_details::MinionType;
 use crate::prettify::prettify;
@@ -187,14 +187,12 @@ impl From<CardData> for Card {
                     attack: c.attack.unwrap(),
                     health: c.health.unwrap(),
                     text: c.text,
-                    minion_types: match (c.minion_type_id, c.multi_type_ids) {
-                        (None, _) => HashSet::new(),
-                        (Some(t), None) => HashSet::from([t.into()]),
-                        (Some(t), Some(v)) => iter::once(t)
-                            .chain(v)
-                            .map(MinionType::from)
-                            .collect::<HashSet<_>>(),
-                    },
+                    minion_types: c
+                        .minion_type_id
+                        .into_iter()
+                        .chain(c.multi_type_ids.into_iter().flatten())
+                        .map(MinionType::from)
+                        .collect(),
                     upgrade_id: bg.upgrade_id,
                 }
             } else if c.card_type_id == 43 {
@@ -211,14 +209,12 @@ impl From<CardData> for Card {
                 attack: c.attack.unwrap(),
                 health: c.health.unwrap(),
                 text: c.text,
-                minion_types: match (c.minion_type_id, c.multi_type_ids) {
-                    (None, _) => HashSet::new(),
-                    (Some(t), None) => HashSet::from([t.into()]),
-                    (Some(t), Some(v)) => iter::once(t)
-                        .chain(v)
-                        .map(MinionType::from)
-                        .collect::<HashSet<_>>(),
-                },
+                minion_types: c
+                    .minion_type_id
+                    .into_iter()
+                    .chain(c.multi_type_ids.into_iter().flatten())
+                    .map(MinionType::from)
+                    .collect(),
                 upgrade_id: None,
             }
         };

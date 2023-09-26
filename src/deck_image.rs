@@ -43,14 +43,7 @@ pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImag
 }
 
 fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Result<DynamicImage> {
-    let ordered_cards = order_cards(&deck.cards);
-    let slug_map = ordered_cards
-        .par_iter()
-        .map(|(_, (card, count))| {
-            let slug = get_slug(card, *count, agent);
-            (card, slug)
-        })
-        .collect::<HashMap<_, _>>();
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, agent);
 
     let deck_img_width = COLUMN_WIDTH * col_count + MARGIN;
 
@@ -79,10 +72,10 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
     draw_deck_title(&mut img, deck, agent)?;
 
     // Main deck
-    for (i, (card, _)) in ordered_cards.iter() {
+    for (i, (card, _)) in ordered_cards.iter().enumerate() {
         let slug = &slug_map[card];
 
-        let i = *i as u32;
+        let i = i as u32;
         let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
 
         img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
@@ -93,11 +86,9 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
         let mut sb_pos_tracker = ordered_cards.len();
 
         for sb in sideboards {
-            let current_tracker_pos = sb_pos_tracker as u32;
-
             let (col, row) = (
-                current_tracker_pos / cards_in_col,
-                current_tracker_pos % cards_in_col + 1,
+                sb_pos_tracker as u32 / cards_in_col,
+                sb_pos_tracker as u32 % cards_in_col + 1,
             );
 
             img.copy_from(
@@ -105,23 +96,17 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
             )?;
+            sb_pos_tracker += 1;
 
-            sb_pos_tracker += sb.cards_in_sideboard.len() + 1;
+            for slug in order_cards(&sb.cards_in_sideboard)
+                .iter()
+                .map(| (c, _)| &slug_map[c])
+            {
+                let i = sb_pos_tracker as u32;
+                let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+                img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
-            let slugs_of_sb = order_cards(&sb.cards_in_sideboard)
-                .into_par_iter()
-                .map(|(i, (card, count))| {
-                    let slug = get_slug(card, count, agent);
-
-                    let i = i as u32 + current_tracker_pos + 1;
-                    let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
-
-                    (slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)
-                })
-                .collect::<Vec<_>>();
-
-            for (slug, x, y) in slugs_of_sb {
-                img.copy_from(&slug, x, y)?;
+                sb_pos_tracker += 1;
             }
         }
     }
@@ -130,24 +115,17 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
 }
 
 fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
-    let ordered_cards = order_cards(&deck.cards);
-    let slug_map = ordered_cards
-        .par_iter()
-        .map(|(_, (card, count))| {
-            let slug = get_slug(card, *count, agent);
-            (card, slug)
-        })
-        .collect::<HashMap<_, _>>();
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, agent);
 
     let class_cards = ordered_cards
         .iter()
-        .filter_map(|(_, (c, _))| (!c.class.contains(&Class::Neutral)).then(|| &slug_map[c]))
+        .filter_map(|(c, _)| (!c.class.contains(&Class::Neutral)).then(|| &slug_map[c]))
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
-        .filter_map(|(_, (c, _))| c.class.contains(&Class::Neutral).then(|| &slug_map[c]))
+        .filter_map(|(c, _)| c.class.contains(&Class::Neutral).then(|| &slug_map[c]))
         .enumerate()
         .collect::<Vec<_>>();
 
@@ -161,9 +139,8 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
         if let Some(sideboards) = &deck.sideboard_cards {
             columns += sideboards.len();
         }
-        let columns = columns as u32;
 
-        columns * COLUMN_WIDTH + MARGIN
+        columns as u32 * COLUMN_WIDTH + MARGIN
     };
 
     // deck image height
@@ -205,18 +182,13 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
                 MARGIN,
             )?;
 
-            let slugs_of_sb = order_cards(&sb.cards_in_sideboard)
-                .into_par_iter()
-                .map(|(i, (card, count))| {
-                    let i = i as u32 + 1;
-                    let slug = get_slug(card, count, agent);
-
-                    (slug, column_start, i * ROW_HEIGHT + MARGIN)
-                })
-                .collect::<Vec<_>>();
-
-            for (slug, x, y) in slugs_of_sb {
-                img.copy_from(&slug, x, y)?;
+            for (i, slug) in order_cards(&sb.cards_in_sideboard)
+                .iter()
+                .enumerate()
+                .map(|(i, (c, _))| (i, &slug_map[c]))
+            {
+                let i = i as u32 + 1;
+                img.copy_from(slug, column_start, i * ROW_HEIGHT + MARGIN)?;
             }
         }
     }
@@ -224,18 +196,7 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn order_cards(cards: &[Card]) -> Vec<(usize, (&Card, usize))> {
-    cards
-        .iter()
-        .collect::<Counter<_>>()
-        .into_iter()
-        .collect::<BTreeMap<_, _>>()
-        .into_iter()
-        .enumerate()
-        .collect::<Vec<_>>()
-}
-
-pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicImage {
+pub fn get_card_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
@@ -329,6 +290,42 @@ pub fn get_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicImage 
     );
 
     DynamicImage::ImageRgba8(img)
+}
+
+fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
+    cards
+        .iter()
+        .collect::<Counter<_>>()
+        .into_iter()
+        .collect::<BTreeMap<_, _>>()
+}
+
+fn order_deck_and_get_slugs<'d>(
+    deck: &'d Deck,
+    agent: &ureq::Agent,
+) -> (BTreeMap<&'d Card, usize>, HashMap<&'d Card, DynamicImage>) {
+    let ordered_cards = order_cards(&deck.cards);
+    let ordered_sbs_cards = deck
+        .sideboard_cards
+        .iter()
+        .flat_map(|sbs| {
+            sbs.into_iter()
+                .flat_map(|sb| order_cards(&sb.cards_in_sideboard))
+        })
+        .collect::<Vec<_>>();
+
+    // if a card is in two zones it'd have the same slug in both.
+    let slug_map = ordered_cards
+        .clone()
+        .into_par_iter()
+        .chain(ordered_sbs_cards.into_par_iter())
+        .map(|(card, count)| {
+            let slug = get_card_slug(card, count, agent);
+            (card, slug)
+        })
+        .collect::<HashMap<_, _>>();
+
+    (ordered_cards, slug_map)
 }
 
 fn get_title_slug(title: &str, margin: i32) -> DynamicImage {

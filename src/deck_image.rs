@@ -100,7 +100,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
 
             for slug in order_cards(&sb.cards_in_sideboard)
                 .iter()
-                .map(| (c, _)| &slug_map[c])
+                .map(|(c, _)| &slug_map[c])
             {
                 let i = sb_pos_tracker as u32;
                 let (col, row) = (i / cards_in_col, i % cards_in_col + 1);

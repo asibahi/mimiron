@@ -107,18 +107,14 @@ impl Display for BGCardType {
         }
 
         match self {
-            Self::Hero {
-                armor,
-                buddy_id: _,
-                child_ids: _,
-            } => write!(f, "Hero with {armor} armor."),
+            Self::Hero { armor, .. } => write!(f, "Hero with {armor} armor."),
             Self::Minion {
                 tier,
                 attack,
                 health,
                 text,
                 minion_types,
-                upgrade_id: _,
+                ..
             } => {
                 write!(f, "Tier-{tier} {attack}/{health} ")?;
                 if minion_types.is_empty() {
@@ -326,9 +322,9 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
 
         match &card.card_type {
             BGCardType::Hero {
-                armor: _,
                 buddy_id,
                 child_ids,
+                ..
             } => {
                 'heropower: {
                     // Getting the starting hero power only. API keeps old
@@ -370,24 +366,18 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                 }
             }
             BGCardType::Minion {
-                tier: _,
-                attack: _,
-                health: _,
-                text: _,
-                minion_types: _,
                 upgrade_id: Some(id),
+                ..
             } => 'golden: {
                 let Ok(res) = get_card_by_id(*id, access_token, agent) else {
                     break 'golden;
                 };
 
                 let BGCardType::Minion {
-                    tier: _,
                     attack,
                     health,
                     text,
-                    minion_types: _,
-                    upgrade_id: _,
+                    ..
                 } = res.card_type
                 else {
                     break 'golden;

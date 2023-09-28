@@ -7,7 +7,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
 
-use crate::card::{get_cards_by_text, Card};
+use crate::card::{get_cards_by_text, Card, CardArgs};
 use crate::card_details::Class;
 use crate::deck_image;
 
@@ -214,7 +214,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
         let band_ids = band
             .into_iter()
             .map(|name| {
-                get_cards_by_text(name, false, access_token, agent)?
+                get_cards_by_text(&CardArgs::for_name(name), access_token, agent)?
                     // Undocumented API Found by looking through playhearthstone.com card library
                     .map(|c| Ok(format!("{id}:{ETC_ID}", id = c.id)))
                     .next()

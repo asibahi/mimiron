@@ -3,10 +3,14 @@ use clap::{ArgGroup, Args};
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display, str::FromStr};
+use std::{
+    collections::HashSet,
+    fmt::{self, Display},
+    str::FromStr,
+};
 
 use crate::card_details::MinionType;
-use crate::prettify::prettify;
+use crate::helpers::prettify;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,12 +22,7 @@ pub struct CardData {
     // basic info
     name: String,
     text: String,
-    // collectible: u8,
-    // class_id: u8,
-    // multi_class_ids: Vec<Option<serde_json::Value>>,
     card_type_id: u8,
-    // card_set_id: u8,
-    // rarity_id: Option<u8>,
 
     // Stats
     attack: Option<u8>,
@@ -41,9 +40,6 @@ pub struct CardData {
     image: String,
     // image_gold: String,
     // crop_image: Option<String>,
-    // artist_name: Option<String>,
-    // flavor_text: String,
-    // parent_id: u8,
 }
 
 #[derive(Deserialize)]
@@ -89,8 +85,8 @@ pub enum BGCardType {
     },
 }
 impl Display for BGCardType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn inner(text: &str, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn inner(text: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let text = prettify(text);
 
             if f.alternate() {
@@ -107,7 +103,7 @@ impl Display for BGCardType {
         }
 
         match self {
-            Self::Hero { armor, .. } => write!(f, "Hero with {armor} armor."),
+            Self::Hero { armor, .. } => write!(f, "{armor} armor Hero."),
             Self::Minion {
                 tier,
                 attack,
@@ -154,7 +150,7 @@ pub struct Card {
     pub card_type: BGCardType,
 }
 impl Display for Card {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = &self.name.bold();
 
         let card_info = &self.card_type;

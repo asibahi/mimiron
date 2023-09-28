@@ -276,7 +276,7 @@ pub enum CardType {
 impl Display for CardType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Hero { armor } => write!(f, "Hero card with {armor} armor"),
+            Self::Hero { armor } => write!(f, "{armor} armor Hero card"),
             Self::Minion {
                 attack,
                 health,

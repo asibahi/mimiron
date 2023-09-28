@@ -3,9 +3,14 @@ use clap::Args;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display};
+use std::{
+    cmp::Ordering,
+    collections::HashSet,
+    fmt::{self, Display, Formatter},
+    hash::{Hash, Hasher},
+};
 
-use crate::card_details::*;
+use crate::{card_details::*, helpers::either};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,13 +52,6 @@ struct CardData {
     crop_image: Option<String>,
     //artist_name: String,
     //flavor_text: String,
-
-    // Related cards
-    //copy_of_card_id: Option<usize>,
-    //parent_id: usize,
-    //child_ids: Option<Vec<usize>>,
-
-    //keyword_ids: Option<Vec<i64>>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -76,11 +74,6 @@ pub struct Card {
     pub image: String,
 
     pub crop_image: Option<String>,
-    /*
-    tokens: HashSet<usize>,
-
-    flavor_text: String,
-    */
 }
 
 impl PartialEq for Card {
@@ -89,31 +82,23 @@ impl PartialEq for Card {
     }
 }
 impl PartialOrd for Card {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        /* match self.rarity.partial_cmp(&other.rarity) {
-            Some(core::cmp::Ordering::Equal) => {}
-            ord => return ord,
-        } */
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cost.cmp(&other.cost).then(self.name.cmp(&other.name)))
     }
 }
-impl std::hash::Hash for Card {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl Hash for Card {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
     }
 }
 impl Eq for Card {}
 impl Ord for Card {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        /* match self.rarity.cmp(&other.rarity) {
-            core::cmp::Ordering::Equal => {}
-            ord => return ord,
-        } */
+    fn cmp(&self, other: &Self) -> Ordering {
         self.cost.cmp(&other.cost).then(self.name.cmp(&other.name))
     }
 }
 impl Display for Card {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let name = self.name.bold();
         let cost = self.cost;
 
@@ -123,7 +108,7 @@ impl Display for Card {
         };
 
         let set = self.card_set;
-        let text = crate::prettify::prettify(&self.text);
+        let text = crate::helpers::prettify(&self.text);
         let text = textwrap::fill(
             &text,
             textwrap::Options::new(textwrap::termwidth() - 10)
@@ -166,7 +151,7 @@ impl From<CardData> for Card {
             rune_cost: c.rune_cost,
             card_type: match c.card_type_id {
                 3 => CardType::Hero {
-                    armor:  c.armor.unwrap_or_default() ,
+                    armor: c.armor.unwrap_or_default(),
                 },
                 4 => CardType::Minion {
                     attack: c.attack.unwrap_or_default(),
@@ -196,13 +181,6 @@ impl From<CardData> for Card {
             image: c.image,
 
             crop_image: c.crop_image,
-            /*
-            tokens: match c.child_ids {
-                Some(v) => HashSet::from_iter(v),
-                None => HashSet::new(),
-            },
-            flavor_text: c.flavor_text,
-            */
         }
     }
 }
@@ -223,15 +201,27 @@ pub struct CardArgs {
     #[arg(short, long)]
     text: bool,
 
+    /// Include reprints
+    #[arg(short, long)]
+    reprints: bool,
+
     /// Print image links
     #[arg(short, long)]
     image: bool,
 }
+impl CardArgs {
+    pub(crate) fn for_name(name: String) -> Self {
+        Self {
+            name,
+            text: false,
+            image: false,
+            reprints: false,
+        }
+    }
+}
 
 pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
-    let search_term = args.name.to_lowercase();
-
-    let cards = get_cards_by_text(search_term, args.text, access_token, agent)?;
+    let cards = get_cards_by_text(&args, access_token, agent)?;
 
     for card in cards {
         println!("{card:#}");
@@ -243,12 +233,13 @@ pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
     Ok(())
 }
 
-pub(crate) fn get_cards_by_text(
-    search_term: String,
-    include_body: bool,
+pub(crate) fn get_cards_by_text<'c>(
+    args: &'c CardArgs,
     access_token: &str,
     agent: &ureq::Agent,
-) -> Result<impl Iterator<Item = Card>> {
+) -> Result<impl Iterator<Item = Card> + 'c> {
+    let search_term = &args.name;
+
     let res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
@@ -265,23 +256,19 @@ pub(crate) fn get_cards_by_text(
         ));
     }
 
-    let work_around_borrow_checker = search_term.to_lowercase();
-
     let mut cards = res
         .cards
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
-        .filter(move |c| {
-            include_body || c.name.to_lowercase().contains(&work_around_borrow_checker)
-        })
+        .filter(move |c| args.text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
         // cards have copies in different sets
-        .unique_by(|c| c.name.clone())
+        .unique_by(|c| either(args.reprints, c.id, c.name.clone()))
         .peekable();
 
     if cards.peek().is_none() {
         return Err(anyhow!(
-            "No constructed card found with name {search_term}. Expand search to all text boxes with -t."
+            "No constructed card found with name \"{search_term}\". Expand search to text boxes with --text."
         ));
     }
 

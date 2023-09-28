@@ -173,9 +173,9 @@ impl From<CardData> for Card {
         let card_type = if let Some(bg) = &c.battlegrounds {
             if bg.hero {
                 BGCardType::Hero {
-                    armor: c.armor.unwrap(),
+                    armor: c.armor.unwrap_or(77),
                     buddy_id: bg.companion_id.filter(|x| *x != 0),
-                    child_ids: c.child_ids.unwrap(),
+                    child_ids: c.child_ids.unwrap_or(77),
                 }
             } else if bg.quest {
                 BGCardType::Quest { text: c.text }
@@ -183,9 +183,9 @@ impl From<CardData> for Card {
                 BGCardType::Reward { text: c.text }
             } else if bg.tier.is_some() {
                 BGCardType::Minion {
-                    tier: bg.tier.unwrap(),
-                    attack: c.attack.unwrap(),
-                    health: c.health.unwrap(),
+                    tier: bg.tier.unwrap_or(77),
+                    attack: c.attack.unwrap_or(77),
+                    health: c.health.unwrap_or(77),
                     text: c.text,
                     minion_types: c
                         .minion_type_id
@@ -206,8 +206,8 @@ impl From<CardData> for Card {
         } else {
             BGCardType::Minion {
                 tier: 1,
-                attack: c.attack.unwrap(),
-                health: c.health.unwrap(),
+                attack: c.attack.unwrap_or(77),
+                health: c.health.unwrap_or(77),
                 text: c.text,
                 minion_types: c
                     .minion_type_id

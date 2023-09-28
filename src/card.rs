@@ -153,7 +153,7 @@ impl From<CardData> for Card {
         Self {
             id: c.id,
             card_set: c.card_set_id,
-            name: c.name,
+            name: c.name.clone(),
             class: if c.multi_class_ids.is_empty() {
                 HashSet::from([c.class_id.into()])
             } else {
@@ -166,11 +166,11 @@ impl From<CardData> for Card {
             rune_cost: c.rune_cost,
             card_type: match c.card_type_id {
                 3 => CardType::Hero {
-                    armor: c.armor.unwrap(),
+                    armor:  c.armor.unwrap_or(77) ,
                 },
                 4 => CardType::Minion {
-                    attack: c.attack.unwrap(),
-                    health: c.health.unwrap(),
+                    attack: c.attack.unwrap_or(77),
+                    health: c.health.unwrap_or(77),
                     minion_types: c
                         .minion_type_id
                         .into_iter()
@@ -182,11 +182,11 @@ impl From<CardData> for Card {
                     school: c.spell_school_id.map(SpellSchool::from),
                 },
                 7 => CardType::Weapon {
-                    attack: c.attack.unwrap(),
-                    durability: c.durability.unwrap(),
+                    attack: c.attack.unwrap_or(77),
+                    durability: c.durability.unwrap_or(77),
                 },
                 39 => CardType::Location {
-                    durability: c.health.unwrap(),
+                    durability: c.health.unwrap_or(77),
                 },
                 _ => CardType::Unknown,
             },

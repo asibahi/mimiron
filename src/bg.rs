@@ -175,7 +175,7 @@ impl From<CardData> for Card {
                 BGCardType::Hero {
                     armor: c.armor.unwrap_or(77),
                     buddy_id: bg.companion_id.filter(|x| *x != 0),
-                    child_ids: c.child_ids.unwrap_or(77),
+                    child_ids: c.child_ids.unwrap_or_default(),
                 }
             } else if bg.quest {
                 BGCardType::Quest { text: c.text }

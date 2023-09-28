@@ -166,11 +166,11 @@ impl From<CardData> for Card {
             rune_cost: c.rune_cost,
             card_type: match c.card_type_id {
                 3 => CardType::Hero {
-                    armor:  c.armor.unwrap_or(77) ,
+                    armor:  c.armor.unwrap_or_default() ,
                 },
                 4 => CardType::Minion {
-                    attack: c.attack.unwrap_or(77),
-                    health: c.health.unwrap_or(77),
+                    attack: c.attack.unwrap_or_default(),
+                    health: c.health.unwrap_or_default(),
                     minion_types: c
                         .minion_type_id
                         .into_iter()
@@ -182,11 +182,11 @@ impl From<CardData> for Card {
                     school: c.spell_school_id.map(SpellSchool::from),
                 },
                 7 => CardType::Weapon {
-                    attack: c.attack.unwrap_or(77),
-                    durability: c.durability.unwrap_or(77),
+                    attack: c.attack.unwrap_or_default(),
+                    durability: c.durability.unwrap_or_default(),
                 },
                 39 => CardType::Location {
-                    durability: c.health.unwrap_or(77),
+                    durability: c.health.unwrap_or_default(),
                 },
                 _ => CardType::Unknown,
             },

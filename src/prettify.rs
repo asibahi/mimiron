@@ -1,55 +1,61 @@
-use anyhow::{anyhow, Result};
+use std::fmt::Display;
+
 use colored::Colorize;
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_until},
-    combinator::{eof, map, rest},
-    multi::many_till,
+    bytes::complete::{tag, take_till1},
+    combinator::{all_consuming, map},
+    multi::many1,
     sequence::delimited,
     IResult,
 };
 
-const B_BEG: &str = "<b>";
-const B_END: &str = "</b>";
-const I_BEG: &str = "<i>";
-const I_END: &str = "</i>";
-
-fn parse_bold(i: &str) -> IResult<&str, String> {
-    let body = take_until(B_END);
-    let marks = delimited(tag(B_BEG), body, tag(B_END));
-    map(marks, |c: &str| c.bold().to_string())(i)
+enum TextTree {
+    String(String),
+    Bold(Box<TextTree>),
+    Italic(Box<TextTree>),
+    Seq(Vec<TextTree>),
 }
-
-fn parse_italic(i: &str) -> IResult<&str, String> {
-    let body = take_until(I_END);
-    let marks = delimited(tag(I_BEG), body, tag(I_END));
-    map(marks, |c: &str| c.italic().to_string())(i)
-}
-
-fn parse_plain(i: &str) -> IResult<&str, String> {
-    let body = alt((take_until(B_BEG), take_until(I_BEG), rest));
-    map(body, |c: &str| c.to_owned())(i)
-}
-
-fn prettify_inner(input: &str) -> Result<String> {
-    let apply_parsers = alt((parse_bold, parse_italic, parse_plain));
-    let (_, (parsed, _)) =
-        many_till(apply_parsers, eof)(input).map_err(|e| anyhow!(e.to_string()))?;
-
-    let ret = parsed.join("");
-
-    Ok(ret)
-}
-
-pub(crate) fn prettify(input: &str) -> String {
-    let mut pass = input.to_owned();
-
-    while pass.contains(B_BEG) || pass.contains(I_BEG) {
-        match prettify_inner(&pass) {
-            Ok(s) => pass = s,
-            Err(_) => break,
+impl Display for TextTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::String(s) => write!(f, "{s}"),
+            Self::Bold(b) => write!(f, "{}", b.to_string().bold()),
+            Self::Italic(i) => write!(f, "{}", i.to_string().italic()),
+            Self::Seq(s) => write!(
+                f,
+                "{}",
+                s.iter().fold(String::new(), |acc, s| acc + &s.to_string())
+            ),
         }
     }
+}
 
-    pass
+fn parse_bold(i: &str) -> IResult<&str, TextTree> {
+    let marks = delimited(tag("<b>"), parse_body, tag("</b>"));
+    map(marks, |c| TextTree::Bold(Box::new(c)))(i)
+}
+
+fn parse_italic(i: &str) -> IResult<&str, TextTree> {
+    let marks = delimited(tag("<i>"), parse_body, tag("</i>"));
+    map(marks, |c| TextTree::Italic(Box::new(c)))(i)
+}
+
+fn parse_plain(i: &str) -> IResult<&str, TextTree> {
+    let body = take_till1(|c| c == '<');
+    map(body, |c: &str| TextTree::String(c.to_owned()))(i)
+}
+
+fn parse_body(i: &str) -> IResult<&str, TextTree> {
+    let apply_parsers = alt((parse_bold, parse_italic, parse_plain));
+    map(many1(apply_parsers), |inner| match inner.len() {
+        1 => inner.into_iter().next().unwrap(),
+        _ => TextTree::Seq(inner),
+    })(i)
+}
+
+pub(crate) fn prettify(i: &str) -> String {
+    all_consuming(parse_body)(i)
+        .map(|(_, s)| s.to_string())
+        .unwrap_or(i.to_owned())
 }

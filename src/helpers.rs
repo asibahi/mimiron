@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use colored::Colorize;
-use itertools::Either;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1},
@@ -10,10 +9,6 @@ use nom::{
     sequence::delimited,
     IResult,
 };
-
-// ======
-// Prettify
-// ======
 
 enum TextTree {
     String(String),
@@ -63,16 +58,4 @@ pub(crate) fn prettify(i: &str) -> String {
     all_consuming(parse_body)(i)
         .map(|(_, s)| s.to_string())
         .unwrap_or(i.to_owned())
-}
-
-// ======
-// Either
-// ======
-
-pub(crate) fn either<L, R>(cond: bool, left: L, right: R) -> Either<L, R> {
-    if cond {
-        Either::Left(left)
-    } else {
-        Either::Right(right)
-    }
 }

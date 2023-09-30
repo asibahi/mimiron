@@ -9,8 +9,9 @@ use std::{
     fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
 };
+use eitherable::Eitherable;
 
-use crate::{card_details::*, helpers::either};
+use crate::card_details::*;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -263,7 +264,7 @@ pub(crate) fn get_cards_by_text<'c>(
         // depending on the args.text variable
         .filter(move |c| args.text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
         // cards have copies in different sets
-        .unique_by(|c| either(args.reprints, c.id, c.name.clone()))
+        .unique_by(|c| args.reprints.either(c.id, c.name.clone()))
         .peekable();
 
     if cards.peek().is_none() {

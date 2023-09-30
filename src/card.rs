@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
 use colored::Colorize;
+use eitherable::Eitherable;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -9,7 +10,6 @@ use std::{
     fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
 };
-use eitherable::Eitherable;
 
 use crate::card_details::*;
 

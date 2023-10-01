@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use counter::Counter;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
@@ -293,11 +292,10 @@ pub fn get_card_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicI
 }
 
 fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
-    cards
-        .iter()
-        .collect::<Counter<_>>()
-        .into_iter()
-        .collect::<BTreeMap<_, _>>()
+    cards.iter().fold(BTreeMap::new(), |mut map, card| {
+        *map.entry(card).or_default() += 1;
+        map
+    })
 }
 
 fn order_deck_and_get_slugs<'d>(
@@ -369,24 +367,31 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, agent: &ureq::Agent) -> Res
     );
     img.copy_from(&title, MARGIN, MARGIN)?;
 
-    let class = &deck.class.to_string().to_lowercase();
-
-    let class_img = {
-        let mut buf = Vec::new();
-        agent
-            .get(&(format!("https://render.worldofwarcraft.com/us/icons/56/classicon_{class}.jpg")))
-            .call()
-            .with_context(|| "Could not connect to class image link")?
-            .into_reader()
-            .read_to_end(&mut buf)
-            .with_context(|| "Could not read  class image link")?;
-        image::load_from_memory(&buf)?
+    if let Ok(class_img) = get_class_icon(&deck.class, agent) {
+        img.copy_from(
+            &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
+            MARGIN,
+            MARGIN,
+        )?;
     }
-    .resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian);
-
-    img.copy_from(&class_img, MARGIN, MARGIN)?;
 
     Ok(())
+}
+
+fn get_class_icon(class: &Class, agent: &ureq::Agent) -> Result<DynamicImage> {
+    let mut buf = Vec::new();
+    agent
+        .get(
+            &(format!(
+                "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
+                class.to_string().to_lowercase()
+            )),
+        )
+        .call()?
+        .into_reader()
+        .read_to_end(&mut buf)?;
+
+    Ok(image::load_from_memory(&buf)?)
 }
 
 fn draw_crop_image(img: &mut RgbaImage, card: &Card, agent: &ureq::Agent) -> Result<()> {

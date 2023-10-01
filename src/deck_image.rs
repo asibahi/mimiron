@@ -98,8 +98,8 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
             sb_pos_tracker += 1;
 
             for slug in order_cards(&sb.cards_in_sideboard)
-                .iter()
-                .map(|(c, _)| &slug_map[c])
+                .keys()
+                .map(|c| &slug_map[c])
             {
                 let i = sb_pos_tracker as u32;
                 let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
@@ -272,7 +272,7 @@ pub fn get_card_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicI
     );
 
     // card count
-    let count = if card.rarity == Rarity::Legendary && count == 1 {
+    let count = if matches!(card.rarity, Rarity::Legendary) && count == 1 {
         String::new()
     } else {
         count.to_string()
@@ -307,7 +307,7 @@ fn order_deck_and_get_slugs<'d>(
         .sideboard_cards
         .iter()
         .flat_map(|sbs| {
-            sbs.into_iter()
+            sbs.iter()
                 .flat_map(|sb| order_cards(&sb.cards_in_sideboard))
         })
         .collect::<Vec<_>>();

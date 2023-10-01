@@ -244,7 +244,7 @@ pub(crate) fn get_cards_by_text<'c>(
     let res = agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
-        .query("textFilter", &search_term)
+        .query("textFilter", search_term)
         .query("access_token", access_token)
         .call()
         .with_context(|| "call to card search API failed")?

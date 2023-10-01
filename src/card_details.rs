@@ -5,7 +5,6 @@ use std::{collections::HashSet, fmt::Display, str::FromStr};
 
 #[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
-#[serde(from = "ClassData")]
 pub enum Class {
     DeathKnight,
     DemonHunter,
@@ -66,18 +65,8 @@ impl From<u8> for Class {
         }
     }
 }
-impl From<ClassData> for Class {
-    fn from(value: ClassData) -> Self {
-        value.id.into()
-    }
-}
 
-#[derive(Deserialize)]
-pub struct ClassData {
-    id: u8,
-}
-
-#[derive(PartialEq, PartialOrd, Eq, Ord, Clone)]
+#[derive(Clone)]
 pub enum Rarity {
     Legendary,
     Epic,
@@ -113,7 +102,7 @@ impl From<u8> for Rarity {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(Clone)]
 pub enum SpellSchool {
     Arcane,
     Fire,
@@ -193,8 +182,6 @@ impl Display for MinionType {
     }
 }
 impl From<u8> for MinionType {
-    //   type Error = anyhow::Error;
-
     fn from(value: u8) -> Self {
         match value {
             11 => Self::Undead,
@@ -244,10 +231,11 @@ pub struct RuneCost {
 }
 impl Display for RuneCost {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let bl = "B".repeat(self.blood as usize);
-        let fr = "F".repeat(self.frost as usize);
-        let un = "U".repeat(self.unholy as usize);
-        write!(f, "{bl}{fr}{un}")
+        (0..self.blood)
+            .map(|_| 'B')
+            .chain((0..self.frost).map(|_| 'F'))
+            .chain((0..self.unholy).map(|_| 'U'))
+            .try_for_each(|c| write!(f, "{c}"))
     }
 }
 

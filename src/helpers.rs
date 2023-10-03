@@ -192,9 +192,7 @@ fn traverse_inner(tree: TextTree, visit: &mut dyn FnMut(TextPiece)) {
         TextTree::String(text) => visit(TextPiece::new(&text, TextStyle::Plain)),
         TextTree::Bold(inner) => traverse_inner(*inner, &mut |tp| visit(tp.embolden())),
         TextTree::Italic(inner) => traverse_inner(*inner, &mut |tp| visit(tp.italicize())),
-        TextTree::Seq(seq) => seq
-            .into_iter()
-            .for_each(|tt| traverse_inner(tt, &mut |tp| visit(tp))),
+        TextTree::Seq(seq) => seq.into_iter().for_each(|tt| traverse_inner(tt, visit)),
     }
 }
 

@@ -139,7 +139,7 @@ pub(crate) struct TextPiece {
     text: String,
     style: TextStyle,
 }
-
+#[allow(unused)]
 impl TextPiece {
     fn new(text: &str, style: TextStyle) -> Self {
         TextPiece {
@@ -169,9 +169,17 @@ impl TextPiece {
             ..self
         }
     }
+
+    fn text(&self) -> String {
+        self.text.to_owned()
+    }
+
+    fn style(&self) -> TextStyle {
+        self.style
+    }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum TextStyle {
     Plain,
     Bold,
@@ -179,36 +187,21 @@ pub(crate) enum TextStyle {
     BoldItalic,
 }
 
-/* // ==== Visitor Pattern. Works but reaches "recursion limit".
-fn traverse_inner(tree: TextTree, mut visit: impl FnMut(TextPiece)) {
+fn traverse_inner(tree: TextTree, visit: &mut dyn FnMut(TextPiece)) {
     match tree {
         TextTree::String(text) => visit(TextPiece::new(&text, TextStyle::Plain)),
-        TextTree::Bold(inner) => traverse_inner(*inner, |tp| visit(tp.embolden())),
-        TextTree::Italic(inner) => traverse_inner(*inner, |tp| visit(tp.italicize())),
+        TextTree::Bold(inner) => traverse_inner(*inner, &mut |tp| visit(tp.embolden())),
+        TextTree::Italic(inner) => traverse_inner(*inner, &mut |tp| visit(tp.italicize())),
         TextTree::Seq(seq) => seq
             .into_iter()
-            .for_each(|tt| traverse_inner(tt, |tp| visit(tp))),
+            .for_each(|tt| traverse_inner(tt, &mut |tp| visit(tp))),
     }
-} */
+}
 
 #[allow(unused)]
 fn traverse_text_tree(tree: TextTree) -> Vec<TextPiece> {
     let mut collector = vec![];
-
-    match tree {
-        TextTree::String(text) => collector.push(TextPiece::new(&text, TextStyle::Plain)),
-        TextTree::Bold(inner) => traverse_text_tree(*inner)
-            .into_iter()
-            .for_each(|piece| collector.push(piece.embolden())),
-        TextTree::Italic(inner) => traverse_text_tree(*inner)
-            .into_iter()
-            .for_each(|piece| collector.push(piece.italicize())),
-        TextTree::Seq(seq) => seq
-            .into_iter()
-            .flat_map(traverse_text_tree)
-            .for_each(|piece| collector.push(piece)),
-    }
-
+    traverse_inner(tree, &mut |tp| collector.push(tp));
     collector
 }
 
@@ -222,7 +215,6 @@ mod traverse_tests {
     fn test_eternal_summoner() -> Result<(), String> {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
         let tree = to_text_tree(dbg!(input))?;
-
         let traversal = traverse_text_tree(tree);
 
         let expected = vec![

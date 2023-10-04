@@ -22,7 +22,7 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const TEXT_BOX_HEIGHT: u32 = 75; // two lines height + margin.
+const TEXT_BOX_HEIGHT: u32 = CROP_HEIGHT; // two lines height + 10 margin. subject to change.
 const SLUG_HEIGHT_WITH_TEXT: u32 = CROP_HEIGHT + TEXT_BOX_HEIGHT;
 const ROW_HEIGHT_WITH_TEXT: u32 = SLUG_HEIGHT_WITH_TEXT + MARGIN;
 
@@ -515,8 +515,8 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
         &Rgba([10, 10, 10, 0]),
     );
 
-   // img.copy_from(&gradient, CROP_WIDTH, 0).ok();
-      imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
+    // img.copy_from(&gradient, CROP_WIDTH, 0).ok();
+    imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
     let text_scale = Scale::uniform(20.0);
     let space_advance = plain_font
@@ -527,7 +527,7 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
 
     let line_height = drawing::text_size(text_scale, &plain_font, "O").1 * 14 / 10;
 
-    let mut cursor = (15, 15);
+    let mut cursor = (15, 10);
 
     for bx in get_boxes_and_glue(text) {
         let font = match bx.style() {

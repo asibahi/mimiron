@@ -5,6 +5,7 @@ use std::{collections::HashSet, fmt::Display, str::FromStr};
 
 #[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
+#[serde(from = "ClassData")]
 pub enum Class {
     DeathKnight,
     DemonHunter,
@@ -64,6 +65,18 @@ impl From<u8> for Class {
             _ => Self::Unknown,
         }
     }
+}
+impl From<ClassData> for Class {
+    fn from(value: ClassData) -> Self {
+        value.id.into()
+    }
+}
+
+#[derive(Deserialize)]
+struct ClassData {
+    // slug: String,
+    id: u8,
+    // name: String,
 }
 
 #[derive(Clone)]

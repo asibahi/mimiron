@@ -246,6 +246,26 @@ pub fn get_card_slug(
         _ => (157, 157, 157),
     };
 
+    // colors from d0nkey.top
+    let c_color = if card.class.is_empty() {
+        (169, 169, 169)
+    } else {
+        match &card.class.iter().next().unwrap() {
+            Class::DeathKnight => (108, 105, 154),
+            Class::DemonHunter => (37, 111, 61),
+            Class::Druid => (255, 127, 14),
+            Class::Hunter => (44, 160, 44),
+            Class::Mage => (23, 190, 207),
+            Class::Paladin => (240, 189, 39),
+            Class::Priest => (199, 199, 199),
+            Class::Rogue => (127, 127, 127),
+            Class::Shaman => (43, 125, 180),
+            Class::Warlock => (162, 112, 153),
+            Class::Warrior => (200, 21, 24),
+            _ => (169, 169, 169),
+        }
+    };
+
     let slug_height = if with_text {
         SLUG_HEIGHT_WITH_TEXT
     } else {
@@ -256,7 +276,7 @@ pub fn get_card_slug(
     let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
 
     if with_text {
-        let text_box = build_text_box(&(format!("{:#} {}", &card.card_type, card.text)));
+        let text_box = build_text_box(&(format!("{:#} {}", &card.card_type, card.text)), c_color);
         img.copy_from(&text_box, 0, CROP_HEIGHT).ok();
     }
 
@@ -466,7 +486,7 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card, agent: &ureq::Agent) -> Res
     Ok(())
 }
 
-fn build_text_box(text: &str) -> DynamicImage {
+fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     let plain_font = Font::try_from_bytes(TEXT_PLAIN_FONT).unwrap();
     let bold_font = Font::try_from_bytes(TEXT_BOLD_FONT).unwrap();
     let italic_font = Font::try_from_bytes(TEXT_ITALIC_FONT).unwrap();
@@ -479,6 +499,24 @@ fn build_text_box(text: &str) -> DynamicImage {
         Rect::at(0, 0).of_size(SLUG_WIDTH, TEXT_BOX_HEIGHT),
         Rgba([10, 10, 10, 255]),
     );
+
+    // class color
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH + CROP_HEIGHT, TEXT_BOX_HEIGHT),
+        Rgba([color.0, color.1, color.2, 170]),
+    );
+
+    // gradient
+    let mut gradient = RgbaImage::new(CROP_WIDTH, TEXT_BOX_HEIGHT);
+    imageops::horizontal_gradient(
+        &mut gradient,
+        &Rgba([10, 10, 10, 255]),
+        &Rgba([10, 10, 10, 0]),
+    );
+
+   // img.copy_from(&gradient, CROP_WIDTH, 0).ok();
+      imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
     let text_scale = Scale::uniform(20.0);
     let space_advance = plain_font

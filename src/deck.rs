@@ -181,13 +181,23 @@ pub struct DeckArgs {
     #[arg(short, long, requires("image"))]
     output: Option<std::path::PathBuf>,
 
-    /// Format the deck in one column.
+    /// Format the deck in one column. Most compact horizontally.
     #[arg(short, long, requires("image"))]
     single: bool,
 
-    /// Format the deck in three columns.
+    /// Format the deck in three columns. Most compact vertically.
     #[arg(short, long, requires("image"), conflicts_with("single"))]
     wide: bool,
+
+    /// Similar to Wide Format but with card text added.
+    #[arg(
+        short,
+        long,
+        requires("image"),
+        conflicts_with("single"),
+        conflicts_with("wide")
+    )]
+    text: bool,
 }
 
 pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
@@ -251,9 +261,10 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
 
     // Generate and save image
     if args.image {
-        let shape = match (args.single, args.wide) {
-            (true, _) => deck_image::Shape::Single,
-            (_, true) => deck_image::Shape::Wide,
+        let shape = match (args.single, args.wide, args.text) {
+            (true, _, _) => deck_image::Shape::Single,
+            (_, true, _) => deck_image::Shape::Wide,
+            (_, _, true) => deck_image::Shape::WithText,
             _ => deck_image::Shape::Groups,
         };
 

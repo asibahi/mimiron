@@ -276,27 +276,30 @@ pub enum CardType {
 }
 impl Display for CardType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // f.alternate() is used for text boxes on images. Regular mode for console output.
+        let colon = if f.alternate() { ":" } else { "" };
         match self {
-            Self::Hero { armor } => write!(f, "{armor} armor Hero card"),
+            Self::Hero { armor } => write!(f, "Hero card with {armor} armor{colon}"),
             Self::Minion {
                 attack,
                 health,
                 minion_types,
             } => {
-                if minion_types.is_empty() {
-                    write!(f, "{attack}/{health} minion")
-                } else {
-                    let types = minion_types.iter().join("/");
-                    write!(f, "{attack}/{health} {types}")
-                }
+                let types = minion_types.iter().join("/");
+                write!(
+                    f,
+                    "{attack}/{health} {}{colon}",
+                    if types.is_empty() { "minion" } else { &types }
+                )
             }
             Self::Spell { school } => match school {
-                Some(s) => write!(f, "{s} spell"),
+                Some(s) => write!(f, "{s} spell{colon}"),
+                None if f.alternate() => write!(f, "Spell:"),
                 None => write!(f, "spell"),
             },
-            Self::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon"),
-            Self::Location { durability } => write!(f, "{durability} durability location"),
-            Self::Unknown => write!(f, "UNKNOWN"),
+            Self::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon{colon}"),
+            Self::Location { durability } => write!(f, "{durability} durability location{colon}"),
+            Self::Unknown => write!(f, "UNKNOWN{colon}"),
         }
     }
 }

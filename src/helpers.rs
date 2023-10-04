@@ -1,4 +1,3 @@
-use colored::Colorize;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1},
@@ -27,6 +26,7 @@ enum TextTree {
 
 impl Display for TextTree {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use colored::Colorize;
         match self {
             Self::String(s) => write!(f, "{s}"),
             Self::Bold(b) => write!(f, "{}", b.to_string().bold()),
@@ -64,9 +64,7 @@ fn parse_body(i: &str) -> IResult<&str, TextTree> {
 }
 
 fn to_text_tree(i: &str) -> Result<TextTree, &str> {
-    all_consuming(parse_body)(dbg!(i))
-        .map(|(_, s)| dbg!(s))
-        .map_err(|_| i)
+    all_consuming(parse_body)(i).map(|(_, s)| s).map_err(|_| i)
 }
 
 pub(crate) fn prettify(i: &str) -> String {
@@ -130,6 +128,7 @@ mod prettify_tests {
         Ok(())
     }
 }
+
 // ====================
 // Card Text on Image
 // ====================
@@ -139,9 +138,9 @@ pub(crate) struct TextPiece {
     text: String,
     style: TextStyle,
 }
-#[allow(unused)]
+
 impl TextPiece {
-    fn new(text: &str, style: TextStyle) -> Self {
+  pub  fn new(text: &str, style: TextStyle) -> Self {
         TextPiece {
             text: text.into(),
             style,
@@ -170,11 +169,11 @@ impl TextPiece {
         }
     }
 
-    fn text(&self) -> String {
-        self.text.to_owned()
+    pub fn text(&self) -> String {
+        self.text.clone()
     }
 
-    fn style(&self) -> TextStyle {
+    pub fn style(&self) -> TextStyle {
         self.style
     }
 }
@@ -196,16 +195,37 @@ fn traverse_inner(tree: TextTree, visit: &mut dyn FnMut(TextPiece)) {
     }
 }
 
-#[allow(unused)]
-fn traverse_text_tree(tree: TextTree) -> Vec<TextPiece> {
-    let mut collector = vec![];
-    traverse_inner(tree, &mut |tp| collector.push(tp));
-    collector
+fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
+    let mut collector: Vec<TextPiece> = vec![];
+
+    let visit = &mut |tp: TextPiece| match collector.last_mut() {
+        Some(last) if last.style == tp.style => last.text.push_str(&tp.text),
+        _ => collector.push(tp),
+    };
+
+    traverse_inner(tree, visit);
+
+    collector.into_iter().flat_map(|tp| {
+        tp.text
+            .split_inclusive(' ')
+            .map(|t| TextPiece::new(t, tp.style))
+            .collect::<Vec<_>>()
+    })
+}
+
+pub(crate) fn get_boxes_and_glue(i: &str) -> impl Iterator<Item = TextPiece> {
+    let tree = match to_text_tree(i) {
+        Ok(inner) => inner,
+        Err(text) => TextTree::String(text.to_owned()),
+    };
+
+    traverse_text_tree(tree)
 }
 
 #[cfg(test)]
 mod traverse_tests {
     use super::*;
+
     use TextPiece as TP;
     use TextStyle as TS;
 
@@ -213,14 +233,17 @@ mod traverse_tests {
     fn test_eternal_summoner() -> Result<(), String> {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
         let tree = to_text_tree(dbg!(input))?;
-        let traversal = traverse_text_tree(tree);
+        let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
 
         let expected = vec![
-            TP::new("Reborn", TS::Bold),
-            TP::new(".", TS::Bold),
+            TP::new("Reborn.", TS::Bold),
             TP::new(" ", TS::Plain),
             TP::new("Deathrattle:", TS::Bold),
-            TP::new(" Summon 1 Eternal Knight.", TS::Plain),
+            TP::new(" ", TS::Plain),
+            TP::new("Summon ", TS::Plain),
+            TP::new("1 ", TS::Plain),
+            TP::new("Eternal ", TS::Plain),
+            TP::new("Knight.", TS::Plain),
         ];
 
         assert_eq!(dbg!(traversal), expected);
@@ -231,14 +254,23 @@ mod traverse_tests {
     fn test_climactic_necrotic_explosion() -> Result<(), String> {
         let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
         let tree = to_text_tree(dbg!(input))?;
-        let traversal = traverse_text_tree(tree);
+        let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
 
         let expected = vec![
             TP::new("Lifesteal", TS::Bold),
-            TP::new(". Deal damage. Summon / Souls. ", TS::Plain),
-            TP::new("(Randomly improved by ", TS::Italic),
+            TP::new(". ", TS::Plain),
+            TP::new("Deal ", TS::Plain),
+            TP::new("damage. ", TS::Plain),
+            TP::new("Summon ", TS::Plain),
+            TP::new("/ ", TS::Plain),
+            TP::new("Souls. ", TS::Plain),
+            TP::new("(Randomly ", TS::Italic),
+            TP::new("improved ", TS::Italic),
+            TP::new("by ", TS::Italic),
             TP::new("Corpses", TS::BoldItalic),
-            TP::new(" you've spent)", TS::Italic),
+            TP::new(" ", TS::Italic),
+            TP::new("you've ", TS::Italic),
+            TP::new("spent)", TS::Italic),
         ];
 
         assert_eq!(dbg!(traversal), expected);

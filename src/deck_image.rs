@@ -2,12 +2,14 @@ use anyhow::{anyhow, Context, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
+use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     card::Card,
     card_details::{Class, Rarity},
     deck::Deck,
+    helpers::{get_boxes_and_glue, TextStyle},
 };
 
 //  Numbers based on the crops provided by Blizzard API
@@ -20,29 +22,54 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const FONT_DATA: &[u8] = include_bytes!("../data/YanoneKaffeesatz/YanoneKaffeesatz-Medium.ttf");
+const TEXT_BOX_HEIGHT: u32 = 75; // two lines height + margin.
+const SLUG_HEIGHT_WITH_TEXT: u32 = CROP_HEIGHT + TEXT_BOX_HEIGHT;
+const ROW_HEIGHT_WITH_TEXT: u32 = SLUG_HEIGHT_WITH_TEXT + MARGIN;
+
+const CARD_NAME_FONT: &[u8] =
+    include_bytes!("../data/YanoneKaffeesatz/YanoneKaffeesatz-Medium.ttf");
+
+const TEXT_PLAIN_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Regular.ttf");
+const TEXT_BOLD_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Medium.ttf");
+const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf");
+const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
 
 pub enum Shape {
     // Each group in its own column. (HS Top Decks)
     Groups,
 
-    // Regular Style over one column
+    // Regular Style over one column. Compact horizontally.
     Single,
 
-    // Regular Style over three columns
+    // Regular Style over three columns. Compact vertically.
     Wide,
+
+    // Wide format but with card text.
+    WithText,
 }
 
 pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImage> {
     match shape {
         Shape::Groups => img_groups_format(deck, agent),
-        Shape::Wide => img_columns_format(deck, 3, agent),
-        Shape::Single => img_columns_format(deck, 1, agent),
+        Shape::Wide => img_columns_format(deck, 3, false, agent),
+        Shape::Single => img_columns_format(deck, 1, false, agent),
+        Shape::WithText => img_columns_format(deck, 3, true, agent),
     }
 }
 
-fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, agent);
+fn img_columns_format(
+    deck: &Deck,
+    col_count: u32,
+    with_text: bool,
+    agent: &ureq::Agent,
+) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, with_text, agent);
+
+    let actual_row_height = if with_text {
+        ROW_HEIGHT_WITH_TEXT
+    } else {
+        ROW_HEIGHT
+    };
 
     let deck_img_width = COLUMN_WIDTH * col_count + MARGIN;
 
@@ -63,7 +90,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
         }
     };
 
-    let deck_img_height = (cards_in_col + 1) * ROW_HEIGHT + MARGIN;
+    let deck_img_height = ROW_HEIGHT + (cards_in_col) * actual_row_height + MARGIN;
 
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
@@ -75,25 +102,27 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
         let slug = &slug_map[card];
 
         let i = i as u32;
-        let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+        let (col, row) = (i / cards_in_col, i % cards_in_col);
 
-        img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+        img.copy_from(
+            slug,
+            col * COLUMN_WIDTH + MARGIN,
+            ROW_HEIGHT + row * actual_row_height + MARGIN,
+        )?;
     }
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_pos_tracker = ordered_cards.len();
+        let mut sb_pos_tracker = ordered_cards.len() as u32;
 
         for sb in sideboards {
-            let (col, row) = (
-                sb_pos_tracker as u32 / cards_in_col,
-                sb_pos_tracker as u32 % cards_in_col + 1,
-            );
+            let (col, row) = (sb_pos_tracker / cards_in_col, sb_pos_tracker % cards_in_col);
+            let title_offset = if with_text { TEXT_BOX_HEIGHT } else { 0 };
 
             img.copy_from(
                 &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
                 col * COLUMN_WIDTH + MARGIN,
-                row * ROW_HEIGHT + MARGIN,
+                ROW_HEIGHT + title_offset + row * actual_row_height + MARGIN,
             )?;
             sb_pos_tracker += 1;
 
@@ -101,9 +130,13 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
                 .keys()
                 .map(|c| &slug_map[c])
             {
-                let i = sb_pos_tracker as u32;
-                let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
-                img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+                let i = sb_pos_tracker;
+                let (col, row) = (i / cards_in_col, i % cards_in_col);
+                img.copy_from(
+                    slug,
+                    col * COLUMN_WIDTH + MARGIN,
+                    ROW_HEIGHT + row * actual_row_height + MARGIN,
+                )?;
 
                 sb_pos_tracker += 1;
             }
@@ -114,7 +147,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, agent: &ureq::Agent) -> Resul
 }
 
 fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, agent);
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, false, agent);
 
     let class_cards = ordered_cards
         .iter()
@@ -195,7 +228,12 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-pub fn get_card_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicImage {
+pub fn get_card_slug(
+    card: &Card,
+    count: usize,
+    with_text: bool,
+    agent: &ureq::Agent,
+) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
@@ -208,8 +246,19 @@ pub fn get_card_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicI
         _ => (157, 157, 157),
     };
 
+    let slug_height = if with_text {
+        SLUG_HEIGHT_WITH_TEXT
+    } else {
+        CROP_HEIGHT
+    };
+
     // main canvas
-    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (10, 10, 10));
+    let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
+
+    if with_text {
+        let text_box = build_text_box(&(format!("{:#} {}", &card.card_type, card.text)));
+        img.copy_from(&text_box, 0, CROP_HEIGHT).ok();
+    }
 
     if let Err(e) = draw_crop_image(&mut img, card, agent) {
         eprintln!("Failed to get image of {}: {e}", card.name);
@@ -244,8 +293,8 @@ pub fn get_card_slug(card: &Card, count: usize, agent: &ureq::Agent) -> DynamicI
     );
 
     // font and size
-    let font = rusttype::Font::try_from_bytes(FONT_DATA).unwrap();
-    let scale = rusttype::Scale::uniform(40.0);
+    let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let scale = Scale::uniform(40.0);
 
     // card name
     drawing::draw_text_mut(
@@ -300,6 +349,7 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
 
 fn order_deck_and_get_slugs<'d>(
     deck: &'d Deck,
+    with_text: bool,
     agent: &ureq::Agent,
 ) -> (BTreeMap<&'d Card, usize>, HashMap<&'d Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
@@ -318,7 +368,7 @@ fn order_deck_and_get_slugs<'d>(
         .into_par_iter()
         .chain(ordered_sbs_cards.into_par_iter())
         .map(|(card, count)| {
-            let slug = get_card_slug(card, count, agent);
+            let slug = get_card_slug(card, count, with_text, agent);
             (card, slug)
         })
         .collect::<HashMap<_, _>>();
@@ -331,8 +381,8 @@ fn get_title_slug(title: &str, margin: i32) -> DynamicImage {
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
     // font and size
-    let font = rusttype::Font::try_from_bytes(FONT_DATA).unwrap();
-    let scale = rusttype::Scale::uniform(50.0);
+    let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let scale = Scale::uniform(50.0);
 
     let (_, th) = drawing::text_size(scale, &font, "E");
 
@@ -414,4 +464,64 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card, agent: &ureq::Agent) -> Res
     img.copy_from(&crop, CROP_WIDTH, 0)?;
 
     Ok(())
+}
+
+fn build_text_box(text: &str) -> DynamicImage {
+    let plain_font = Font::try_from_bytes(TEXT_PLAIN_FONT).unwrap();
+    let bold_font = Font::try_from_bytes(TEXT_BOLD_FONT).unwrap();
+    let italic_font = Font::try_from_bytes(TEXT_ITALIC_FONT).unwrap();
+    let bold_italic_font = Font::try_from_bytes(TEXT_BOLD_ITALIC_FONT).unwrap();
+
+    // main canvas.
+    let mut img = ImageBuffer::new(SLUG_WIDTH, TEXT_BOX_HEIGHT);
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(0, 0).of_size(SLUG_WIDTH, TEXT_BOX_HEIGHT),
+        Rgba([10, 10, 10, 255]),
+    );
+
+    let text_scale = Scale::uniform(20.0);
+    let space_advance = plain_font
+        .glyph(' ')
+        .scaled(text_scale)
+        .h_metrics()
+        .advance_width as i32;
+
+    let line_height = drawing::text_size(text_scale, &plain_font, "O").1 * 14 / 10;
+
+    let mut cursor = (15, 15);
+
+    for bx in get_boxes_and_glue(text) {
+        let font = match bx.style() {
+            TextStyle::Plain => &plain_font,
+            TextStyle::Bold => &bold_font,
+            TextStyle::Italic => &italic_font,
+            TextStyle::BoldItalic => &bold_italic_font,
+        };
+
+        let box_advance = drawing::text_size(text_scale, font, &bx.text()).0;
+
+        if SLUG_WIDTH as i32 - 20 <= cursor.0 + box_advance {
+            cursor = (15, cursor.1 + line_height);
+        }
+
+        drawing::draw_text_mut(
+            &mut img,
+            Rgba([255, 255, 255, 255]),
+            cursor.0,
+            cursor.1,
+            text_scale,
+            font,
+            &bx.text(),
+        );
+
+        cursor.0 += box_advance // imageproc trims end spaces.
+            + if bx.text().chars().last().is_some_and(|c| c.is_whitespace()) {
+                space_advance
+            } else {
+                0
+            };
+    }
+
+    DynamicImage::ImageRgba8(img)
 }

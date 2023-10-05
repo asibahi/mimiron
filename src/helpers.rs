@@ -140,7 +140,7 @@ pub(crate) struct TextPiece {
 }
 
 impl TextPiece {
-  pub  fn new(text: &str, style: TextStyle) -> Self {
+    pub fn new(text: &str, style: TextStyle) -> Self {
         TextPiece {
             text: text.into(),
             style,

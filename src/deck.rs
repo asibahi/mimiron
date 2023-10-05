@@ -3,6 +3,7 @@ use clap::Args;
 use colored::Colorize;
 use counter::Counter;
 use itertools::Itertools;
+use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
@@ -27,6 +28,7 @@ pub struct Deck {
     pub cards: Vec<Card>,
     // card_count: usize,
     pub sideboard_cards: Option<Vec<Sideboard>>,
+    invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
     fn compare_with(&self, other: &Self) -> DeckDifference {
@@ -139,7 +141,7 @@ impl Display for DeckDifference {
 }
 
 fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<Deck> {
-    agent
+    let mut deck = agent
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en_us")
         .query("code", code)
@@ -147,7 +149,38 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
         .call()
         .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
         .into_json::<Deck>()
-        .with_context(|| "parsing deck code json failed")
+        .with_context(|| "parsing deck code json failed")?;
+
+    // ugly hack for multiple class decks. Doesn't work if card id's don't exist in API.
+    // e.g. Works for Duels double class decks. Doesn't work with Core Brann when Brann is not in Core.
+    // Doesn't change the `class` field in the Deck.
+    let Some(ref invalid_ids) = deck.invalid_card_ids else {
+        return Ok(deck);
+    };
+    
+    eprint!("Code may contain invalid ID's. Double checking ...\r");
+    let x = invalid_ids
+        .par_iter()
+        .map(|id| {
+            let res = agent
+                .get(&format!(
+                    "https://us.api.blizzard.com/hearthstone/cards/{id}"
+                ))
+                .query("locale", "en_us")
+                .query("access_token", access_token)
+                .call()?
+                .into_json::<Card>()?;
+            Ok(res)
+        })
+        .collect::<Result<Vec<_>>>();
+
+    let Ok(mut other_cards) = x else {
+        return Ok(deck);
+    };
+
+    deck.cards.append(&mut other_cards);
+
+    Ok(deck)
 }
 
 #[derive(Args)]

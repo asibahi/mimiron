@@ -150,8 +150,9 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
         .into_json::<Deck>()
         .with_context(|| "parsing deck code json failed")?;
 
-    // ugly hack for multiple class decks. Doesn't work if card id's don't exist in API.
-    // e.g. Works for Duels double class decks. Doesn't work with Core Brann when Brann is not in Core.
+    // ugly hack for double class decks. Doesn't work if card id's don't exist in API.
+    // e.g. Works for Duels double class decks.   Doesn't work with Core Brann when Brann is not in Core.
+    // Current impl is only one extra API call _but_ doesn't work on potential future triple class decks.
     // Doesn't change the `class` field in the Deck.
     if let Some(ref invalid_ids) = deck.invalid_card_ids {
         eprint!("Code may contain invalid ID's. Double checking ...\r");

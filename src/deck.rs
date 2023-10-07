@@ -3,7 +3,6 @@ use clap::Args;
 use colored::Colorize;
 use counter::Counter;
 use itertools::Itertools;
-use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
@@ -154,31 +153,24 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
     // ugly hack for multiple class decks. Doesn't work if card id's don't exist in API.
     // e.g. Works for Duels double class decks. Doesn't work with Core Brann when Brann is not in Core.
     // Doesn't change the `class` field in the Deck.
-    let Some(ref invalid_ids) = deck.invalid_card_ids else {
-        return Ok(deck);
-    };
-    
-    eprint!("Code may contain invalid ID's. Double checking ...\r");
-    let x = invalid_ids
-        .par_iter()
-        .map(|id| {
-            let res = agent
-                .get(&format!(
-                    "https://us.api.blizzard.com/hearthstone/cards/{id}"
-                ))
-                .query("locale", "en_us")
-                .query("access_token", access_token)
-                .call()?
-                .into_json::<Card>()?;
-            Ok(res)
-        })
-        .collect::<Result<Vec<_>>>();
+    if let Some(ref invalid_ids) = deck.invalid_card_ids {
+        eprint!("Code may contain invalid ID's. Double checking ...\r");
 
-    let Ok(mut other_cards) = x else {
-        return Ok(deck);
-    };
+        let card_ids = invalid_ids.into_iter().join(",");
 
-    deck.cards.append(&mut other_cards);
+        let response = agent
+            .get("https://us.api.blizzard.com/hearthstone/deck")
+            .query("locale", "en_us")
+            .query("access_token", access_token)
+            .query("ids", &card_ids)
+            .call();
+
+        if let Ok(response) = response {
+            if let Ok(mut other_deck) = response.into_json::<Deck>() {
+                deck.cards.append(&mut other_deck.cards);
+            }
+        }
+    }
 
     Ok(deck)
 }

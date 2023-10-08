@@ -287,6 +287,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
 
     // Generate and save image
     if args.image {
+        eprintln!("Generating image for deck ..\r");
         let shape = match (args.single, args.wide, args.text) {
             (true, _, _) => deck_image::Shape::Single,
             (_, true, _) => deck_image::Shape::Wide,

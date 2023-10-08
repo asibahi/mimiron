@@ -89,7 +89,7 @@ There are a couple more compact formats: `--single`, `--wide`, and `--text`.
 mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --single
 ```
 
-![Deck image](README/deckimagesingle.png | height=200)
+<img src="README/deckimagesingle.png" height="400">
 
 ```sh
 mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --wide

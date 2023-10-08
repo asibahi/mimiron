@@ -72,6 +72,16 @@ If the deck has E.T.C., Band Manager, you can add the band members with `--addba
 mimiron deck --addband "Holy Maki Roll" "Melted Maker" "Anachronos" AAECAZ8FBsvEBf3EBcHGBYv+BY3+BdiBBgzJoATquQTavQTA4gSgmQXBxAXu6QWt7QWK/gXCggaOlQaGowYA 
 ```
 
+![Deck image](README/addbanddecklookup.png)
+
+This also handles Duels mode dual-class deck *mostly* correctly. (Doesn't edit the class name dynamically.)
+
+```sh
+mimiron deck AAEBAa6aBQ/6Du/3ApXNA5PQA6bvA/D2A+CLBMeyBN65BJzHBJbUBJ+kBeKkBc+eBrChBgAAAA==
+```
+
+![Deck image](README/duelsdecklookup.png)
+
 Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`:
 
 ```sh

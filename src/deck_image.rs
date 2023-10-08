@@ -257,12 +257,12 @@ pub fn get_card_slug(
             Class::Hunter => (44, 160, 44),
             Class::Mage => (23, 190, 207),
             Class::Paladin => (240, 189, 39),
-            Class::Priest => (199, 199, 199),
+            Class::Priest => (200, 200, 200),
             Class::Rogue => (127, 127, 127),
             Class::Shaman => (43, 125, 180),
             Class::Warlock => (162, 112, 153),
             Class::Warrior => (200, 21, 24),
-            _ => (169, 169, 169),
+            _ => (159, 159, 159),
         }
     };
 

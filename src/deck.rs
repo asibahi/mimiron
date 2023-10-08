@@ -157,7 +157,7 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
     if let Some(ref invalid_ids) = deck.invalid_card_ids {
         eprint!("Code may contain invalid ID's. Double checking ...\r");
 
-        let card_ids = invalid_ids.into_iter().join(",");
+        let card_ids = invalid_ids.iter().join(",");
 
         let response = agent
             .get("https://us.api.blizzard.com/hearthstone/deck")
@@ -287,7 +287,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
 
     // Generate and save image
     if args.image {
-        eprintln!("Generating image for deck ..\r");
+        eprint!("Generating image for deck ..\r");
         let shape = match (args.single, args.wide, args.text) {
             (true, _, _) => deck_image::Shape::Single,
             (_, true, _) => deck_image::Shape::Wide,

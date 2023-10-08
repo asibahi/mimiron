@@ -83,13 +83,25 @@ mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS
 
 (Yes, it looks like the [Hearthstone Top Decks](https://www.hearthstonetopdecks.com) format. I am a fan.)
 
-There are a couple more compact formats: `--single` and `--wide`.
+There are a couple more compact formats: `--single`, `--wide`, and `--text`.
+
+```sh
+mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --single
+```
+
+![Deck image](README/deckimagesingle.png | height=200)
 
 ```sh
 mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --wide
 ```
 
 ![Deck image](README/deckimagewide.png)
+
+```sh
+mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --text
+```
+
+![Deck image](README/deckimagetext.png)
 
 Compare two decks:
 

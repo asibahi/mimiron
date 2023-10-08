@@ -171,6 +171,8 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
                 deck.cards.append(&mut other_deck.cards);
             }
         }
+
+        eprint!("                                                   \r");
     }
 
     Ok(deck)

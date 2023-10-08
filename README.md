@@ -69,14 +69,13 @@ mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS
 If the deck has E.T.C., Band Manager, you can add the band members with `--addband` argument. The card names should be exact, or at least give a unique card. This gives you the updated deck code in the output.
 
 ```sh
-mimiron deck AAECAZ8FBsvEBf3EBcHGBYv+BY3+BdiBBgzJoATquQTavQTA4gSgmQXBxAXu6QWt7QWK/gXCggaOlQaGowYA --addband "Holy Maki Roll" "Melted Maker" "Anachronos"
+mimiron deck --addband "Holy Maki Roll" "Melted Maker" "Anachronos" AAECAZ8FBsvEBf3EBcHGBYv+BY3+BdiBBgzJoATquQTavQTA4gSgmQXBxAXu6QWt7QWK/gXCggaOlQaGowYA 
 ```
-
 
 Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`:
 
 ```sh
-mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image
+mimiron deck --image AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
 ```
 
 ![Deck image](README/deckimage.png)
@@ -86,27 +85,27 @@ mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS
 There are a couple more compact formats: `--single`, `--wide`, and `--text`.
 
 ```sh
-mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --single
+mimiron deck --image --single AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
 ```
 Image is rotated so it doesn't distort this page so much:
 ![Deck image](README/deckimagesingle.png)
 
 ```sh
-mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --wide
+mimiron deck --image --wide AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
 ```
 
 ![Deck image](README/deckimagewide.png)
 
 ```sh
-mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --text
+mimiron deck --image --text AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
 ```
 
 ![Deck image](README/deckimagetext.png)
 
-Compare two decks:
+Compare two decks with `--comp`:
 
 ```sh
-mimiron deck -c AAECAa0GCoSfBOWwBKi2BP/hBJfvBO+RBeKkBf3EBc/GBc2eBg+i6AOhtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYA AAECAa0GCKG2BKi2BOy6BO+RBc/GBc/2Bdj2Ba//BQv52wS43AS63ASGgwWkkQXgpAW7xwWm8QXt9wXjgAa4ngYA
+mimiron deck --comp AAECAa0GCoSfBOWwBKi2BP/hBJfvBO+RBeKkBf3EBc/GBc2eBg+i6AOhtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYA AAECAa0GCKG2BKi2BOy6BO+RBc/GBc/2Bdj2Ba//BQv52wS43AS63ASGgwWkkQXgpAW7xwWm8QXt9wXjgAa4ngYA
 ```
 
 ![Deck comparison in terminal](README/deckcompare.png)

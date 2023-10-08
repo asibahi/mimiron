@@ -88,8 +88,8 @@ There are a couple more compact formats: `--single`, `--wide`, and `--text`.
 ```sh
 mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --single
 ```
-
-<img src="README/deckimagesingle.png" height="400">
+Image is rotated so it doesn't distort this page so much:
+![Deck image](README/deckimagesingle.png)
 
 ```sh
 mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== --image --wide

@@ -281,7 +281,7 @@ pub fn get_card_slug(
     }
 
     if let Err(e) = draw_crop_image(&mut img, card, agent) {
-        eprintln!("Failed to get image of {}: {e}", card.name);
+        eprint!("Failed to get image of {}: {e}\r", card.name);
         drawing::draw_filled_rect_mut(
             &mut img,
             Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),

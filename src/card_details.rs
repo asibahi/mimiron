@@ -1,7 +1,11 @@
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashSet, fmt::Display, str::FromStr};
+use std::{
+    collections::HashSet,
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 
 #[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
@@ -10,10 +14,10 @@ pub enum Class {
     DeathKnight,
     DemonHunter,
     Druid,
-    Evoker,
+    // Evoker,
     Hunter,
     Mage,
-    Monk,
+    // Monk,
     Paladin,
     Priest,
     Rogue,
@@ -24,15 +28,15 @@ pub enum Class {
     Unknown,
 }
 impl Display for Class {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             Self::DeathKnight => "DeathKnight",
             Self::DemonHunter => "DemonHunter",
             Self::Druid => "Druid",
-            Self::Evoker => "Evoker",
+            // Self::Evoker => "Evoker",
             Self::Hunter => "Hunter",
             Self::Mage => "Mage",
-            Self::Monk => "Monk",
+            // Self::Monk => "Monk",
             Self::Paladin => "Paladin",
             Self::Priest => "Priest",
             Self::Rogue => "Rogue",
@@ -71,6 +75,25 @@ impl From<ClassData> for Class {
         value.id.into()
     }
 }
+impl Class {
+    pub(crate) fn color(&self) -> (u8, u8, u8) {
+        match self {
+            // colors from d0nkey.top
+            Self::DeathKnight => (108, 105, 154),
+            Self::DemonHunter => (37, 111, 61),
+            Self::Druid => (255, 127, 14),
+            Self::Hunter => (44, 160, 44),
+            Self::Mage => (23, 190, 207),
+            Self::Paladin => (240, 189, 39),
+            Self::Priest => (200, 200, 200),
+            Self::Rogue => (127, 127, 127),
+            Self::Shaman => (43, 125, 180),
+            Self::Warlock => (162, 112, 153),
+            Self::Warrior => (200, 21, 24),
+            _ => (169, 169, 169),
+        }
+    }
+}
 
 #[derive(Deserialize)]
 struct ClassData {
@@ -89,7 +112,7 @@ pub enum Rarity {
     Unknown,
 }
 impl Display for Rarity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let r = match self {
             Self::Common => "common".white(),
             Self::Free => "free".white(),
@@ -127,7 +150,7 @@ pub enum SpellSchool {
     Unknown,
 }
 impl Display for SpellSchool {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             Self::Arcane => "Arcane",
             Self::Fire => "Fire",
@@ -174,7 +197,7 @@ pub enum MinionType {
     Unknown,
 }
 impl Display for MinionType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let t = match self {
             Self::Undead => "Undead",
             Self::Murloc => "Murloc",
@@ -245,9 +268,9 @@ pub struct RuneCost {
 impl Display for RuneCost {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         (0..self.blood)
-            .map(|_| 'B')
-            .chain((0..self.frost).map(|_| 'F'))
-            .chain((0..self.unholy).map(|_| 'U'))
+            .map(|_| "B".red())
+            .chain((0..self.frost).map(|_| "F".blue()))
+            .chain((0..self.unholy).map(|_| "U".green()))
             .try_for_each(|c| write!(f, "{c}"))
     }
 }
@@ -275,7 +298,7 @@ pub enum CardType {
     Unknown,
 }
 impl Display for CardType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // f.alternate() is used for text boxes on images. Regular mode for console output.
         let colon = if f.alternate() { ":" } else { "" };
         match self {

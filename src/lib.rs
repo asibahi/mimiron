@@ -39,6 +39,11 @@ enum Commands {
     Token,
 }
 
+pub struct Api {
+    agent: ureq::Agent,
+    access_token: String,
+}
+
 pub fn run_cli() -> Result<()> {
     let args = Cli::parse();
 
@@ -50,11 +55,16 @@ pub fn run_cli() -> Result<()> {
     let access_token =
         authorization::get_access_token(&agent).with_context(|| "failed to get access token.")?;
 
+    let api = Api {
+        agent,
+        access_token,
+    };
+
     match args.command {
-        Commands::Card(args) => card::run(args, &access_token, &agent)?,
-        Commands::Deck(args) => deck::run(args, &access_token, &agent)?,
-        Commands::BG(args) => bg::run(args, &access_token, &agent)?,
-        Commands::Token => println!("{access_token}"),
+        Commands::Card(args) => card::run(args, &api)?,
+        Commands::Deck(args) => deck::run(args, &api)?,
+        Commands::BG(args) => bg::run(args, &api)?,
+        Commands::Token => println!("{}", api.access_token),
     }
 
     Ok(())

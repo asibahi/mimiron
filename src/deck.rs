@@ -9,7 +9,7 @@ use std::{collections::BTreeMap, fmt::Display};
 
 use crate::card::{get_cards_by_text, Card, CardArgs};
 use crate::card_details::Class;
-use crate::deck_image;
+use crate::{deck_image, Api};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -55,12 +55,12 @@ impl Display for Deck {
         let cards = self
             .cards
             .iter()
-            .collect::<Counter<_>>()
-            .into_iter()
-            .collect::<BTreeMap<_, _>>();
+            .fold(BTreeMap::<_, usize>::new(), |mut map, card| {
+                *map.entry(card).or_default() += 1;
+                map
+            });
 
         for (card, count) in cards {
-            // crate::card_image::get_slug(&card, count).ok();
             let count = if count == 1 {
                 String::new()
             } else {
@@ -71,14 +71,15 @@ impl Display for Deck {
 
         if let Some(sideboards) = &self.sideboard_cards {
             for sideboard in sideboards {
-                let sideboard_name = &sideboard.sideboard_card.name;
-                writeln!(f, "Sideboard of {sideboard_name}:")?;
+                writeln!(f, "Sideboard of {}:", sideboard.sideboard_card.name)?;
 
-                let cards = sideboard
-                    .cards_in_sideboard
-                    .iter()
-                    .collect::<Counter<_>>()
-                    .most_common_ordered();
+                let cards = sideboard.cards_in_sideboard.iter().fold(
+                    BTreeMap::<_, usize>::new(),
+                    |mut map, card| {
+                        *map.entry(card).or_default() += 1;
+                        map
+                    },
+                );
 
                 for (card, count) in cards {
                     let count = if count == 1 {
@@ -91,8 +92,7 @@ impl Display for Deck {
             }
         }
 
-        write!(f, "{code}")?;
-        Ok(())
+        write!(f, "{code}")
     }
 }
 
@@ -139,12 +139,13 @@ impl Display for DeckDifference {
     }
 }
 
-fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<Deck> {
-    let mut deck = agent
+fn deck_lookup(code: &str, api: &Api) -> Result<Deck> {
+    let mut deck = api
+        .agent
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en_us")
         .query("code", code)
-        .query("access_token", access_token)
+        .query("access_token", &api.access_token)
         .call()
         .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
         .into_json::<Deck>()
@@ -159,10 +160,11 @@ fn deck_lookup(code: &str, access_token: &str, agent: &ureq::Agent) -> Result<De
 
         let card_ids = invalid_ids.iter().join(",");
 
-        let response = agent
+        let response = api
+            .agent
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", "en_us")
-            .query("access_token", access_token)
+            .query("access_token", &api.access_token)
             .query("ids", &card_ids)
             .call();
 
@@ -228,9 +230,9 @@ pub struct DeckArgs {
     text: bool,
 }
 
-pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
+pub fn run(args: DeckArgs, api: &Api) -> Result<()> {
     // Get the main deck
-    let mut deck = deck_lookup(&args.code, access_token, agent)?;
+    let mut deck = deck_lookup(&args.code, api)?;
 
     // Add Band resolution.
     // Function WILL need to be updated if new sideboard cards are printed.
@@ -252,7 +254,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
         let band_ids = band
             .into_iter()
             .map(|name| {
-                get_cards_by_text(&CardArgs::for_name(name), access_token, agent)?
+                get_cards_by_text(&CardArgs::for_name(name), api)?
                     // Undocumented API Found by looking through playhearthstone.com card library
                     .map(|c| Ok(format!("{id}:{ETC_ID}", id = c.id)))
                     .next()
@@ -261,10 +263,11 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
             .collect::<Result<Vec<String>>>()?
             .join(",");
 
-        deck = agent
+        deck = api
+            .agent
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", "en_us")
-            .query("access_token", access_token)
+            .query("access_token", &api.access_token)
             .query("ids", &card_ids)
             .query("sideboardCards", &band_ids)
             .call()
@@ -280,7 +283,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {
-        let deck2 = deck_lookup(&code, access_token, agent)?;
+        let deck2 = deck_lookup(&code, api)?;
         let deck_diff = deck.compare_with(&deck2);
         println!("{deck_diff}");
     } else {
@@ -297,7 +300,7 @@ pub fn run(args: DeckArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
             _ => deck_image::Shape::Groups,
         };
 
-        let img = deck_image::get(&deck, shape, agent)?;
+        let img = deck_image::get(&deck, shape, &api.agent)?;
 
         let name = format!(
             "{} {} {}.png",

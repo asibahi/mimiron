@@ -9,8 +9,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::card_details::MinionType;
-use crate::helpers::prettify;
+use crate::{card_details::MinionType, helpers::prettify, Api};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -197,10 +196,7 @@ impl From<CardData> for Card {
         Self {
             id: c.id,
             name: c.name,
-            image: match &c.battlegrounds {
-                Some(bg) => bg.image.clone(),
-                _ => c.image,
-            },
+            image: c.battlegrounds.map_or(c.image, |bg| bg.image),
             card_type,
         }
     }
@@ -237,10 +233,11 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
-    let mut res = agent
+pub fn run(args: BGArgs, api: &Api) -> Result<()> {
+    let mut res = api
+        .agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", access_token)
+        .query("access_token", &api.access_token)
         .query("locale", "en_us")
         .query("gameMode", "battlegrounds");
 
@@ -304,7 +301,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                     let Some(id) = child_ids.iter().min() else {
                         break 'heropower;
                     };
-                    let Ok(res) = get_card_by_id(*id, access_token, agent) else {
+                    let Ok(res) = get_card_by_id(*id, api) else {
                         break 'heropower;
                     };
                     let res = textwrap::fill(
@@ -322,7 +319,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                     let Some(buddy_id) = buddy_id else {
                         break 'buddy;
                     };
-                    let Ok(res) = get_card_by_id(*buddy_id, access_token, agent) else {
+                    let Ok(res) = get_card_by_id(*buddy_id, api) else {
                         break 'buddy;
                     };
                     let res = textwrap::fill(
@@ -340,7 +337,7 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
                 upgrade_id: Some(id),
                 ..
             } => 'golden: {
-                let Ok(res) = get_card_by_id(*id, access_token, agent) else {
+                let Ok(res) = get_card_by_id(*id, api) else {
                     break 'golden;
                 };
 
@@ -376,21 +373,16 @@ pub fn run(args: BGArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> 
     Ok(())
 }
 
-fn get_card_by_id(
-    id: usize,
-    access_token: &str,
-    agent: &ureq::Agent,
-) -> Result<Card, anyhow::Error> {
-    let res = agent
+fn get_card_by_id(id: usize, api: &Api) -> Result<Card> {
+    let res = api
+        .agent
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
         .query("locale", "en_us")
         .query("gameMode", "battlegrounds")
-        .query("access_token", access_token)
-        .call()
-        .with_context(|| "call to card by id API failed")?
-        .into_json::<Card>()
-        .with_context(|| "parsing BG card search by id json failed")?;
+        .query("access_token", &api.access_token)
+        .call()?
+        .into_json::<Card>()?;
     Ok(res)
 }

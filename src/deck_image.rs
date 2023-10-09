@@ -247,24 +247,7 @@ pub fn get_card_slug(
     };
 
     // colors from d0nkey.top
-    let c_color = if card.class.is_empty() {
-        (169, 169, 169)
-    } else {
-        match &card.class.iter().next().unwrap() {
-            Class::DeathKnight => (108, 105, 154),
-            Class::DemonHunter => (37, 111, 61),
-            Class::Druid => (255, 127, 14),
-            Class::Hunter => (44, 160, 44),
-            Class::Mage => (23, 190, 207),
-            Class::Paladin => (240, 189, 39),
-            Class::Priest => (200, 200, 200),
-            Class::Rogue => (127, 127, 127),
-            Class::Shaman => (43, 125, 180),
-            Class::Warlock => (162, 112, 153),
-            Class::Warrior => (200, 21, 24),
-            _ => (159, 159, 159),
-        }
-    };
+    let c_color = card.class.iter().next().unwrap_or(&Class::Neutral).color();
 
     let slug_height = if with_text {
         SLUG_HEIGHT_WITH_TEXT

@@ -11,7 +11,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use crate::card_details::*;
+use crate::{card_details::*, Api};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -221,8 +221,8 @@ impl CardArgs {
     }
 }
 
-pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()> {
-    let cards = get_cards_by_text(&args, access_token, agent)?;
+pub fn run(args: CardArgs, api: &Api) -> Result<()> {
+    let cards = get_cards_by_text(&args, api)?;
 
     for card in cards {
         println!("{card:#}");
@@ -236,16 +236,16 @@ pub fn run(args: CardArgs, access_token: &str, agent: &ureq::Agent) -> Result<()
 
 pub(crate) fn get_cards_by_text<'c>(
     args: &'c CardArgs,
-    access_token: &str,
-    agent: &ureq::Agent,
+    api: &Api,
 ) -> Result<impl Iterator<Item = Card> + 'c> {
     let search_term = &args.name;
 
-    let res = agent
+    let res = api
+        .agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en_us")
         .query("textFilter", search_term)
-        .query("access_token", access_token)
+        .query("access_token", &api.access_token)
         .call()
         .with_context(|| "call to card search API failed")?
         .into_json::<CardSearchResponse>()

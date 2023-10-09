@@ -256,9 +256,9 @@ pub(crate) fn run(args: DeckArgs, api: &Api) -> Result<()> {
             .map(|name| {
                 get_cards_by_text(&CardArgs::for_name(name), api)?
                     // Undocumented API Found by looking through playhearthstone.com card library
-                    .map(|c| Ok(format!("{id}:{ETC_ID}", id = c.id)))
+                    .map(|c| format!("{id}:{ETC_ID}", id = c.id))
                     .next()
-                    .unwrap()
+                    .ok_or_else(|| anyhow!("Band found brown M&M's."))
             })
             .collect::<Result<Vec<String>>>()?
             .join(",");
@@ -293,10 +293,10 @@ pub(crate) fn run(args: DeckArgs, api: &Api) -> Result<()> {
     // Generate and save image
     if args.image {
         eprint!("Generating image for deck ..\r");
-        let shape = match (args.single, args.wide, args.text) {
-            (true, _, _) => deck_image::Shape::Single,
-            (_, true, _) => deck_image::Shape::Wide,
-            (_, _, true) => deck_image::Shape::WithText,
+        let shape = match args.single {
+            true => deck_image::Shape::Single,
+            _ if args.wide => deck_image::Shape::Wide,
+            _ if args.text => deck_image::Shape::WithText,
             _ => deck_image::Shape::Groups,
         };
 
@@ -312,15 +312,16 @@ pub(crate) fn run(args: DeckArgs, api: &Api) -> Result<()> {
             chrono::Local::now().format("%Y%m%d %H%M")
         );
 
-        let save_file = if let Some(p) = args.output {
-            p.join(name)
-        } else {
-            directories::UserDirs::new()
-                .ok_or(anyhow!("couldn't get user directories"))?
-                .download_dir()
-                .ok_or(anyhow!("couldn't get downloads directory"))?
-                .join(name)
-        };
+        let save_file = args
+            .output
+            .unwrap_or_else(|| {
+                directories::UserDirs::new()
+                    .expect("couldn't get user directories")
+                    .download_dir()
+                    .expect("couldn't get downloads directory")
+                    .to_path_buf()
+            })
+            .join(name);
 
         img.save(save_file)?;
     }

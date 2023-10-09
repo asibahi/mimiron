@@ -39,9 +39,10 @@ enum Commands {
     Token,
 }
 
-pub struct Api {
+struct Api<'a> {
     agent: ureq::Agent,
-    access_token: String,
+    access_token: &'a str,
+    locale: &'a str,
 }
 
 pub fn run_cli() -> Result<()> {
@@ -57,14 +58,15 @@ pub fn run_cli() -> Result<()> {
 
     let api = Api {
         agent,
-        access_token,
+        access_token: &access_token,
+        locale: "es_us",
     };
 
     match args.command {
         Commands::Card(args) => card::run(args, &api)?,
         Commands::Deck(args) => deck::run(args, &api)?,
         Commands::BG(args) => bg::run(args, &api)?,
-        Commands::Token => println!("{}", api.access_token),
+        Commands::Token => println!("{}", access_token),
     }
 
     Ok(())

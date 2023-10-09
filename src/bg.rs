@@ -233,12 +233,12 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub fn run(args: BGArgs, api: &Api) -> Result<()> {
+pub(crate) fn run(args: BGArgs, api: &Api) -> Result<()> {
     let mut res = api
         .agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", &api.access_token)
-        .query("locale", "en_us")
+        .query("access_token", api.access_token)
+        .query("locale", api.locale)
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &args.name {
@@ -379,9 +379,9 @@ fn get_card_by_id(id: usize, api: &Api) -> Result<Card> {
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
-        .query("locale", "en_us")
+        .query("locale", api.locale)
         .query("gameMode", "battlegrounds")
-        .query("access_token", &api.access_token)
+        .query("access_token", api.access_token)
         .call()?
         .into_json::<Card>()?;
     Ok(res)

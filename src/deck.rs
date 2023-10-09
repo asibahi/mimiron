@@ -143,9 +143,9 @@ fn deck_lookup(code: &str, api: &Api) -> Result<Deck> {
     let mut deck = api
         .agent
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", "en_us")
+        .query("locale", api.locale)
         .query("code", code)
-        .query("access_token", &api.access_token)
+        .query("access_token", api.access_token)
         .call()
         .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
         .into_json::<Deck>()
@@ -163,8 +163,8 @@ fn deck_lookup(code: &str, api: &Api) -> Result<Deck> {
         let response = api
             .agent
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", "en_us")
-            .query("access_token", &api.access_token)
+            .query("locale", api.locale)
+            .query("access_token", api.access_token)
             .query("ids", &card_ids)
             .call();
 
@@ -230,7 +230,7 @@ pub struct DeckArgs {
     text: bool,
 }
 
-pub fn run(args: DeckArgs, api: &Api) -> Result<()> {
+pub(crate) fn run(args: DeckArgs, api: &Api) -> Result<()> {
     // Get the main deck
     let mut deck = deck_lookup(&args.code, api)?;
 
@@ -266,8 +266,8 @@ pub fn run(args: DeckArgs, api: &Api) -> Result<()> {
         deck = api
             .agent
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", "en_us")
-            .query("access_token", &api.access_token)
+            .query("locale", api.locale)
+            .query("access_token", api.access_token)
             .query("ids", &card_ids)
             .query("sideboardCards", &band_ids)
             .call()

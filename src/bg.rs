@@ -166,42 +166,9 @@ impl Display for Card {
 }
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
-        let card_type = if let Some(bg) = &c.battlegrounds {
-            if bg.hero {
-                BGCardType::Hero {
-                    armor: c.armor.unwrap_or_default(),
-                    buddy_id: bg.companion_id.filter(|x| *x != 0),
-                    child_ids: c.child_ids.unwrap_or_default(),
-                }
-            } else if bg.quest {
-                BGCardType::Quest { text: c.text }
-            } else if bg.reward {
-                BGCardType::Reward { text: c.text }
-            } else if bg.tier.is_some() {
-                BGCardType::Minion {
-                    tier: bg.tier.unwrap_or_default(),
-                    attack: c.attack.unwrap_or_default(),
-                    health: c.health.unwrap_or_default(),
-                    text: c.text,
-                    minion_types: c
-                        .minion_type_id
-                        .into_iter()
-                        .chain(c.multi_type_ids.into_iter().flatten())
-                        .map(MinionType::from)
-                        .collect(),
-                    upgrade_id: bg.upgrade_id,
-                }
-            } else if c.card_type_id == 43 {
-                BGCardType::Anomaly { text: c.text }
-            } else {
-                BGCardType::HeroPower {
-                    text: c.text,
-                    cost: c.mana_cost,
-                }
-            }
-        } else {
-            BGCardType::Minion {
-                tier: 1,
+        let card_type = match &c.battlegrounds {
+            Some(bg) if bg.tier.is_some() => BGCardType::Minion {
+                tier: bg.tier.unwrap_or_default(),
                 attack: c.attack.unwrap_or_default(),
                 health: c.health.unwrap_or_default(),
                 text: c.text,
@@ -211,8 +178,20 @@ impl From<CardData> for Card {
                     .chain(c.multi_type_ids.into_iter().flatten())
                     .map(MinionType::from)
                     .collect(),
-                upgrade_id: None,
-            }
+                upgrade_id: bg.upgrade_id,
+            },
+            Some(bg) if bg.hero => BGCardType::Hero {
+                armor: c.armor.unwrap_or_default(),
+                buddy_id: bg.companion_id.filter(|x| *x != 0),
+                child_ids: c.child_ids.unwrap_or_default(),
+            },
+            Some(bg) if bg.quest => BGCardType::Quest { text: c.text },
+            Some(bg) if bg.reward => BGCardType::Reward { text: c.text },
+            _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },
+            _ => BGCardType::HeroPower {
+                text: c.text,
+                cost: c.mana_cost,
+            },
         };
 
         Self {

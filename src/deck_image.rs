@@ -9,7 +9,7 @@ use crate::{
     card::Card,
     card_details::{Class, Rarity},
     deck::Deck,
-    helpers::{get_boxes_and_glue, TextStyle},
+    helpers::{get_boxes_and_glue, TextStyle, Thusable},
 };
 
 //  Numbers based on the crops provided by Blizzard API
@@ -324,11 +324,7 @@ pub fn get_card_slug(
     );
 
     // card count
-    let count = if matches!(card.rarity, Rarity::Legendary) && count == 1 {
-        String::new()
-    } else {
-        count.to_string()
-    };
+    let count = (count > 1 || card.rarity != Rarity::Legendary).thus_or_default(count.to_string());
     let (tw, _) = drawing::text_size(scale, &font, &count);
     drawing::draw_text_mut(
         &mut img,

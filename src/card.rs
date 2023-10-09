@@ -11,7 +11,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use crate::{card_details::*, Api};
+use crate::{card_details::*, helpers::prettify, Api};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -109,7 +109,7 @@ impl Display for Card {
         };
 
         let set = self.card_set;
-        let text = crate::helpers::prettify(&self.text);
+        let text = prettify(&self.text);
         let text = textwrap::fill(
             &text,
             textwrap::Options::new(textwrap::termwidth() - 10)

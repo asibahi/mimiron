@@ -102,7 +102,7 @@ struct ClassData {
     // name: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Rarity {
     Legendary,
     Epic,

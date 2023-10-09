@@ -7,9 +7,13 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
 
-use crate::card::{get_cards_by_text, Card, CardArgs};
-use crate::card_details::Class;
-use crate::{deck_image, Api};
+use crate::{
+    card::{get_cards_by_text, Card, CardArgs},
+    card_details::Class,
+    deck_image,
+    helpers::Thusable,
+    Api,
+};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -61,11 +65,7 @@ impl Display for Deck {
             });
 
         for (card, count) in cards {
-            let count = if count == 1 {
-                String::new()
-            } else {
-                format!("{count}x")
-            };
+            let count = (count > 1).thus_or_default(format!("{count}x"));
             writeln!(f, "{count:>4} {card}")?;
         }
 
@@ -82,11 +82,7 @@ impl Display for Deck {
                 );
 
                 for (card, count) in cards {
-                    let count = if count == 1 {
-                        String::new()
-                    } else {
-                        format!("{count}x")
-                    };
+                    let count = (count > 1).thus_or_default(format!("{count}x"));
                     writeln!(f, "{count:>4} {card}")?;
                 }
             }
@@ -108,31 +104,19 @@ pub struct DeckDifference {
 impl Display for DeckDifference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (card, count) in &self.shared_cards.iter().collect::<BTreeMap<_, _>>() {
-            let count = if **count == 1 {
-                String::new()
-            } else {
-                format!("{count}x")
-            };
+            let count = (**count > 1).thus_or_default(format!("{count}x"));
             writeln!(f, "{count:>4} {card}")?;
         }
 
         writeln!(f, "\n{}", self.deck1_code)?;
         for (card, count) in &self.deck1_uniques.iter().collect::<BTreeMap<_, _>>() {
-            let count = if **count == 1 {
-                String::new()
-            } else {
-                format!("{count}x")
-            };
+            let count = (**count > 1).thus_or_default(format!("{count}x"));
             writeln!(f, "{}{count:>3} {card}", "+".green())?;
         }
 
         writeln!(f, "\n{}", self.deck2_code)?;
         for (card, count) in &self.deck2_uniques.iter().collect::<BTreeMap<_, _>>() {
-            let count = if **count == 1 {
-                String::new()
-            } else {
-                format!("{count}x")
-            };
+            let count = (**count > 1).thus_or_default(format!("{count}x"));
             writeln!(f, "{}{count:>3} {card}", "-".red())?;
         }
         Ok(())

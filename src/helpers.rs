@@ -277,3 +277,21 @@ mod traverse_tests {
         Ok(())
     }
 }
+
+// ====================
+// Bool extension
+// ====================
+
+pub(crate) trait Thusable {
+    fn thus_or_default<T: Default>(&self, input: T) -> T;
+}
+
+impl Thusable for bool {
+    fn thus_or_default<T: Default>(&self, input: T) -> T {
+        if *self {
+            input
+        } else {
+            T::default()
+        }
+    }
+}

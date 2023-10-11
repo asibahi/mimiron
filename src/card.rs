@@ -10,6 +10,7 @@ use std::{
     fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
 };
+use unicode_width::UnicodeWidthStr;
 
 use crate::{card_details::*, helpers::prettify, Api};
 
@@ -100,6 +101,8 @@ impl Ord for Card {
 }
 impl Display for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let padding = 25_usize.saturating_sub(self.name.as_str().width());
+
         let name = self.name.bold();
         let cost = self.cost;
 
@@ -125,7 +128,8 @@ impl Display for Card {
 
         write!(
             f,
-            "{name:25} {rarity} {class} {runes}{cost} mana {card_info}."
+            "{name}{:padding$} {rarity} {class} {runes}{cost} mana {card_info}.",
+            ""
         )?;
 
         if f.alternate() {

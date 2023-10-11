@@ -8,6 +8,7 @@ use std::{
     fmt::{self, Display},
     str::FromStr,
 };
+use unicode_width::UnicodeWidthStr;
 
 use crate::{card_details::MinionType, helpers::prettify, Api};
 
@@ -150,17 +151,18 @@ pub struct Card {
 }
 impl Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let padding = 20_usize.saturating_sub(self.name.as_str().width());
         let name = &self.name.bold();
 
         let card_info = &self.card_type;
 
-        if f.alternate() {
-            write!(f, "{name:20} {card_info:#}")?;
-        } else {
-            write!(f, "{name:20} {card_info}")?;
-        }
+        write!(f, "{name}{:padding$} ", "")?;
 
-        Ok(())
+        if f.alternate() {
+            write!(f, "{card_info:#}")
+        } else {
+            write!(f, "{card_info}")
+        }
     }
 }
 impl From<CardData> for Card {

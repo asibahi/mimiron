@@ -14,7 +14,7 @@ use crate::{card_details::MinionType, helpers::prettify, Api};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardData {
+struct CardData {
     // Unique identifier
     id: usize,
     // slug: String,
@@ -33,7 +33,7 @@ pub struct CardData {
     // Additional info
     minion_type_id: Option<u8>,
     multi_type_ids: Option<Vec<u8>>,
-    battlegrounds: Option<BattlegroundsData>,
+    battlegrounds: Option<BGData>,
     child_ids: Option<Vec<usize>>,
 
     // Flavor
@@ -44,7 +44,7 @@ pub struct CardData {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct BattlegroundsData {
+struct BGData {
     hero: bool,
     quest: bool,
     reward: bool,
@@ -168,8 +168,12 @@ impl Display for Card {
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         let card_type = match &c.battlegrounds {
-            Some(bg) if bg.tier.is_some() => BGCardType::Minion {
-                tier: bg.tier.unwrap_or_default(),
+            Some(BGData {
+                tier: Some(tier),
+                upgrade_id,
+                ..
+            }) => BGCardType::Minion {
+                tier: *tier,
                 attack: c.attack.unwrap_or_default(),
                 health: c.health.unwrap_or_default(),
                 text: c.text,
@@ -179,7 +183,7 @@ impl From<CardData> for Card {
                     .chain(c.multi_type_ids.into_iter().flatten())
                     .map(MinionType::from)
                     .collect(),
-                upgrade_id: bg.upgrade_id,
+                upgrade_id: *upgrade_id,
             },
             Some(bg) if bg.hero => BGCardType::Hero {
                 armor: c.armor.unwrap_or_default(),
@@ -206,7 +210,7 @@ impl From<CardData> for Card {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardSearchResponse {
+struct CardSearchResponse {
     cards: Vec<Card>,
     card_count: usize,
 }

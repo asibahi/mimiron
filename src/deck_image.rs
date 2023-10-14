@@ -228,12 +228,7 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-pub fn get_card_slug(
-    card: &Card,
-    count: usize,
-    with_text: bool,
-    agent: &ureq::Agent,
-) -> DynamicImage {
+fn get_card_slug(card: &Card, count: usize, with_text: bool, agent: &ureq::Agent) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;

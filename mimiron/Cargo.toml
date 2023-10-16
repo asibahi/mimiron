@@ -1,5 +1,5 @@
 [package]
-name = "mimiron_lib"
+name = "mimiron"
 version = "0.3.0"
 edition = "2021"
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]

@@ -7,7 +7,7 @@ description = "A CLI application to query Blizzard Hearthstone API"
 license = "MIT"
 
 [dependencies]
-mimiron_lib = { path = "../mimiron_lib" }
+mimiron = { path = "../mimiron" }
 
 [[bin]]
 name = "mimiron"

@@ -7,7 +7,7 @@ description = "A Discord bot to query Blizzard Hearthstone API"
 license = "MIT"
 
 [dependencies]
-mimiron_lib = { path = "../mimiron_lib" }
+mimiron = { path = "../mimiron" }
 
 [[bin]]
 name = "m1m1r0n"

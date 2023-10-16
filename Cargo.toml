@@ -2,3 +2,4 @@
 
 resolver = "2"
 members = ["mimiron", "mimiron_cli", "mimiron_bot"]
+default-members = ["mimiron", "mimiron_cli"]

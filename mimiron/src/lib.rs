@@ -59,7 +59,7 @@ pub fn run_cli() -> Result<()> {
     let api = Api {
         agent,
         access_token: &access_token,
-        locale: "es_us",
+        locale: "en_us",
     };
 
     match args.command {

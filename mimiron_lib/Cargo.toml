@@ -3,7 +3,7 @@ name = "mimiron_lib"
 version = "0.3.0"
 edition = "2021"
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
-description = "A CLI application to query Blizzard Hearthstone API"
+description = "A library to query Blizzard Hearthstone API"
 license = "MIT"
 
 [dependencies]

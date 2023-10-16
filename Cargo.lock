@@ -598,8 +598,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mimiron_bot"
+version = "0.1.0"
+dependencies = [
+ "mimiron_lib",
+]
+
+[[package]]
 name = "mimiron_cli"
-version = "0.3.1"
+version = "0.3.0"
 dependencies = [
  "mimiron_lib",
 ]

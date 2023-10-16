@@ -1,7 +1,4 @@
 [workspace]
 
 resolver = "2"
-members = [
-	"mimiron_lib",
-	"mimiron_cli",
-]
+members = ["mimiron_lib", "mimiron_cli", "mimiron_bot"]

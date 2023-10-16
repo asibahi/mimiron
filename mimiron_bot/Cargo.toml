@@ -1,14 +1,14 @@
 [package]
-name = "mimiron_cli"
-version = "0.3.0"
+name = "mimiron_bot"
+version = "0.1.0"
 edition = "2021"
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
-description = "A CLI application to query Blizzard Hearthstone API"
+description = "A Discord bot to query Blizzard Hearthstone API"
 license = "MIT"
 
 [dependencies]
 mimiron_lib = { path = "../mimiron_lib" }
 
 [[bin]]
-name = "mimiron"
+name = "m1m1r0n"
 path = "src/main.rs"

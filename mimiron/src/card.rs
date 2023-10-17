@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use clap::Args;
 use colored::Colorize;
 use eitherable::Eitherable;
 use itertools::Itertools;
@@ -12,7 +11,7 @@ use std::{
 };
 use unicode_width::UnicodeWidthStr;
 
-use crate::{card_details::*, helpers::prettify, Api};
+use crate::{card_details::*, helpers::prettify, ApiHandle};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -197,59 +196,34 @@ struct CardSearchResponse {
     card_count: usize,
 }
 
-#[derive(Args)]
-pub struct CardArgs {
-    /// Text to search for
-    name: String,
-
-    /// Include text inside text boxes and flavor text
-    #[arg(short, long)]
-    text: bool,
-
-    /// Include reprints
-    #[arg(short, long)]
-    reprints: bool,
-
-    /// Print image links
-    #[arg(short, long)]
-    image: bool,
+pub struct SearchOptions {
+    search_term: String,
+    with_text: bool,
+    include_reprints: bool,
 }
-impl CardArgs {
-    pub(crate) fn for_name(name: String) -> Self {
+
+impl SearchOptions {
+    pub fn new(search_term: String, with_text: bool, include_reprints: bool) -> Self {
         Self {
-            name,
-            text: false,
-            image: false,
-            reprints: false,
+            search_term,
+            with_text,
+            include_reprints,
         }
     }
 }
 
-pub(crate) fn run(args: CardArgs, api: &Api) -> Result<()> {
-    let cards = get_cards_by_text(&args, api)?;
-
-    for card in cards {
-        println!("{card:#}");
-        if args.image {
-            println!("\tImage: {}", card.image);
-        }
-    }
-
-    Ok(())
-}
-
-pub(crate) fn get_cards_by_text<'c>(
-    args: &'c CardArgs,
-    api: &Api,
+pub fn get<'c>(
+    opts: &'c SearchOptions,
+    api: &ApiHandle,
 ) -> Result<impl Iterator<Item = Card> + 'c> {
-    let search_term = &args.name;
+    let search_term = &opts.search_term;
 
     let res = api
         .agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", api.locale)
+        .query("locale", &api.locale)
         .query("textFilter", search_term)
-        .query("access_token", api.access_token)
+        .query("access_token", &api.access_token)
         .call()
         .with_context(|| "call to card search API failed")?
         .into_json::<CardSearchResponse>()
@@ -266,9 +240,11 @@ pub(crate) fn get_cards_by_text<'c>(
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
-        .filter(move |c| args.text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
+        .filter(move |c| {
+            opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())
+        })
         // cards have copies in different sets
-        .unique_by(|c| args.reprints.either(c.id, c.name.clone()))
+        .unique_by(|c| opts.include_reprints.either(c.id, c.name.clone()))
         .peekable();
 
     if cards.peek().is_none() {

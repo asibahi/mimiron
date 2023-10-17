@@ -1,19 +1,14 @@
 use anyhow::{anyhow, Context, Result};
-use clap::Args;
 use colored::Colorize;
 use counter::Counter;
+use image::DynamicImage;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
 
-use crate::{
-    card::{get_cards_by_text, Card, CardArgs},
-    card_details::Class,
-    deck_image,
-    helpers::Thusable,
-    Api,
-};
+pub use crate::deck_image::ImageOptions;
+use crate::{card::Card, card_details::Class, deck_image, helpers::Thusable, ApiHandle};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +29,7 @@ pub struct Deck {
     invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
-    fn compare_with(&self, other: &Self) -> DeckDifference {
+    pub fn compare_with(&self, other: &Self) -> DeckDifference {
         let counter1 = self.cards.clone().into_iter().collect::<Counter<_>>();
         let counter2 = other.cards.clone().into_iter().collect::<Counter<_>>();
 
@@ -123,13 +118,13 @@ impl Display for DeckDifference {
     }
 }
 
-fn deck_lookup(code: &str, api: &Api) -> Result<Deck> {
+pub fn lookup(code: &str, api: &ApiHandle) -> Result<Deck> {
     let mut deck = api
         .agent
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", api.locale)
+        .query("locale", &api.locale)
         .query("code", code)
-        .query("access_token", api.access_token)
+        .query("access_token", &api.access_token)
         .call()
         .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
         .into_json::<Deck>()
@@ -147,8 +142,8 @@ fn deck_lookup(code: &str, api: &Api) -> Result<Deck> {
         let response = api
             .agent
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", api.locale)
-            .query("access_token", api.access_token)
+            .query("locale", &api.locale)
+            .query("access_token", &api.access_token)
             .query("ids", &card_ids)
             .call();
 
@@ -164,151 +159,50 @@ fn deck_lookup(code: &str, api: &Api) -> Result<Deck> {
     Ok(deck)
 }
 
-#[derive(Args)]
-pub struct DeckArgs {
-    /// Deck code to parse
-    code: String,
-
-    /// Compare with a second deck
-    #[arg(short, long, value_name("DECK2"))]
-    comp: Option<String>,
-
-    /// Add Sideboard cards for E.T.C., Band Manager if the deck code lacks them. Make sure card names are exact.
-    #[arg(
-        short,
-        long("addband"),
-        value_name("BAND_MEMBER"),
-        num_args(3),
-        conflicts_with("comp")
-    )]
-    band: Option<Vec<String>>,
-
-    /// Override format/game mode provided by code (For Twist, Duels, Tavern Brawl, etc.)
-    #[arg(short, long)]
-    mode: Option<String>,
-
-    /// Save deck image. Defaults to your downloads folder unless --output is set
-    #[arg(short, long, conflicts_with("comp"))]
-    image: bool,
-
-    /// Choose deck image output.
-    #[arg(short, long, requires("image"))]
-    output: Option<std::path::PathBuf>,
-
-    /// Format the deck in one column. Most compact horizontally.
-    #[arg(short, long, requires("image"))]
-    single: bool,
-
-    /// Format the deck in three columns. Most compact vertically.
-    #[arg(short, long, requires("image"), conflicts_with("single"))]
-    wide: bool,
-
-    /// Similar to Wide Format but with card text added.
-    #[arg(
-        short,
-        long,
-        requires("image"),
-        conflicts_with("single"),
-        conflicts_with("wide")
-    )]
-    text: bool,
-}
-
-pub(crate) fn run(args: DeckArgs, api: &Api) -> Result<()> {
-    // Get the main deck
-    let mut deck = deck_lookup(&args.code, api)?;
-
-    // Add Band resolution.
+pub fn add_band(deck: &mut Deck, band: Vec<String>, api: &ApiHandle) -> Result<()> {
     // Function WILL need to be updated if new sideboard cards are printed.
-    if let Some(band) = args.band {
-        // Constants that might change should ETC be added to core.
-        const ETC_NAME: &str = "E.T.C., Band Manager";
-        const ETC_ID: usize = 90749;
 
-        if !deck.cards.iter().any(|c| c.id == ETC_ID) {
-            return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
-        }
+    // Constants that might change should ETC be added to core.
+    const ETC_NAME: &str = "E.T.C., Band Manager";
+    const ETC_ID: usize = 90749;
 
-        if deck.sideboard_cards.is_some() {
-            return Err(anyhow!("Deck already has a Sideboard."));
-        }
-
-        let card_ids = deck.cards.into_iter().map(|c| c.id).join(",");
-
-        let band_ids = band
-            .into_iter()
-            .map(|name| {
-                get_cards_by_text(&CardArgs::for_name(name), api)?
-                    // Undocumented API Found by looking through playhearthstone.com card library
-                    .map(|c| format!("{id}:{ETC_ID}", id = c.id))
-                    .next()
-                    .ok_or_else(|| anyhow!("Band found brown M&M's."))
-            })
-            .collect::<Result<Vec<String>>>()?
-            .join(",");
-
-        deck = api
-            .agent
-            .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", api.locale)
-            .query("access_token", api.access_token)
-            .query("ids", &card_ids)
-            .query("sideboardCards", &band_ids)
-            .call()
-            .with_context(|| "call to deck API by card ids failed.")?
-            .into_json::<Deck>()
-            .with_context(|| "parsing deck json failed")?;
+    if !deck.cards.iter().any(|c| c.id == ETC_ID) {
+        return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
     }
 
-    // Deck format/mode override
-    if let Some(format) = args.mode {
-        deck.format = format;
+    if deck.sideboard_cards.is_some() {
+        return Err(anyhow!("Deck already has a Sideboard."));
     }
 
-    // Deck compare and/or printing
-    if let Some(code) = args.comp {
-        let deck2 = deck_lookup(&code, api)?;
-        let deck_diff = deck.compare_with(&deck2);
-        println!("{deck_diff}");
-    } else {
-        println!("{deck}");
-    }
+    let card_ids = deck.cards.iter().map(|c| c.id).join(",");
 
-    // Generate and save image
-    if args.image {
-        eprint!("Generating image for deck ..\r");
-        let shape = match args.single {
-            true => deck_image::Shape::Single,
-            _ if args.wide => deck_image::Shape::Wide,
-            _ if args.text => deck_image::Shape::WithText,
-            _ => deck_image::Shape::Groups,
-        };
+    let band_ids = band
+        .into_iter()
+        .map(|name| {
+            crate::card::get(&crate::card::SearchOptions::new(name, false, false), api)?
+                // Undocumented API Found by looking through playhearthstone.com card library
+                .map(|c| format!("{id}:{ETC_ID}", id = c.id))
+                .next()
+                .ok_or_else(|| anyhow!("Band found brown M&M's."))
+        })
+        .collect::<Result<Vec<String>>>()?
+        .join(",");
 
-        let img = deck_image::get(&deck, shape, &api.agent)?;
-
-        let name = format!(
-            "{} {} {}.png",
-            deck.class,
-            deck.format
-                .chars()
-                .filter_map(|c| c.is_alphanumeric().then(|| c.to_ascii_uppercase()))
-                .collect::<String>(),
-            chrono::Local::now().format("%Y%m%d %H%M")
-        );
-
-        let save_file = args
-            .output
-            .unwrap_or_else(|| {
-                directories::UserDirs::new()
-                    .expect("couldn't get user directories")
-                    .download_dir()
-                    .expect("couldn't get downloads directory")
-                    .to_path_buf()
-            })
-            .join(name);
-
-        img.save(save_file)?;
-    }
+    *deck = api
+        .agent
+        .get("https://us.api.blizzard.com/hearthstone/deck")
+        .query("locale", &api.locale)
+        .query("access_token", &api.access_token)
+        .query("ids", &card_ids)
+        .query("sideboardCards", &band_ids)
+        .call()
+        .with_context(|| "call to deck API by card ids failed.")?
+        .into_json::<Deck>()
+        .with_context(|| "parsing deck json failed")?;
 
     Ok(())
+}
+
+pub fn get_image(deck: &Deck, opts: ImageOptions, api: &ApiHandle) -> Result<DynamicImage> {
+    deck_image::get(deck, opts, &api.agent)
 }

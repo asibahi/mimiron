@@ -34,7 +34,7 @@ const TEXT_BOLD_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Medium.ttf")
 const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf");
 const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
 
-pub enum Shape {
+pub enum ImageOptions {
     // Each group in its own column. (HS Top Decks)
     Groups,
 
@@ -48,12 +48,12 @@ pub enum Shape {
     WithText,
 }
 
-pub fn get(deck: &Deck, shape: Shape, agent: &ureq::Agent) -> Result<DynamicImage> {
+pub fn get(deck: &Deck, shape: ImageOptions, agent: &ureq::Agent) -> Result<DynamicImage> {
     match shape {
-        Shape::Groups => img_groups_format(deck, agent),
-        Shape::Wide => img_columns_format(deck, 3, false, agent),
-        Shape::Single => img_columns_format(deck, 1, false, agent),
-        Shape::WithText => img_columns_format(deck, 3, true, agent),
+        ImageOptions::Groups => img_groups_format(deck, agent),
+        ImageOptions::Wide => img_columns_format(deck, 3, false, agent),
+        ImageOptions::Single => img_columns_format(deck, 1, false, agent),
+        ImageOptions::WithText => img_columns_format(deck, 3, true, agent),
     }
 }
 

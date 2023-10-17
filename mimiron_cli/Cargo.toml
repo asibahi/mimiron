@@ -8,6 +8,10 @@ license = "MIT"
 
 [dependencies]
 mimiron = { path = "../mimiron" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+directories = "5.0"
+chrono = "0.4.26"
 
 [[bin]]
 name = "mimiron"

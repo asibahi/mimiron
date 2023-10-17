@@ -1,16 +1,14 @@
 use anyhow::{anyhow, Context, Result};
-use clap::{ArgGroup, Args};
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
     collections::HashSet,
     fmt::{self, Display},
-    str::FromStr,
 };
 use unicode_width::UnicodeWidthStr;
 
-use crate::{card_details::MinionType, helpers::prettify, Api};
+use crate::{card_details::MinionType, helpers::prettify, ApiHandle};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -215,47 +213,49 @@ struct CardSearchResponse {
     card_count: usize,
 }
 
-#[derive(Args)]
-#[command(group = ArgGroup::new("search").required(true).multiple(true))]
-pub struct BGArgs {
-    /// Text to search for
-    #[arg(group = "search")]
-    name: Option<String>,
-
-    /// Search by Minion Battlegrounds tier
-    #[arg(short, long, group = "search", value_parser = clap::value_parser!(u8).range(1..=7))]
+pub struct SearchOptions {
+    search_term: Option<String>,
     tier: Option<u8>,
-
-    // Search by Minion type
-    #[arg(short = 'T', long = "type", group = "search", value_parser = MinionType::from_str)]
     minion_type: Option<MinionType>,
-
-    /// Include text inside text boxes.
-    #[arg(long)]
-    text: bool,
-
-    /// Print image links.
-    #[arg(short, long)]
-    image: bool,
+    with_text: bool,
 }
 
-pub(crate) fn run(args: BGArgs, api: &Api) -> Result<()> {
+impl SearchOptions {
+    pub fn new(
+        search_term: Option<String>,
+        tier: Option<u8>,
+        minion_type: Option<MinionType>,
+        with_text: bool,
+    ) -> Self {
+        Self {
+            search_term,
+            tier,
+            minion_type,
+            with_text,
+        }
+    }
+}
+
+pub fn get<'c>(
+    opts: &'c SearchOptions,
+    api: &ApiHandle,
+) -> Result<impl Iterator<Item = Card> + 'c> {
     let mut res = api
         .agent
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", api.access_token)
-        .query("locale", api.locale)
+        .query("access_token", &api.access_token)
+        .query("locale", &api.locale)
         .query("gameMode", "battlegrounds");
 
-    if let Some(t) = &args.name {
+    if let Some(t) = &opts.search_term {
         res = res.query("textFilter", t);
     }
 
-    if let Some(t) = args.minion_type {
+    if let Some(t) = &opts.minion_type {
         res = res.query("minionType", &t.to_string().to_lowercase());
     }
 
-    if let Some(t) = args.tier {
+    if let Some(t) = opts.tier {
         res = res.query("tier", &t.to_string());
     }
 
@@ -275,8 +275,8 @@ pub(crate) fn run(args: BGArgs, api: &Api) -> Result<()> {
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
         .filter(|c| {
-            args.text
-                || args.name.as_ref().map_or(true, |name| {
+            opts.with_text
+                || opts.search_term.as_ref().map_or(true, |name| {
                     c.name.to_lowercase().contains(&name.to_lowercase())
                 })
         })
@@ -288,106 +288,112 @@ pub(crate) fn run(args: BGArgs, api: &Api) -> Result<()> {
         ));
     }
 
-    for card in cards {
-        println!("{card:#}");
-        if args.image {
-            println!("\tImage: {}", card.image);
-        }
-
-        match &card.card_type {
-            BGCardType::Hero {
-                buddy_id,
-                child_ids,
-                ..
-            } => {
-                'heropower: {
-                    // Getting the starting hero power only. API keeps old
-                    // versions of hero powers below that for some reason.
-                    // First hero power is usually the smallest ID.
-                    let Some(id) = child_ids.iter().min() else {
-                        break 'heropower;
-                    };
-                    let Ok(res) = get_card_by_id(*id, api) else {
-                        break 'heropower;
-                    };
-                    let res = textwrap::fill(
-                        &res.to_string(),
-                        textwrap::Options::new(textwrap::termwidth() - 10)
-                            .initial_indent("\t")
-                            .subsequent_indent(&format!("\t{:<20} ", " ")),
-                    )
-                    .blue();
-
-                    println!("{res}");
-                }
-
-                'buddy: {
-                    let Some(buddy_id) = buddy_id else {
-                        break 'buddy;
-                    };
-                    let Ok(res) = get_card_by_id(*buddy_id, api) else {
-                        break 'buddy;
-                    };
-                    let res = textwrap::fill(
-                        &res.to_string(),
-                        textwrap::Options::new(textwrap::termwidth() - 10)
-                            .initial_indent("\t")
-                            .subsequent_indent(&format!("\t{:<20} ", " ")),
-                    )
-                    .green();
-
-                    println!("{res}");
-                }
-            }
-            BGCardType::Minion {
-                upgrade_id: Some(id),
-                ..
-            } => 'golden: {
-                let Ok(res) = get_card_by_id(*id, api) else {
-                    break 'golden;
-                };
-
-                let BGCardType::Minion {
-                    attack,
-                    health,
-                    text,
-                    ..
-                } = res.card_type
-                else {
-                    break 'golden;
-                };
-
-                let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
-
-                println!("{upgraded}");
-
-                let res = textwrap::fill(
-                    &prettify(&text),
-                    textwrap::Options::new(textwrap::termwidth() - 10)
-                        .initial_indent("\t")
-                        .subsequent_indent("\t"),
-                )
-                .yellow();
-
-                println!("{res}");
-            }
-
-            _ => (),
-        }
-    }
-
-    Ok(())
+    Ok(cards)
 }
 
-fn get_card_by_id(id: usize, api: &Api) -> Result<Card> {
+pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> {
+    let mut cards = vec![];
+
+    match &card.card_type {
+        BGCardType::Hero {
+            buddy_id,
+            child_ids,
+            ..
+        } => {
+            'heropower: {
+                // Getting the starting hero power only. API keeps old
+                // versions of hero powers below that for some reason.
+                // First hero power is usually the smallest ID.
+                let Some(id) = child_ids.iter().min() else {
+                    break 'heropower;
+                };
+                let Ok(res) = get_card_by_id(*id, api) else {
+                    break 'heropower;
+                };
+                let text = textwrap::fill(
+                    &res.to_string(),
+                    textwrap::Options::new(textwrap::termwidth() - 10)
+                        .initial_indent("\t")
+                        .subsequent_indent(&format!("\t{:<20} ", " ")),
+                )
+                .blue();
+
+                cards.push(res);
+
+                println!("{text}");
+            }
+
+            'buddy: {
+                let Some(buddy_id) = buddy_id else {
+                    break 'buddy;
+                };
+                let Ok(res) = get_card_by_id(*buddy_id, api) else {
+                    break 'buddy;
+                };
+
+                let text = textwrap::fill(
+                    &res.to_string(),
+                    textwrap::Options::new(textwrap::termwidth() - 10)
+                        .initial_indent("\t")
+                        .subsequent_indent(&format!("\t{:<20} ", " ")),
+                )
+                .green();
+
+                cards.push(res);
+
+                println!("{text}");
+            }
+        }
+        BGCardType::Minion {
+            upgrade_id: Some(id),
+            ..
+        } => 'golden: {
+            let Ok(res) = get_card_by_id(*id, api) else {
+                break 'golden;
+            };
+
+            let BGCardType::Minion {
+                attack,
+                health,
+                text,
+                ..
+            } = &res.card_type
+            else {
+                break 'golden;
+            };
+
+            let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
+
+            println!("{upgraded}");
+
+            let text = textwrap::fill(
+                &prettify(text),
+                textwrap::Options::new(textwrap::termwidth() - 10)
+                    .initial_indent("\t")
+                    .subsequent_indent("\t"),
+            )
+            .yellow();
+
+            cards.push(res);
+
+            println!("{text}");
+        }
+
+        _ => (),
+    }
+
+    cards
+}
+
+fn get_card_by_id(id: usize, api: &ApiHandle) -> Result<Card> {
     let res = api
         .agent
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
-        .query("locale", api.locale)
+        .query("locale", &api.locale)
         .query("gameMode", "battlegrounds")
-        .query("access_token", api.access_token)
+        .query("access_token", &api.access_token)
         .call()?
         .into_json::<Card>()?;
     Ok(res)

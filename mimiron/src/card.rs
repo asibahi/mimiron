@@ -18,11 +18,8 @@ use crate::{card_details::*, helpers::prettify, ApiHandle};
 struct CardData {
     // Unique identifiers
     id: usize,
-    // slug: String,
 
     // basic info
-
-    // collectible: u8,
     card_type_id: u8,
     class_id: u8,
     multi_class_ids: Vec<u8>,
@@ -51,8 +48,7 @@ struct CardData {
     // Flavor
     image: String,
     crop_image: Option<String>,
-    //artist_name: String,
-    //flavor_text: String,
+    flavor_text: String,
 }
 
 #[derive(Deserialize, Clone)]
@@ -73,8 +69,8 @@ pub struct Card {
     pub text: String,
 
     pub image: String,
-
     pub crop_image: Option<String>,
+    pub flavor_text: String,
 }
 
 impl PartialEq for Card {
@@ -183,8 +179,8 @@ impl From<CardData> for Card {
             text: c.text,
 
             image: c.image,
-
             crop_image: c.crop_image,
+            flavor_text: c.flavor_text,
         }
     }
 }
@@ -212,7 +208,7 @@ impl SearchOptions {
     }
 }
 
-pub fn get<'c>(
+pub fn lookup<'c>(
     opts: &'c SearchOptions,
     api: &ApiHandle,
 ) -> Result<impl Iterator<Item = Card> + 'c> {

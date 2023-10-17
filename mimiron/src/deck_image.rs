@@ -35,25 +35,25 @@ const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf
 const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
 
 pub enum ImageOptions {
-    // Each group in its own column. (HS Top Decks)
+    /// Each group in its own column. (HS Top Decks)
     Groups,
 
-    // Regular Style over one column. Compact horizontally.
-    Single,
+    Regular {
+        /// 1 is most compact horizontally.
+        /// 3 is most compact (yet readable) vertically.
+        columns: u8,
 
-    // Regular Style over three columns. Compact vertically.
-    Wide,
-
-    // Wide format but with card text.
-    WithText,
+        /// whether card text is included. Best with 3 columns.
+        with_text: bool,
+    },
 }
 
 pub fn get(deck: &Deck, shape: ImageOptions, agent: &ureq::Agent) -> Result<DynamicImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck, agent),
-        ImageOptions::Wide => img_columns_format(deck, 3, false, agent),
-        ImageOptions::Single => img_columns_format(deck, 1, false, agent),
-        ImageOptions::WithText => img_columns_format(deck, 3, true, agent),
+        ImageOptions::Regular { columns, with_text } => {
+            img_columns_format(deck, columns as u32, with_text, agent)
+        }
     }
 }
 

@@ -22,7 +22,7 @@ pub(crate) struct CardArgs {
 
 pub(crate) fn run(args: CardArgs, api: &ApiHandle) -> Result<()> {
     let opts = card::SearchOptions::new(args.name, args.text, args.reprints);
-    let cards = card::get(&opts, api)?;
+    let cards = card::lookup(&opts, api)?;
 
     for card in cards {
         println!("{card:#}");

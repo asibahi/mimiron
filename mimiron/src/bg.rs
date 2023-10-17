@@ -13,9 +13,7 @@ use crate::{card_details::MinionType, helpers::prettify, ApiHandle};
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CardData {
-    // Unique identifier
     id: usize,
-    // slug: String,
 
     // basic info
     name: String,
@@ -36,8 +34,6 @@ struct CardData {
 
     // Flavor
     image: String,
-    // image_gold: String,
-    // crop_image: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -48,7 +44,6 @@ struct BGData {
     reward: bool,
     companion_id: Option<usize>,
     image: String,
-    // image_gold: String,
     tier: Option<u8>,
     upgrade_id: Option<usize>,
 }
@@ -236,7 +231,7 @@ impl SearchOptions {
     }
 }
 
-pub fn get<'c>(
+pub fn lookup<'c>(
     opts: &'c SearchOptions,
     api: &ApiHandle,
 ) -> Result<impl Iterator<Item = Card> + 'c> {

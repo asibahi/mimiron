@@ -7,7 +7,6 @@ use std::{
     str::FromStr,
 };
 
-#[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
 #[serde(from = "ClassData")]
 pub enum Class {
@@ -97,9 +96,7 @@ impl Class {
 
 #[derive(Deserialize)]
 struct ClassData {
-    // slug: String,
     id: u8,
-    // name: String,
 }
 
 #[derive(Clone, PartialEq)]

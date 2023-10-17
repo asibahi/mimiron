@@ -5,11 +5,10 @@ use serde::Deserialize;
 const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
 const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
 
-#[allow(unused)]
 #[derive(Deserialize)]
 struct Authorization {
     access_token: String,
-    expires_in: i64,
+    // expires_in: i64,
 }
 
 pub fn get_access_token(agent: &ureq::Agent) -> Result<String> {

@@ -30,7 +30,7 @@ pub struct BGArgs {
 
 pub(crate) fn run(args: BGArgs, api: &ApiHandle) -> Result<()> {
     let opts = bg::SearchOptions::new(args.name, args.tier, args.minion_type, args.text);
-    let cards = bg::get(&opts, api)?;
+    let cards = bg::lookup(&opts, api)?;
 
     for card in cards {
         println!("{card:#}");

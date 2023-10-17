@@ -34,22 +34,23 @@ pub struct DeckArgs {
     #[arg(short, long, requires("image"))]
     output: Option<PathBuf>,
 
+    #[command(flatten)]
+    image_args: ImageArgs,
+}
+
+#[derive(Args)]
+#[group(requires("image"), multiple(false))]
+struct ImageArgs {
     /// Format the deck in one column. Most compact horizontally.
-    #[arg(short, long, requires("image"))]
+    #[arg(short, long)]
     single: bool,
 
     /// Format the deck in three columns. Most compact vertically.
-    #[arg(short, long, requires("image"), conflicts_with("single"))]
+    #[arg(short, long)]
     wide: bool,
 
     /// Similar to Wide Format but with card text added.
-    #[arg(
-        short,
-        long,
-        requires("image"),
-        conflicts_with("single"),
-        conflicts_with("wide")
-    )]
+    #[arg(short, long)]
     text: bool,
 }
 
@@ -76,10 +77,19 @@ pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
     }
 
     if args.image {
-        let opts = match args.single {
-            true => mimiron::deck::ImageOptions::Single,
-            _ if args.wide => mimiron::deck::ImageOptions::Wide,
-            _ if args.text => mimiron::deck::ImageOptions::WithText,
+        let opts = match args.image_args.single {
+            true => mimiron::deck::ImageOptions::Regular {
+                columns: 1,
+                with_text: false,
+            },
+            _ if args.image_args.wide => mimiron::deck::ImageOptions::Regular {
+                columns: 3,
+                with_text: false,
+            },
+            _ if args.image_args.text => mimiron::deck::ImageOptions::Regular {
+                columns: 3,
+                with_text: true,
+            },
             _ => mimiron::deck::ImageOptions::Groups,
         };
 

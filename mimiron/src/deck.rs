@@ -8,7 +8,13 @@ use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
 
 pub use crate::deck_image::ImageOptions;
-use crate::{card::Card, card_details::Class, deck_image, helpers::Thusable, ApiHandle};
+use crate::{
+    card::{self, Card},
+    card_details::Class,
+    deck_image,
+    helpers::Thusable,
+    ApiHandle,
+};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,11 +26,10 @@ pub struct Sideboard {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Deck {
-    deck_code: String,
+    pub deck_code: String,
     pub format: String,
     pub class: Class,
     pub cards: Vec<Card>,
-    // card_count: usize,
     pub sideboard_cards: Option<Vec<Sideboard>>,
     invalid_card_ids: Option<Vec<usize>>,
 }
@@ -90,10 +95,10 @@ impl Display for Deck {
 pub struct DeckDifference {
     pub shared_cards: HashMap<Card, usize>,
 
-    deck1_code: String,
+    pub deck1_code: String,
     pub deck1_uniques: HashMap<Card, usize>,
 
-    deck2_code: String,
+    pub deck2_code: String,
     pub deck2_uniques: HashMap<Card, usize>,
 }
 impl Display for DeckDifference {
@@ -179,7 +184,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>, api: &ApiHandle) -> Result<(
     let band_ids = band
         .into_iter()
         .map(|name| {
-            crate::card::get(&crate::card::SearchOptions::new(name, false, false), api)?
+            card::lookup(&card::SearchOptions::new(name, false, false), api)?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| format!("{id}:{ETC_ID}", id = c.id))
                 .next()

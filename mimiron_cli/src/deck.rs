@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Args;
+use clap::{Args, ValueEnum};
 use mimiron::{deck, ApiHandle};
 use std::path::PathBuf;
 
@@ -30,28 +30,34 @@ pub struct DeckArgs {
     #[arg(short, long, conflicts_with("comp"))]
     image: bool,
 
-    /// Choose deck image output.
+    /// Choose where to save the deck image
     #[arg(short, long, requires("image"))]
     output: Option<PathBuf>,
 
-    #[command(flatten)]
-    image_args: ImageArgs,
+    /// Choose the format for the deck image.
+    ///
+    /// Groups: Separates Class and Neutral cards.
+    /// Single: Regular style. Most compact horizontally.
+    /// Square: Regular but over 2 columns. Default.
+    /// Wide:   Regular but over 3 columns. Most compact vertically.
+    /// Text:   Includes card text.
+    #[arg(
+        short,
+        long,
+        default_value("square"),
+        requires("image"),
+        verbatim_doc_comment
+    )]
+    format: ImageFormat,
 }
 
-#[derive(Args)]
-#[group(requires("image"), multiple(false))]
-struct ImageArgs {
-    /// Format the deck in one column. Most compact horizontally.
-    #[arg(short, long)]
-    single: bool,
-
-    /// Format the deck in three columns. Most compact vertically.
-    #[arg(short, long)]
-    wide: bool,
-
-    /// Similar to Wide Format but with card text added.
-    #[arg(short, long)]
-    text: bool,
+#[derive(Clone, ValueEnum)]
+enum ImageFormat {
+    Groups,
+    Single,
+    Square,
+    Wide,
+    Text,
 }
 
 pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
@@ -77,23 +83,15 @@ pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
     }
 
     if args.image {
-        let opts = if args.image_args.single {
-            deck::ImageOptions::Regular {
-                columns: 1,
-                with_text: false,
-            }
-        } else if args.image_args.wide {
-            deck::ImageOptions::Regular {
-                columns: 3,
-                with_text: false,
-            }
-        } else if args.image_args.text {
-            deck::ImageOptions::Regular {
-                columns: 3,
-                with_text: true,
-            }
-        } else {
-            deck::ImageOptions::Groups
+        let opts = 'opts: {
+            let (columns, with_text) = match args.format {
+                ImageFormat::Groups => break 'opts deck::ImageOptions::Groups,
+                ImageFormat::Single => (1, false),
+                ImageFormat::Square => (2, false),
+                ImageFormat::Wide => (3, false),
+                ImageFormat::Text => (3, true),
+            };
+            deck::ImageOptions::Regular { columns, with_text }
         };
 
         let img = deck::get_image(&deck, opts, api)?;

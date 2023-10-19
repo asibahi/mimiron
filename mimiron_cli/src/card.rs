@@ -15,7 +15,7 @@ pub(crate) struct CardArgs {
     #[arg(short, long)]
     reprints: bool,
 
-    /// Include non-collectible cards
+    /// Include non-collectible cards. Expect weird output.
     #[arg(short, long)]
     all: bool,
 

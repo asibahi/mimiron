@@ -172,6 +172,7 @@ impl From<CardData> for Card {
                 39 => CardType::Location {
                     durability: c.health.unwrap_or_default(),
                 },
+                10 => CardType::HeroPower,
                 _ => CardType::Unknown,
             },
             rarity: c.rarity_id.unwrap_or_default().into(),

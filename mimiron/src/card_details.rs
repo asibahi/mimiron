@@ -150,7 +150,7 @@ impl Display for Rarity {
             Self::Rare => "rare".blue(),
             Self::Epic => "epic".purple(),
             Self::Legendary => "LEGENDARY".bright_yellow().bold(),
-            Self::Unknown => "UNKNOWN".clear(),
+            Self::Unknown => "Noncollectible".clear(),
         }
         .italic();
         write!(f, "{r}")
@@ -326,6 +326,7 @@ pub enum CardType {
     Location {
         durability: u8,
     },
+    HeroPower,
     Unknown,
 }
 impl Display for CardType {
@@ -353,6 +354,7 @@ impl Display for CardType {
             },
             Self::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon{colon}"),
             Self::Location { durability } => write!(f, "{durability} durability location{colon}"),
+            Self::HeroPower => write!(f, "Hero Power{colon}"),
             Self::Unknown => write!(f, "UNKNOWN{colon}"),
         }
     }

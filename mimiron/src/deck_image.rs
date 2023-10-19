@@ -5,7 +5,7 @@ use crate::{
     get_agent,
     helpers::{get_boxes_and_glue, TextStyle, Thusable},
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
@@ -441,11 +441,9 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
     let mut buf = Vec::new();
     get_agent()
         .get(link)
-        .call()
-        .with_context(|| "Could not connect to image link")?
+        .call()?
         .into_reader()
-        .read_to_end(&mut buf)
-        .with_context(|| "Could not read image link")?;
+        .read_to_end(&mut buf)?;
 
     let crop = image::load_from_memory(&buf)?;
 

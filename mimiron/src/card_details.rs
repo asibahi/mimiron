@@ -1,5 +1,4 @@
 use crate::{get_access_token, get_agent};
-use anyhow::Context;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -22,19 +21,13 @@ struct Set {
 
 pub(crate) fn get_set_by_id(id: usize) -> String {
     let sets = SETS.get_or_init(|| {
-        let res = get_agent()
+        get_agent()
             .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
             .query("locale", "en-US")
             .query("access_token", get_access_token())
             .call()
-            .with_context(|| "Error calling metadata API")
-            .and_then(|res| {
-                res.into_json()
-                    .with_context(|| "Error parsing metadata json")
-            })
-            .unwrap_or_default();
-
-        res
+            .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
+            .unwrap_or_default()
     });
 
     let set = sets.into_iter().find(|s| {

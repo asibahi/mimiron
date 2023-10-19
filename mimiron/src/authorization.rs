@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -35,10 +35,8 @@ fn internal_get_access_token() -> Result<String> {
         .post("https://oauth.battle.net/token")
         .set("Authorization", &format!("Basic {creds}"))
         .query("grant_type", "client_credentials")
-        .call()
-        .with_context(|| "call to get access_token failed")?
-        .into_json::<Authorization>()
-        .with_context(|| "parsing authorization json failed")?
+        .call()?
+        .into_json::<Authorization>()?
         .access_token;
     Ok(access_token)
 }

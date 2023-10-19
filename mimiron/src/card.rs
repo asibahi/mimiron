@@ -1,5 +1,5 @@
 use crate::{card_details::*, get_access_token, get_agent, helpers::prettify};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use colored::Colorize;
 use eitherable::Eitherable;
 use itertools::Itertools;
@@ -216,10 +216,8 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
         .query("locale", "en-US")
         .query("textFilter", search_term)
         .query("access_token", get_access_token())
-        .call()
-        .with_context(|| "call to card search API failed")?
-        .into_json::<CardSearchResponse>()
-        .with_context(|| "parsing card search json failed")?;
+        .call()?
+        .into_json::<CardSearchResponse>()?;
 
     if res.card_count == 0 {
         return Err(anyhow!(

@@ -1,17 +1,18 @@
-pub use crate::deck_image::{get as get_image, ImageOptions};
 use crate::{
     card::{self, Card},
     card_details::Class,
     get_access_token, get_agent,
     helpers::Thusable,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use colored::Colorize;
 use counter::Counter;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
+
+pub use crate::deck_image::{get as get_image, ImageOptions};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -127,10 +128,8 @@ pub fn lookup(code: &str) -> Result<Deck> {
         .query("locale", "en-US")
         .query("code", code)
         .query("access_token", get_access_token())
-        .call()
-        .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
-        .into_json::<Deck>()
-        .with_context(|| "parsing deck code json failed")?;
+        .call()?
+        .into_json::<Deck>()?;
 
     // ugly hack for double class decks. Doesn't work if card id's don't exist in API.
     // e.g. Works for Duels double class decks.   Doesn't work with Core Brann when Brann is not in Core.
@@ -195,10 +194,8 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
         .query("access_token", get_access_token())
         .query("ids", &card_ids)
         .query("sideboardCards", &band_ids)
-        .call()
-        .with_context(|| "call to deck API by card ids failed.")?
-        .into_json::<Deck>()
-        .with_context(|| "parsing deck json failed")?;
+        .call()?
+        .into_json::<Deck>()?;
 
     Ok(())
 }

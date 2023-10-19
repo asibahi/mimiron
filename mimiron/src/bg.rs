@@ -1,5 +1,5 @@
 use crate::{card_details::MinionType, get_access_token, get_agent, helpers::prettify};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -250,11 +250,7 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
         res = res.query("tier", &t.to_string());
     }
 
-    let res = res
-        .call()
-        .with_context(|| "call to BG card search API failed")?
-        .into_json::<CardSearchResponse>()
-        .with_context(|| "parsing BG card search json failed")?;
+    let res = res.call()?.into_json::<CardSearchResponse>()?;
 
     if res.card_count == 0 {
         return Err(anyhow!("No Battlegrounds card found. Check your spelling."));

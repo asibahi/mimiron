@@ -1,3 +1,5 @@
+use crate::{get_access_token, get_agent};
+use anyhow::Context;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -5,7 +7,46 @@ use std::{
     collections::HashSet,
     fmt::{Display, Formatter},
     str::FromStr,
+    sync::OnceLock,
 };
+
+static SETS: OnceLock<Vec<Set>> = OnceLock::new();
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Set {
+    id: usize,
+    name: String,
+    alias_set_ids: Option<Vec<usize>>,
+}
+
+pub(crate) fn get_set_by_id(id: usize) -> String {
+    let sets = SETS.get_or_init(|| {
+        let res = get_agent()
+            .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
+            .query("locale", "en-US")
+            .query("access_token", get_access_token())
+            .call()
+            .with_context(|| "Error calling metadata API")
+            .and_then(|res| {
+                res.into_json()
+                    .with_context(|| "Error parsing metadata json")
+            })
+            .unwrap_or_default();
+
+        res
+    });
+
+    let set = sets.into_iter().find(|s| {
+        s.id == id
+            || s.alias_set_ids
+                .clone()
+                .is_some_and(|aliases| aliases.into_iter().any(|a| a == id))
+    });
+
+    set.map(|s| s.name.clone())
+        .unwrap_or_else(|| format!("Set {id}"))
+}
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
 #[serde(from = "ClassData")]

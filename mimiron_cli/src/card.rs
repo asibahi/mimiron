@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Args;
-use mimiron::{card, ApiHandle};
+use mimiron::card;
 
 #[derive(Args)]
 pub(crate) struct CardArgs {
@@ -20,9 +20,9 @@ pub(crate) struct CardArgs {
     image: bool,
 }
 
-pub(crate) fn run(args: CardArgs, api: &ApiHandle) -> Result<()> {
+pub(crate) fn run(args: CardArgs) -> Result<()> {
     let opts = card::SearchOptions::new(args.name, args.text, args.reprints);
-    let cards = card::lookup(&opts, api)?;
+    let cards = card::lookup(&opts)?;
 
     for card in cards {
         println!("{card:#}");

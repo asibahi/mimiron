@@ -1,3 +1,4 @@
+use crate::{card_details::MinionType, get_access_token, get_agent, helpers::prettify};
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use itertools::Itertools;
@@ -7,8 +8,6 @@ use std::{
     fmt::{self, Display},
 };
 use unicode_width::UnicodeWidthStr;
-
-use crate::{card_details::MinionType, helpers::prettify, ApiHandle};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -232,15 +231,11 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup<'c>(
-    opts: &'c SearchOptions,
-    api: &ApiHandle,
-) -> Result<impl Iterator<Item = Card> + 'c> {
-    let mut res = api
-        .agent
+pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> + 'c> {
+    let mut res = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", &api.access_token)
-        .query("locale", &api.locale)
+        .query("access_token", get_access_token())
+        .query("locale", "en-US")
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &opts.search_term {
@@ -288,7 +283,7 @@ pub fn lookup<'c>(
 }
 
 #[must_use]
-pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> {
+pub fn get_and_print_associated_cards(card: Card) -> Vec<Card> {
     let mut cards = vec![];
 
     match &card.card_type {
@@ -304,7 +299,7 @@ pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> 
                 let Some(id) = child_ids.iter().min() else {
                     break 'heropower;
                 };
-                let Ok(res) = get_card_by_id(*id, api) else {
+                let Ok(res) = get_card_by_id(*id) else {
                     break 'heropower;
                 };
                 let text = textwrap::fill(
@@ -324,7 +319,7 @@ pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> 
                 let Some(buddy_id) = buddy_id else {
                     break 'buddy;
                 };
-                let Ok(res) = get_card_by_id(*buddy_id, api) else {
+                let Ok(res) = get_card_by_id(*buddy_id) else {
                     break 'buddy;
                 };
 
@@ -345,7 +340,7 @@ pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> 
             upgrade_id: Some(id),
             ..
         } => 'golden: {
-            let Ok(res) = get_card_by_id(*id, api) else {
+            let Ok(res) = get_card_by_id(*id) else {
                 break 'golden;
             };
 
@@ -382,15 +377,14 @@ pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> 
     cards
 }
 
-fn get_card_by_id(id: usize, api: &ApiHandle) -> Result<Card> {
-    let res = api
-        .agent
+fn get_card_by_id(id: usize) -> Result<Card> {
+    let res = get_agent()
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
-        .query("locale", &api.locale)
+        .query("locale", "en-US")
         .query("gameMode", "battlegrounds")
-        .query("access_token", &api.access_token)
+        .query("access_token", get_access_token())
         .call()?
         .into_json::<Card>()?;
     Ok(res)

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Args, ValueEnum};
-use mimiron::{deck, ApiHandle};
+use mimiron::deck;
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -60,12 +60,12 @@ enum ImageFormat {
     Text,
 }
 
-pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
-    let mut deck = deck::lookup(&args.code, api)?;
+pub(crate) fn run(args: DeckArgs) -> Result<()> {
+    let mut deck = deck::lookup(&args.code)?;
 
     // Add Band resolution.
     if let Some(band) = args.band {
-        deck::add_band(&mut deck, band, api)?;
+        deck::add_band(&mut deck, band)?;
     }
 
     // Deck format/mode override
@@ -75,7 +75,7 @@ pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {
-        let deck2 = deck::lookup(&code, api)?;
+        let deck2 = deck::lookup(&code)?;
         let deck_diff = deck.compare_with(&deck2);
         println!("{deck_diff}");
     } else {
@@ -94,7 +94,7 @@ pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
             deck::ImageOptions::Regular { columns, with_text }
         };
 
-        let img = deck::get_image(&deck, opts, api)?;
+        let img = deck::get_image(&deck, opts)?;
 
         let file_name = format!(
             "{} {} {}.png",

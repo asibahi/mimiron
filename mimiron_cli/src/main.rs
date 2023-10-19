@@ -37,13 +37,12 @@ enum Commands {
 
 pub fn run() -> Result<()> {
     let args = Cli::parse();
-    let api = mimiron::get_api_handle()?;
 
     match args.command {
-        Commands::Card(args) => card::run(args, &api)?,
-        Commands::Deck(args) => deck::run(args, &api)?,
-        Commands::BG(args) => bg::run(args, &api)?,
-        Commands::Token => println!("{}", api.access_token),
+        Commands::Card(args) => card::run(args)?,
+        Commands::Deck(args) => deck::run(args)?,
+        Commands::BG(args) => bg::run(args)?,
+        Commands::Token => println!("{}", mimiron::get_access_token()),
     }
 
     Ok(())

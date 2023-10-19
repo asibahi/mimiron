@@ -1,20 +1,17 @@
+pub use crate::deck_image::{get as get_image, ImageOptions};
+use crate::{
+    card::{self, Card},
+    card_details::Class,
+    get_access_token, get_agent,
+    helpers::Thusable,
+};
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use counter::Counter;
-use image::DynamicImage;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{collections::BTreeMap, fmt::Display};
-
-pub use crate::deck_image::ImageOptions;
-use crate::{
-    card::{self, Card},
-    card_details::Class,
-    deck_image,
-    helpers::Thusable,
-    ApiHandle,
-};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -124,13 +121,12 @@ impl Display for DeckDifference {
     }
 }
 
-pub fn lookup(code: &str, api: &ApiHandle) -> Result<Deck> {
-    let mut deck = api
-        .agent
+pub fn lookup(code: &str) -> Result<Deck> {
+    let mut deck = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &api.locale)
+        .query("locale", "en-US")
         .query("code", code)
-        .query("access_token", &api.access_token)
+        .query("access_token", get_access_token())
         .call()
         .with_context(|| "call to deck code API failed. may be an invalid deck code.")?
         .into_json::<Deck>()
@@ -145,11 +141,10 @@ pub fn lookup(code: &str, api: &ApiHandle) -> Result<Deck> {
 
         let card_ids = invalid_ids.iter().join(",");
 
-        let response = api
-            .agent
+        let response = get_agent()
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", &api.locale)
-            .query("access_token", &api.access_token)
+            .query("locale", "en-US")
+            .query("access_token", get_access_token())
             .query("ids", &card_ids)
             .call();
 
@@ -165,7 +160,7 @@ pub fn lookup(code: &str, api: &ApiHandle) -> Result<Deck> {
     Ok(deck)
 }
 
-pub fn add_band(deck: &mut Deck, band: Vec<String>, api: &ApiHandle) -> Result<()> {
+pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     // Function WILL need to be updated if new sideboard cards are printed.
 
     // Constants that might change should ETC be added to core.
@@ -185,7 +180,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>, api: &ApiHandle) -> Result<(
     let band_ids = band
         .into_iter()
         .map(|name| {
-            card::lookup(&card::SearchOptions::new(name, false, false), api)?
+            card::lookup(&card::SearchOptions::new(name, false, false))?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| format!("{id}:{ETC_ID}", id = c.id))
                 .next()
@@ -194,11 +189,10 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>, api: &ApiHandle) -> Result<(
         .collect::<Result<Vec<String>>>()?
         .join(",");
 
-    *deck = api
-        .agent
+    *deck = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &api.locale)
-        .query("access_token", &api.access_token)
+        .query("locale", "en-US")
+        .query("access_token", get_access_token())
         .query("ids", &card_ids)
         .query("sideboardCards", &band_ids)
         .call()
@@ -207,8 +201,4 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>, api: &ApiHandle) -> Result<(
         .with_context(|| "parsing deck json failed")?;
 
     Ok(())
-}
-
-pub fn get_image(deck: &Deck, opts: ImageOptions, api: &ApiHandle) -> Result<DynamicImage> {
-    deck_image::get(deck, opts, &api.agent)
 }

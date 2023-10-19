@@ -1,16 +1,16 @@
+use crate::{
+    card::Card,
+    card_details::{Class, Rarity},
+    deck::Deck,
+    get_agent,
+    helpers::{get_boxes_and_glue, TextStyle, Thusable},
+};
 use anyhow::{anyhow, Context, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
-
-use crate::{
-    card::Card,
-    card_details::{Class, Rarity},
-    deck::Deck,
-    helpers::{get_boxes_and_glue, TextStyle, Thusable},
-};
 
 //  Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -48,22 +48,17 @@ pub enum ImageOptions {
     },
 }
 
-pub fn get(deck: &Deck, shape: ImageOptions, agent: &ureq::Agent) -> Result<DynamicImage> {
+pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
     match shape {
-        ImageOptions::Groups => img_groups_format(deck, agent),
+        ImageOptions::Groups => img_groups_format(deck),
         ImageOptions::Regular { columns, with_text } => {
-            img_columns_format(deck, columns as u32, with_text, agent)
+            img_columns_format(deck, columns as u32, with_text)
         }
     }
 }
 
-fn img_columns_format(
-    deck: &Deck,
-    col_count: u32,
-    with_text: bool,
-    agent: &ureq::Agent,
-) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, with_text, agent);
+fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, with_text);
 
     let actual_row_height = if with_text {
         ROW_HEIGHT_WITH_TEXT
@@ -95,7 +90,7 @@ fn img_columns_format(
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, deck, agent)?;
+    draw_deck_title(&mut img, deck)?;
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
@@ -146,8 +141,8 @@ fn img_columns_format(
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, false, agent);
+fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, false);
 
     let class_cards = ordered_cards
         .iter()
@@ -185,7 +180,7 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, deck, agent)?;
+    draw_deck_title(&mut img, deck)?;
     if !neutral_cards.is_empty() {
         let neutrals_title = get_title_slug("Neutrals", 0);
         img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
@@ -228,7 +223,7 @@ fn img_groups_format(deck: &Deck, agent: &ureq::Agent) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, count: usize, with_text: bool, agent: &ureq::Agent) -> DynamicImage {
+fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
@@ -258,7 +253,7 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool, agent: &ureq::Agent
         img.copy_from(&text_box, 0, CROP_HEIGHT).ok();
     }
 
-    if let Err(e) = draw_crop_image(&mut img, card, agent) {
+    if let Err(e) = draw_crop_image(&mut img, card) {
         eprint!("Failed to get image of {}: {e}            \r", card.name);
         drawing::draw_filled_rect_mut(
             &mut img,
@@ -344,7 +339,6 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
 fn order_deck_and_get_slugs<'d>(
     deck: &'d Deck,
     with_text: bool,
-    agent: &ureq::Agent,
 ) -> (BTreeMap<&'d Card, usize>, HashMap<&'d Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
@@ -362,7 +356,7 @@ fn order_deck_and_get_slugs<'d>(
         .into_par_iter()
         .chain(ordered_sbs_cards.into_par_iter())
         .map(|(card, count)| {
-            let slug = get_card_slug(card, count, with_text, agent);
+            let slug = get_card_slug(card, count, with_text);
             (card, slug)
         })
         .collect::<HashMap<_, _>>();
@@ -404,14 +398,14 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, agent: &ureq::Agent) -> Result<()> {
+fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
     let title = get_title_slug(
         &format!("{} - {}", deck.class, deck.format.to_uppercase()),
         CROP_HEIGHT as i32,
     );
     img.copy_from(&title, MARGIN, MARGIN)?;
 
-    if let Ok(class_img) = get_class_icon(&deck.class, agent) {
+    if let Ok(class_img) = get_class_icon(&deck.class) {
         img.copy_from(
             &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
             MARGIN,
@@ -422,9 +416,9 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, agent: &ureq::Agent) -> Res
     Ok(())
 }
 
-fn get_class_icon(class: &Class, agent: &ureq::Agent) -> Result<DynamicImage> {
+fn get_class_icon(class: &Class) -> Result<DynamicImage> {
     let mut buf = Vec::new();
-    agent
+    get_agent()
         .get(
             &(format!(
                 "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
@@ -438,14 +432,14 @@ fn get_class_icon(class: &Class, agent: &ureq::Agent) -> Result<DynamicImage> {
     Ok(image::load_from_memory(&buf)?)
 }
 
-fn draw_crop_image(img: &mut RgbaImage, card: &Card, agent: &ureq::Agent) -> Result<()> {
+fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
     let link = card
         .crop_image
         .as_ref()
         .ok_or(anyhow!("Card {} has no crop image", card.name))?;
 
     let mut buf = Vec::new();
-    agent
+    get_agent()
         .get(link)
         .call()
         .with_context(|| "Could not connect to image link")?

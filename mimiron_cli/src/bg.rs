@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{ArgGroup, Args};
-use mimiron::{bg, card_details::MinionType, ApiHandle};
+use mimiron::{bg, card_details::MinionType};
 use std::str::FromStr;
 
 #[derive(Args)]
@@ -27,13 +27,13 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub(crate) fn run(args: BGArgs, api: &ApiHandle) -> Result<()> {
+pub(crate) fn run(args: BGArgs) -> Result<()> {
     let opts = bg::SearchOptions::new(args.name, args.tier, args.minion_type, args.text);
-    let cards = bg::lookup(&opts, api)?;
+    let cards = bg::lookup(&opts)?;
 
     for card in cards {
         println!("{card:#}");
-        _ = bg::get_and_print_associated_cards(card, api);
+        _ = bg::get_and_print_associated_cards(card);
     }
 
     Ok(())

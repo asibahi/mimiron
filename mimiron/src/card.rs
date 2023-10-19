@@ -1,3 +1,4 @@
+use crate::{card_details::*, get_access_token, get_agent, helpers::prettify};
 use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use eitherable::Eitherable;
@@ -10,8 +11,6 @@ use std::{
     hash::{Hash, Hasher},
 };
 use unicode_width::UnicodeWidthStr;
-
-use crate::{card_details::*, helpers::prettify, ApiHandle};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -55,7 +54,7 @@ struct CardData {
 #[serde(from = "CardData")]
 pub struct Card {
     pub id: usize,
-    pub card_set: usize,
+    pub card_set: String,
 
     pub name: String,
     pub class: HashSet<Class>,
@@ -106,7 +105,7 @@ impl Display for Card {
             None => String::new(),
         };
 
-        let set = self.card_set;
+        let set = &self.card_set;
         let text = prettify(&self.text);
         let text = textwrap::fill(
             &text,
@@ -128,7 +127,7 @@ impl Display for Card {
         )?;
 
         if f.alternate() {
-            write!(f, " Set {set}.\n{text}")?;
+            write!(f, " {set}\n{text}")?;
         }
         Ok(())
     }
@@ -137,7 +136,7 @@ impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         Self {
             id: c.id,
-            card_set: c.card_set_id,
+            card_set: get_set_by_id(c.card_set_id),
             name: c.name.clone(),
             class: if c.multi_class_ids.is_empty() {
                 HashSet::from([c.class_id.into()])
@@ -209,18 +208,14 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup<'c>(
-    opts: &'c SearchOptions,
-    api: &ApiHandle,
-) -> Result<impl Iterator<Item = Card> + 'c> {
+pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> + 'c> {
     let search_term = &opts.search_term;
 
-    let res = api
-        .agent
+    let res = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", &api.locale)
+        .query("locale", "en-US")
         .query("textFilter", search_term)
-        .query("access_token", &api.access_token)
+        .query("access_token", get_access_token())
         .call()
         .with_context(|| "call to card search API failed")?
         .into_json::<CardSearchResponse>()

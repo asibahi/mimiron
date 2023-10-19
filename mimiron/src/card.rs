@@ -19,11 +19,11 @@ struct CardData {
     id: usize,
 
     // basic info
-    card_type_id: u8,
-    class_id: u8,
+    card_type_id: Option<u8>,
+    class_id: Option<u8>,
     multi_class_ids: Vec<u8>,
 
-    rarity_id: u8,
+    rarity_id: Option<u8>,
     card_set_id: usize,
 
     name: String,
@@ -139,7 +139,7 @@ impl From<CardData> for Card {
             card_set: get_set_by_id(c.card_set_id),
             name: c.name.clone(),
             class: if c.multi_class_ids.is_empty() {
-                HashSet::from([c.class_id.into()])
+                HashSet::from([c.class_id.unwrap_or_default().into()])
             } else {
                 c.multi_class_ids
                     .into_iter()
@@ -148,7 +148,7 @@ impl From<CardData> for Card {
             },
             cost: c.mana_cost,
             rune_cost: c.rune_cost,
-            card_type: match c.card_type_id {
+            card_type: match c.card_type_id.unwrap_or_default() {
                 3 => CardType::Hero {
                     armor: c.armor.unwrap_or_default(),
                 },
@@ -174,7 +174,7 @@ impl From<CardData> for Card {
                 },
                 _ => CardType::Unknown,
             },
-            rarity: c.rarity_id.into(),
+            rarity: c.rarity_id.unwrap_or_default().into(),
             text: c.text,
 
             image: c.image,
@@ -194,16 +194,33 @@ struct CardSearchResponse {
 pub struct SearchOptions {
     search_term: String,
     with_text: bool,
-    include_reprints: bool,
+    reprints: bool,
+    noncollectibles: bool,
 }
 
 impl SearchOptions {
     #[must_use]
-    pub fn new(search_term: String, with_text: bool, include_reprints: bool) -> Self {
+    pub fn search_for(search_term: String) -> Self {
         Self {
             search_term,
-            with_text,
-            include_reprints,
+            with_text: false,
+            reprints: false,
+            noncollectibles: false,
+        }
+    }
+    #[must_use]
+    pub fn with_text(self, with_text: bool) -> Self {
+        Self { with_text, ..self }
+    }
+    #[must_use]
+    pub fn include_reprints(self, reprints: bool) -> Self {
+        Self { reprints, ..self }
+    }
+    #[must_use]
+    pub fn include_noncollectibles(self, noncollectibles: bool) -> Self {
+        Self {
+            noncollectibles,
+            ..self
         }
     }
 }
@@ -211,13 +228,20 @@ impl SearchOptions {
 pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> + 'c> {
     let search_term = &opts.search_term;
 
-    let res = get_agent()
+    let mut res = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en-US")
         .query("textFilter", search_term)
-        .query("access_token", get_access_token())
-        .call()?
-        .into_json::<CardSearchResponse>()?;
+        .query("access_token", get_access_token());
+
+    if opts.noncollectibles {
+        res = res.query("collectible", "0,1");
+    }
+
+    let res = res.call()?;
+    let res = res.into_json::<CardSearchResponse>()?;
+
+    //   let res : CardSearchResponse = serde_json::from_str(dbg!(&res))?;
 
     if res.card_count == 0 {
         return Err(anyhow!(
@@ -234,7 +258,7 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
             opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())
         })
         // cards have copies in different sets
-        .unique_by(|c| opts.include_reprints.either(c.id, c.name.clone()))
+        .unique_by(|c| opts.reprints.either(c.id, c.name.clone()))
         .peekable();
 
     if cards.peek().is_none() {

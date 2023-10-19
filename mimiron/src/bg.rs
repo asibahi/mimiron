@@ -216,18 +216,35 @@ pub struct SearchOptions {
 
 impl SearchOptions {
     #[must_use]
-    pub fn new(
-        search_term: Option<String>,
-        tier: Option<u8>,
-        minion_type: Option<MinionType>,
-        with_text: bool,
-    ) -> Self {
+    pub fn new() -> Self {
+        Self {
+            search_term: None,
+            tier: None,
+            minion_type: None,
+            with_text: false,
+        }
+    }
+    #[must_use]
+    pub fn search_for(self, search_term: Option<String>) -> Self {
         Self {
             search_term,
-            tier,
-            minion_type,
-            with_text,
+            ..self
         }
+    }
+    #[must_use]
+    pub fn with_tier(self, tier: Option<u8>) -> Self {
+        Self { tier, ..self }
+    }
+    #[must_use]
+    pub fn with_type(self, minion_type: Option<MinionType>) -> Self {
+        Self {
+            minion_type,
+            ..self
+        }
+    }
+    #[must_use]
+    pub fn with_text(self, with_text: bool) -> Self {
+        Self { with_text, ..self }
     }
 }
 

@@ -179,7 +179,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     let band_ids = band
         .into_iter()
         .map(|name| {
-            card::lookup(&card::SearchOptions::new(name, false, false))?
+            card::lookup(&card::SearchOptions::search_for(name))?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| format!("{id}:{ETC_ID}", id = c.id))
                 .next()

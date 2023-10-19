@@ -15,13 +15,20 @@ pub(crate) struct CardArgs {
     #[arg(short, long)]
     reprints: bool,
 
+    /// Include non-collectible cards
+    #[arg(short, long)]
+    all: bool,
+
     /// Print image links
     #[arg(short, long)]
     image: bool,
 }
 
 pub(crate) fn run(args: CardArgs) -> Result<()> {
-    let opts = card::SearchOptions::new(args.name, args.text, args.reprints);
+    let opts = card::SearchOptions::search_for(args.name)
+        .with_text(args.text)
+        .include_reprints(args.reprints)
+        .include_noncollectibles(args.all);
     let cards = card::lookup(&opts)?;
 
     for card in cards {

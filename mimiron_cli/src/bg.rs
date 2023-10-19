@@ -1,8 +1,7 @@
 use anyhow::Result;
 use clap::{ArgGroup, Args};
-use std::str::FromStr;
-
 use mimiron::{bg, card_details::MinionType, ApiHandle};
+use std::str::FromStr;
 
 #[derive(Args)]
 #[command(group = ArgGroup::new("search").required(true).multiple(true))]
@@ -34,7 +33,7 @@ pub(crate) fn run(args: BGArgs, api: &ApiHandle) -> Result<()> {
 
     for card in cards {
         println!("{card:#}");
-        bg::get_and_print_associated_cards(card, api);
+        _ = bg::get_and_print_associated_cards(card, api);
     }
 
     Ok(())

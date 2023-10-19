@@ -216,6 +216,7 @@ pub struct SearchOptions {
 }
 
 impl SearchOptions {
+    #[must_use]
     pub fn new(
         search_term: Option<String>,
         tier: Option<u8>,
@@ -286,6 +287,7 @@ pub fn lookup<'c>(
     Ok(cards)
 }
 
+#[must_use]
 pub fn get_and_print_associated_cards(card: Card, api: &ApiHandle) -> Vec<Card> {
     let mut cards = vec![];
 

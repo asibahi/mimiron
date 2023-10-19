@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Args;
-use mimiron::ApiHandle;
+use mimiron::{deck, ApiHandle};
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -55,11 +55,11 @@ struct ImageArgs {
 }
 
 pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
-    let mut deck = mimiron::deck::lookup(&args.code, api)?;
+    let mut deck = deck::lookup(&args.code, api)?;
 
     // Add Band resolution.
     if let Some(band) = args.band {
-        mimiron::deck::add_band(&mut deck, band, api)?;
+        deck::add_band(&mut deck, band, api)?;
     }
 
     // Deck format/mode override
@@ -69,7 +69,7 @@ pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {
-        let deck2 = mimiron::deck::lookup(&code, api)?;
+        let deck2 = deck::lookup(&code, api)?;
         let deck_diff = deck.compare_with(&deck2);
         println!("{deck_diff}");
     } else {
@@ -77,23 +77,26 @@ pub(crate) fn run(args: DeckArgs, api: &ApiHandle) -> Result<()> {
     }
 
     if args.image {
-        let opts = match args.image_args.single {
-            true => mimiron::deck::ImageOptions::Regular {
+        let opts = if args.image_args.single {
+            deck::ImageOptions::Regular {
                 columns: 1,
                 with_text: false,
-            },
-            _ if args.image_args.wide => mimiron::deck::ImageOptions::Regular {
+            }
+        } else if args.image_args.wide {
+            deck::ImageOptions::Regular {
                 columns: 3,
                 with_text: false,
-            },
-            _ if args.image_args.text => mimiron::deck::ImageOptions::Regular {
+            }
+        } else if args.image_args.text {
+            deck::ImageOptions::Regular {
                 columns: 3,
                 with_text: true,
-            },
-            _ => mimiron::deck::ImageOptions::Groups,
+            }
+        } else {
+            deck::ImageOptions::Groups
         };
 
-        let img = mimiron::deck::get_image(&deck, opts, api)?;
+        let img = deck::get_image(&deck, opts, api)?;
 
         let file_name = format!(
             "{} {} {}.png",

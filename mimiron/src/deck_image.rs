@@ -528,7 +528,7 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
         );
 
         cursor.0 += box_advance // imageproc trims end spaces.
-            + if bx.text().chars().last().is_some_and(|c| c.is_whitespace()) {
+            + if bx.text().chars().last().is_some_and(char::is_whitespace) {
                 space_advance
             } else {
                 0

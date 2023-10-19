@@ -34,6 +34,7 @@ pub struct Deck {
     invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
+    #[must_use]
     pub fn compare_with(&self, other: &Self) -> DeckDifference {
         let counter1 = self.cards.clone().into_iter().collect::<Counter<_>>();
         let counter2 = other.cards.clone().into_iter().collect::<Counter<_>>();

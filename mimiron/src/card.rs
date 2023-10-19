@@ -199,6 +199,7 @@ pub struct SearchOptions {
 }
 
 impl SearchOptions {
+    #[must_use]
     pub fn new(search_term: String, with_text: bool, include_reprints: bool) -> Self {
         Self {
             search_term,

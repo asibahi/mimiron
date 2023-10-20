@@ -228,14 +228,7 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
 
     let name = &card.name;
 
-    // colors from https://wowpedia.fandom.com/wiki/Quality
-    let r_color = match &card.rarity {
-        Rarity::Legendary => (255, 128, 0),
-        Rarity::Epic => (163, 53, 238),
-        Rarity::Rare => (0, 112, 221),
-        _ => (157, 157, 157),
-    };
-
+    let r_color = &card.rarity.color();
     let c_color = card.class.iter().next().unwrap_or(&Class::Neutral).color();
 
     let slug_height = if with_text {

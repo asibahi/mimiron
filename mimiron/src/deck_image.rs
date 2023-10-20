@@ -236,7 +236,6 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
         _ => (157, 157, 157),
     };
 
-    // colors from d0nkey.top
     let c_color = card.class.iter().next().unwrap_or(&Class::Neutral).color();
 
     let slug_height = if with_text {

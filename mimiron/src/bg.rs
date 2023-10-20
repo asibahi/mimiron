@@ -288,7 +288,7 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
 
     if cards.peek().is_none() {
         return Err(anyhow!(
-            "No Battlegrounds card found with this name. Expand search to text boxes with --text."
+            "No Battlegrounds card found with this name. Try expanding search to text boxes."
         ));
     }
 

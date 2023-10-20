@@ -264,7 +264,7 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
 
     if cards.peek().is_none() {
         return Err(anyhow!(
-            "No constructed card found with name \"{search_term}\". Expand search to text boxes with --text."
+            "No constructed card found with name \"{search_term}\". Try expanding search to text boxes."
         ));
     }
 

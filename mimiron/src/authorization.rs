@@ -12,8 +12,10 @@ struct Authorization {
     // expires_in: i64,
 }
 
+static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+static TOKEN: OnceLock<String> = OnceLock::new();
+
 pub(crate) fn get_agent() -> &'static ureq::Agent {
-    static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
     AGENT.get_or_init(|| {
         ureq::AgentBuilder::new()
             .timeout_connect(std::time::Duration::from_secs(2))
@@ -42,8 +44,6 @@ fn internal_get_access_token() -> Result<String> {
 }
 
 pub fn get_access_token() -> &'static str {
-    static TOKEN: OnceLock<String> = OnceLock::new();
-
     TOKEN.get_or_init(|| {
         internal_get_access_token()
             .map_err(|e| {

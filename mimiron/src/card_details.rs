@@ -109,7 +109,7 @@ impl From<ClassData> for Class {
     }
 }
 impl Class {
-    pub(crate) fn color(&self) -> (u8, u8, u8) {
+    pub fn color(&self) -> (u8, u8, u8) {
         match self {
             // colors from d0nkey.top
             Self::DeathKnight => (108, 105, 154),

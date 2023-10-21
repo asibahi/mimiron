@@ -239,10 +239,7 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
         res = res.query("collectible", "0,1");
     }
 
-    let res = res.call()?;
-    let res = res.into_json::<CardSearchResponse>()?;
-
-    //   let res : CardSearchResponse = serde_json::from_str(dbg!(&res))?;
+    let res = res.call()?.into_json::<CardSearchResponse>()?;
 
     if res.card_count == 0 {
         return Err(anyhow!(
@@ -251,7 +248,11 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
     }
 
     let mut cards = res.cards;
-    cards.sort_by_key(|c| !c.name.eq_ignore_ascii_case(&search_term));
+    cards.sort_by_key(|c| {
+        !c.name
+            .to_lowercase()
+            .starts_with(&search_term.to_lowercase())
+    });
 
     let mut cards = cards
         .into_iter()

@@ -250,11 +250,13 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
         ));
     }
 
-    let mut cards = res
-        .cards
+    let mut cards = res.cards;
+    cards.sort_by_key(|c| !c.name.eq_ignore_ascii_case(&search_term));
+
+    let mut cards = cards
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
-        // depending on the args.text variable
+        // depending on the opts.with_text variable
         .filter(move |c| {
             opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())
         })

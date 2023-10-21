@@ -1,10 +1,11 @@
 use anyhow::Context as _;
-use poise::serenity_prelude as serenity;
+ use poise::serenity_prelude as serenity;
 use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
 
 mod bg_cmds;
 mod card_cmds;
+mod deck_cmds;
 
 pub struct Data {}
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -45,6 +46,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 card_cmds::cardtext(),
                 card_cmds::cardreprints(),
                 bg_cmds::battlegrounds(),
+                deck_cmds::deck(),
             ],
             ..Default::default()
         })

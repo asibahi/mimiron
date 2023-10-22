@@ -1,5 +1,5 @@
 use anyhow::Context as _;
- use poise::serenity_prelude as serenity;
+use poise::serenity_prelude as serenity;
 use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
 
@@ -48,6 +48,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 bg_cmds::battlegrounds(),
                 deck_cmds::deck(),
             ],
+
             ..Default::default()
         })
         .token(discord_token)

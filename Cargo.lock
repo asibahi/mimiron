@@ -1336,6 +1336,7 @@ name = "mimiron_bot"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "image",
  "itertools 0.11.0",
  "mimiron",
  "poise",
@@ -1344,6 +1345,7 @@ dependencies = [
  "shuttle-secrets",
  "tokio",
  "tracing",
+ "urlencoding",
 ]
 
 [[package]]

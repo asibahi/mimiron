@@ -4,6 +4,54 @@ use mimiron::card;
 type Error = crate::Error;
 type Context<'a> = crate::Context<'a>;
 
+/// Search for a constructed card by name. Be precise!
+#[poise::command(slash_command)]
+pub async fn card(
+    ctx: Context<'_>,
+    #[description = "search term"] search_term: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let opts = card::SearchOptions::search_for(search_term);
+    let cards = card::lookup(&opts)?;
+
+    inner_card_search(ctx, cards).await?;
+
+    Ok(())
+}
+
+/// Search for a constructed card by name, including reprints. Be precise!
+#[poise::command(slash_command)]
+pub async fn cardreprints(
+    ctx: Context<'_>,
+    #[description = "search term"] search_term: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let opts = card::SearchOptions::search_for(search_term).include_reprints(true);
+    let cards = card::lookup(&opts)?;
+
+    inner_card_search(ctx, cards).await?;
+
+    Ok(())
+}
+
+/// Search for a constructed card by text.
+#[poise::command(slash_command)]
+pub async fn cardtext(
+    ctx: Context<'_>,
+    #[description = "search term"] search_term: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let opts = card::SearchOptions::search_for(search_term).with_text(true);
+    let cards = card::lookup(&opts)?;
+
+    inner_card_search(ctx, cards).await?;
+
+    Ok(())
+}
+
 async fn inner_card_search(
     ctx: Context<'_>,
     cards: impl Iterator<Item = card::Card>,
@@ -30,47 +78,5 @@ async fn inner_card_search(
         reply
     })
     .await?;
-    Ok(())
-}
-
-/// Search for a constructed card by name. Be precise!
-#[poise::command(slash_command)]
-pub async fn card(
-    ctx: Context<'_>,
-    #[description = "search term"] search_term: String,
-) -> Result<(), Error> {
-    let opts = card::SearchOptions::search_for(search_term);
-    let cards = card::lookup(&opts)?;
-
-    inner_card_search(ctx, cards).await?;
-
-    Ok(())
-}
-
-/// Search for a constructed card by name, including reprints. Be precise!
-#[poise::command(slash_command)]
-pub async fn cardreprints(
-    ctx: Context<'_>,
-    #[description = "search term"] search_term: String,
-) -> Result<(), Error> {
-    let opts = card::SearchOptions::search_for(search_term).include_reprints(true);
-    let cards = card::lookup(&opts)?;
-
-    inner_card_search(ctx, cards).await?;
-
-    Ok(())
-}
-
-/// Search for a constructed card by text.
-#[poise::command(slash_command)]
-pub async fn cardtext(
-    ctx: Context<'_>,
-    #[description = "search term"] search_term: String,
-) -> Result<(), Error> {
-    let opts = card::SearchOptions::search_for(search_term).with_text(true);
-    let cards = card::lookup(&opts)?;
-
-    inner_card_search(ctx, cards).await?;
-
     Ok(())
 }

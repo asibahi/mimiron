@@ -1,8 +1,10 @@
 # Mimiron
 
-An overengineered CLI tool to look up Hearthstone cards. It feeds up on the official Blizzard API and therefore, in theory, always works and always has the official, and updated, data for all cards.
+An overengineered CLI tool and Discord bot to look up Hearthstone cards. It feeds up on the official Blizzard API and therefore, in theory, always works and always has the official, and updated, data for all cards.
 
 ![An example of card lookup. Development screenshot](README/cardlookup.png)
+
+The following is a write up about the CLI app. For the discord bot, please go to [The Bot's README.](./mimiron_bot/README.md)
 
 ## Installation
 

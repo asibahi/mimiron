@@ -31,7 +31,8 @@ Include card text boxes in search (which is the default mode for Blizzard's API)
 ```
 
 ![Card text box search](README/cardtextlookup.png)
-may be useful for Classic Cards (rip classic mode).
+
+Include reprints of a card in the search. This may be useful for Classic Cards (rip classic mode).
 
 ```sh
 /cardreprints ragnaros

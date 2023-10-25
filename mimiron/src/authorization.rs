@@ -3,7 +3,8 @@ use base64::{engine::general_purpose, Engine};
 use serde::Deserialize;
 use std::{
     ops::Add,
-    sync::{OnceLock, RwLock}, time::{Instant, Duration},
+    sync::{OnceLock, RwLock},
+    time::{Duration, Instant},
 };
 
 const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
@@ -61,23 +62,16 @@ fn internal_get_access_token() -> Result<AccessToken> {
 }
 
 pub fn get_access_token() -> String {
-    let current_token = '_lock_read: { TOKEN.read().unwrap().clone() };
+    let current_token = TOKEN.read().unwrap().clone();
     match current_token {
         Some(at) if Instant::now() < at.expiry => at.token,
         _ => {
-            let new_token = internal_get_access_token()
-                .map_err(|e| {
-                    eprintln!("Encountered Error: {e}");
-                    e
-                })
-                .expect("Failed to get access token");
-
-            '_lock_write: {
-                let mut handle = TOKEN.write().unwrap();
-                *handle = Some(new_token.clone())
-            }
-
-            new_token.token
+            TOKEN
+                .write()
+                .unwrap()
+                .insert(internal_get_access_token().expect("Failed to get access token"))
+                .clone()
+                .token
         }
     }
 }

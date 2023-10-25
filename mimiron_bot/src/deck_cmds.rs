@@ -16,7 +16,7 @@ pub async fn deck(
     let deck = deck::lookup(&code)?;
     /***
      * this code is to list the cards by text. Do I even want that?
-     * 
+     *
     let cards = order_cards(&deck.cards);
 
     let mut class_cards_buffer = String::new();
@@ -93,7 +93,7 @@ fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
 
 /****
  *  I don't know if I even want to do these. List cards by text or rely on image?
- * 
+ *
 fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     cards.iter().fold(BTreeMap::new(), |mut map, card| {
         *map.entry(card).or_default() += 1;

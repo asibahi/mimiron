@@ -127,7 +127,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en-US")
         .query("code", code)
-        .query("access_token",& get_access_token())
+        .query("access_token", &get_access_token())
         .call()?
         .into_json::<Deck>()?;
 

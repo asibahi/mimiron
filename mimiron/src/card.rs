@@ -233,7 +233,7 @@ pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> 
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en-US")
         .query("textFilter", search_term)
-        .query("access_token", get_access_token());
+        .query("access_token", &get_access_token());
 
     if opts.noncollectibles {
         res = res.query("collectible", "0,1");

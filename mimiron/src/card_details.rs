@@ -24,7 +24,7 @@ pub(crate) fn get_set_by_id(id: usize) -> String {
         get_agent()
             .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
             .query("locale", "en-US")
-            .query("access_token", get_access_token())
+            .query("access_token", &get_access_token())
             .call()
             .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
             .unwrap_or_default()

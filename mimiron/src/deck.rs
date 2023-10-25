@@ -127,7 +127,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en-US")
         .query("code", code)
-        .query("access_token", get_access_token())
+        .query("access_token",& get_access_token())
         .call()?
         .into_json::<Deck>()?;
 
@@ -143,7 +143,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
         let response = get_agent()
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", "en-US")
-            .query("access_token", get_access_token())
+            .query("access_token", &get_access_token())
             .query("ids", &card_ids)
             .call();
 
@@ -191,7 +191,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     *deck = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en-US")
-        .query("access_token", get_access_token())
+        .query("access_token", &get_access_token())
         .query("ids", &card_ids)
         .query("sideboardCards", &band_ids)
         .call()?

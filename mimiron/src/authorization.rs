@@ -3,7 +3,7 @@ use base64::{engine::general_purpose, Engine};
 use serde::Deserialize;
 use std::{
     ops::Add,
-    sync::{OnceLock, RwLock},
+    sync::{OnceLock, RwLock}, time::{Instant, Duration},
 };
 
 const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
@@ -19,24 +19,24 @@ struct Authorization {
 #[serde(from = "Authorization")]
 struct AccessToken {
     token: String,
-    expiry: std::time::Instant,
+    expiry: Instant,
 }
 impl From<Authorization> for AccessToken {
     fn from(value: Authorization) -> Self {
         Self {
             token: value.access_token,
-            expiry: std::time::Instant::now().add(std::time::Duration::from_secs(value.expires_in)),
+            expiry: Instant::now().add(Duration::from_secs(value.expires_in)),
         }
     }
 }
 
 static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
-static TOKEN: OnceLock<std::sync::RwLock<AccessToken>> = OnceLock::new();
+static TOKEN: RwLock<Option<AccessToken>> = RwLock::new(None);
 
 pub(crate) fn get_agent() -> &'static ureq::Agent {
     AGENT.get_or_init(|| {
         ureq::AgentBuilder::new()
-            .timeout_connect(std::time::Duration::from_secs(2))
+            .timeout_connect(Duration::from_secs(2))
             .user_agent("mimiron cli https://github.com/asibahi/mimiron")
             .build()
     })
@@ -61,31 +61,23 @@ fn internal_get_access_token() -> Result<AccessToken> {
 }
 
 pub fn get_access_token() -> String {
-    let current = TOKEN.get_or_init(|| {
-        let t = internal_get_access_token()
-            .map_err(|e| {
-                eprintln!("Encountered Error: {e}");
-                e
-            })
-            .expect("Failed to get access token");
+    let current_token = '_lock_read: { TOKEN.read().unwrap().clone() };
+    match current_token {
+        Some(at) if Instant::now() < at.expiry => at.token,
+        _ => {
+            let new_token = internal_get_access_token()
+                .map_err(|e| {
+                    eprintln!("Encountered Error: {e}");
+                    e
+                })
+                .expect("Failed to get access token");
 
-        RwLock::new(t)
-    });
+            '_lock_write: {
+                let mut handle = TOKEN.write().unwrap();
+                *handle = Some(new_token.clone())
+            }
 
-    let AccessToken { token, expiry } = '_lock_read: { current.read().unwrap().clone() };
-    if std::time::Instant::now() > expiry {
-        let new_token = internal_get_access_token()
-            .map_err(|e| {
-                eprintln!("Encountered Error: {e}");
-                e
-            })
-            .expect("Failed to get access token");
-
-        let mut u = TOKEN.get().unwrap().write().unwrap();
-        *u = new_token.clone();
-
-        new_token.token
-    } else {
-        token
+            new_token.token
+        }
     }
 }

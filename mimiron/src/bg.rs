@@ -251,7 +251,7 @@ impl SearchOptions {
 pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> + 'c> {
     let mut res = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", get_access_token())
+        .query("access_token", &get_access_token())
         .query("locale", "en-US")
         .query("gameMode", "battlegrounds");
 
@@ -397,7 +397,7 @@ fn get_card_by_id(id: usize) -> Result<Card> {
         ))
         .query("locale", "en-US")
         .query("gameMode", "battlegrounds")
-        .query("access_token", get_access_token())
+        .query("access_token", &get_access_token())
         .call()?
         .into_json::<Card>()?;
     Ok(res)

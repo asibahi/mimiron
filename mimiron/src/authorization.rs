@@ -1,7 +1,10 @@
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
 use serde::Deserialize;
-use std::sync::OnceLock;
+use std::{
+    ops::Add,
+    sync::{OnceLock, RwLock},
+};
 
 const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
 const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
@@ -9,11 +12,26 @@ const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
 #[derive(Deserialize)]
 struct Authorization {
     access_token: String,
-    // expires_in: i64,
+    expires_in: u64,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(from = "Authorization")]
+struct AccessToken {
+    token: String,
+    expiry: std::time::Instant,
+}
+impl From<Authorization> for AccessToken {
+    fn from(value: Authorization) -> Self {
+        Self {
+            token: value.access_token,
+            expiry: std::time::Instant::now().add(std::time::Duration::from_secs(value.expires_in)),
+        }
+    }
 }
 
 static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
-static TOKEN: OnceLock<String> = OnceLock::new();
+static TOKEN: OnceLock<std::sync::RwLock<AccessToken>> = OnceLock::new();
 
 pub(crate) fn get_agent() -> &'static ureq::Agent {
     AGENT.get_or_init(|| {
@@ -24,7 +42,7 @@ pub(crate) fn get_agent() -> &'static ureq::Agent {
     })
 }
 
-fn internal_get_access_token() -> Result<String> {
+fn internal_get_access_token() -> Result<AccessToken> {
     // need to replace later with something that allows people to input their own creds
     dotenvy::dotenv().ok();
     let id = std::env::var(ID_KEY).map_err(|e| anyhow!("Failed to get {ID_KEY}: {e}"))?;
@@ -38,18 +56,36 @@ fn internal_get_access_token() -> Result<String> {
         .set("Authorization", &format!("Basic {creds}"))
         .query("grant_type", "client_credentials")
         .call()?
-        .into_json::<Authorization>()?
-        .access_token;
+        .into_json::<AccessToken>()?;
     Ok(access_token)
 }
 
-pub fn get_access_token() -> &'static str {
-    TOKEN.get_or_init(|| {
-        internal_get_access_token()
+pub fn get_access_token() -> String {
+    let current = TOKEN.get_or_init(|| {
+        let t = internal_get_access_token()
             .map_err(|e| {
                 eprintln!("Encountered Error: {e}");
                 e
             })
-            .expect("Failed to get access token")
-    })
+            .expect("Failed to get access token");
+
+        RwLock::new(t)
+    });
+
+    let AccessToken { token, expiry } = '_lock_read: { current.read().unwrap().clone() };
+    if std::time::Instant::now() > expiry {
+        let new_token = internal_get_access_token()
+            .map_err(|e| {
+                eprintln!("Encountered Error: {e}");
+                e
+            })
+            .expect("Failed to get access token");
+
+        let mut u = TOKEN.get().unwrap().write().unwrap();
+        *u = new_token.clone();
+
+        new_token.token
+    } else {
+        token
+    }
 }

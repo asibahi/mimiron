@@ -9,8 +9,11 @@ use colored::Colorize;
 use counter::Counter;
 use itertools::Itertools;
 use serde::Deserialize;
-use std::collections::HashMap;
-use std::{collections::BTreeMap, fmt::Display};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::Display,
+    ops::Not,
+};
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
 
@@ -166,7 +169,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    if !deck.cards.iter().any(|c| c.id == ETC_ID) {
+    if deck.cards.iter().any(|c| c.id == ETC_ID).not() {
         return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
     }
 

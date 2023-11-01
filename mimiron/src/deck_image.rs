@@ -10,7 +10,10 @@ use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    ops::Not,
+};
 
 //  Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -160,7 +163,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     // assumes decks will always have class cards
     let deck_img_width = {
         let mut columns = 1;
-        if !neutral_cards.is_empty() {
+        if neutral_cards.is_empty().not() {
             columns += 1;
         }
         if let Some(sideboards) = &deck.sideboard_cards {
@@ -181,7 +184,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     draw_deck_title(&mut img, deck)?;
-    if !neutral_cards.is_empty() {
+    if neutral_cards.is_empty().not() {
         let neutrals_title = get_title_slug("Neutrals", 0);
         img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
     }

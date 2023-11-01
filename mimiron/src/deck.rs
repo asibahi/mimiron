@@ -12,7 +12,6 @@ use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::Display,
-    ops::Not,
 };
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
@@ -169,7 +168,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    if deck.cards.iter().any(|c| c.id == ETC_ID).not() {
+    if deck.cards.iter().all(|c| c.id != ETC_ID) {
         return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
     }
 

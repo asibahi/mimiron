@@ -12,11 +12,7 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
 fn markdown(i: &str) -> String {
-    i.replace("*", "\\*")
-        .replace("<b>", "**")
-        .replace("</b>", "**")
-        .replace("<i>", "*")
-        .replace("</i>", "*")
+    mimiron::card_text_to_markdown(i)
 }
 
 #[shuttle_runtime::main]

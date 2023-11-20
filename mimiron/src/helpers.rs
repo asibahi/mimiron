@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1},
@@ -6,7 +7,7 @@ use nom::{
     sequence::delimited,
     IResult,
 };
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 // ====================
 // Text Tree
@@ -220,6 +221,68 @@ pub(crate) fn get_boxes_and_glue(i: &str) -> impl Iterator<Item = TextPiece> {
     };
 
     traverse_text_tree(tree)
+}
+
+pub fn card_text_to_markdown(i: &str) -> String {
+    let mut buffer = String::new();
+    let mut prev_style = TextStyle::Plain;
+
+    let boxes = get_boxes_and_glue(i).coalesce(|x, y| {
+        if x.style == y.style {
+            Ok(TextPiece {
+                text: format!("{}{}", x.text, y.text),
+                style: x.style,
+            })
+        } else {
+            Err((x, y))
+        }
+    });
+
+    for piece in boxes {
+        let tag = match (prev_style, piece.style) {
+            (TextStyle::Plain, TextStyle::Plain)
+            | (TextStyle::Bold, TextStyle::Bold)
+            | (TextStyle::Italic, TextStyle::Italic)
+            | (TextStyle::BoldItalic, TextStyle::BoldItalic) => "",
+
+            (TextStyle::Plain, TextStyle::Italic)
+            | (TextStyle::Bold, TextStyle::BoldItalic)
+            | (TextStyle::Italic, TextStyle::Plain)
+            | (TextStyle::BoldItalic, TextStyle::Bold) => "*",
+
+            (TextStyle::Plain, TextStyle::Bold)
+            | (TextStyle::Bold, TextStyle::Plain)
+            | (TextStyle::Italic, TextStyle::BoldItalic)
+            | (TextStyle::BoldItalic, TextStyle::Italic) => "**",
+
+            (TextStyle::Plain, TextStyle::BoldItalic)
+            | (TextStyle::BoldItalic, TextStyle::Plain) => "***",
+
+            (TextStyle::Bold, TextStyle::Italic) => "** *", // should never happen?
+            (TextStyle::Italic, TextStyle::Bold) => "* **", // should never happen?
+        };
+
+        let Ok(()) = write!(buffer, "{tag}{}", piece.text) else {
+            return i.into();
+        };
+
+        prev_style = piece.style;
+    }
+
+    let Ok(()) = write!(
+        buffer,
+        "{}",
+        match prev_style {
+            TextStyle::Plain => "",
+            TextStyle::Bold => "**",
+            TextStyle::Italic => "*",
+            TextStyle::BoldItalic => "***",
+        }
+    ) else {
+        return i.into();
+    };
+
+    buffer
 }
 
 #[cfg(test)]

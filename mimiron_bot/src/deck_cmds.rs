@@ -87,6 +87,45 @@ fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
     Ok(cursor)
 }
 
+/// Add band to a deck without a band.
+#[poise::command(slash_command)]
+pub async fn addband(
+    ctx: Context<'_>,
+    #[description = "deck code"] code: String,
+    #[description = "band member"] member1: String,
+    #[description = "band member"] member2: String,
+    #[description = "band member"] member3: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let mut deck = deck::lookup(&code)?;
+    mimiron::deck::add_band(&mut deck, vec![member1, member2, member3])?;
+
+    let cursor = inner_get_image(&deck)?;
+
+    ctx.send(|reply| {
+        reply
+            .embed(|embed| {
+                embed
+                    .title(format!("{} Deck", deck.class))
+                    .url(format!(
+                        "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
+                        urlencoding::encode(&deck.deck_code)
+                    ))
+                    .description(&deck.deck_code)
+                    .color(deck.class.color())
+                    .attachment("deck.png")
+            })
+            .attachment(serenity::AttachmentType::Bytes {
+                data: Cow::Owned(cursor.into_inner()),
+                filename: "deck.png".into(),
+            })
+    })
+    .await?;
+
+    Ok(())
+}
+
 /****
  *  I don't know if I even want to do these. List cards by text or rely on image?
  *

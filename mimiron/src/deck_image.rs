@@ -49,6 +49,9 @@ pub enum ImageOptions {
         /// whether card text is included. Best with 3 columns.
         with_text: bool,
     },
+
+    /// Similar to Regular but is either 2 or 3 columns based on "size"
+    Adaptable,
 }
 
 pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
@@ -57,7 +60,82 @@ pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
         ImageOptions::Regular { columns, with_text } => {
             img_columns_format(deck, columns as u32, with_text)
         }
+        ImageOptions::Adaptable => img_adaptable_format(deck),
     }
+}
+
+fn img_adaptable_format(deck: &Deck) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, false);
+
+    // silly hack for Reno Renathal decks.
+    let col_count = if ordered_cards.len() <= 25 { 2 } else { 3 };
+
+    let deck_img_width = COLUMN_WIDTH * col_count + MARGIN;
+
+    let cards_in_col = {
+        let main_deck_length = ordered_cards.len();
+
+        let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
+            sbs.iter()
+                .fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc)
+        });
+
+        let length = (main_deck_length + sideboards_length) as u32;
+
+        if length % col_count == 0 {
+            length / col_count
+        } else {
+            length / col_count + 1
+        }
+    };
+
+    let deck_img_height = (cards_in_col + 1) * ROW_HEIGHT + MARGIN;
+
+    // main canvas
+    let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
+
+    draw_deck_title(&mut img, deck)?;
+
+    // Main deck
+    for (i, (card, _)) in ordered_cards.iter().enumerate() {
+        let slug = &slug_map[card];
+
+        let i = i as u32;
+        let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+
+        img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+    }
+
+    // sideboard cards
+    if let Some(sideboards) = &deck.sideboard_cards {
+        let mut sb_pos_tracker = ordered_cards.len() as u32;
+
+        for sb in sideboards {
+            let (col, row) = (
+                sb_pos_tracker / cards_in_col,
+                sb_pos_tracker % cards_in_col + 1,
+            );
+            img.copy_from(
+                &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
+                col * COLUMN_WIDTH + MARGIN,
+                row * ROW_HEIGHT + MARGIN,
+            )?;
+            sb_pos_tracker += 1;
+
+            for slug in order_cards(&sb.cards_in_sideboard)
+                .keys()
+                .map(|c| &slug_map[c])
+            {
+                let i = sb_pos_tracker;
+                let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+                img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+
+                sb_pos_tracker += 1;
+            }
+        }
+    }
+
+    Ok(DynamicImage::ImageRgba8(img))
 }
 
 fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<DynamicImage> {

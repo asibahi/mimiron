@@ -79,11 +79,7 @@ pub async fn deck(
 }
 
 fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
-    let opts = deck::ImageOptions::Regular {
-        columns: 2,
-        with_text: false,
-    };
-    let img = deck::get_image(&deck, opts)?;
+    let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
 
     let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
     img.write_to(&mut cursor, image::ImageOutputFormat::Png)?;

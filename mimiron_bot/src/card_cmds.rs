@@ -68,7 +68,6 @@ pub async fn allcards(
     Ok(())
 }
 
-
 async fn inner_card_print(
     ctx: Context<'_>,
     cards: impl Iterator<Item = card::Card>,
@@ -77,6 +76,15 @@ async fn inner_card_print(
 
     ctx.send(|reply| {
         for card in cards {
+            let mut fields = vec![
+                (" ", format!("{} mana {}", card.cost, card.card_type), true),
+                (" ", card.card_set, true),
+            ];
+
+            if !card.flavor_text.is_empty() {
+                fields.push(("Flavor Text", markdown(&card.flavor_text), false));
+            }
+
             reply.embed(|embed| {
                 embed
                     .title(&card.name)
@@ -87,9 +95,7 @@ async fn inner_card_print(
                     .description(markdown(&card.text))
                     .color(card.rarity.color())
                     .thumbnail(&card.image)
-                    .field(" ", &card.card_type.to_string(), true)
-                    .field(" ", &card.card_set, true)
-                    .field("Flavor Text", markdown(&card.flavor_text), false)
+                    .fields(fields)
             });
         }
         reply

@@ -15,7 +15,7 @@ pub async fn card(
     let opts = card::SearchOptions::search_for(search_term);
     let cards = card::lookup(&opts)?;
 
-    inner_card_search(ctx, cards).await?;
+    inner_card_print(ctx, cards).await?;
 
     Ok(())
 }
@@ -31,7 +31,7 @@ pub async fn cardreprints(
     let opts = card::SearchOptions::search_for(search_term).include_reprints(true);
     let cards = card::lookup(&opts)?;
 
-    inner_card_search(ctx, cards).await?;
+    inner_card_print(ctx, cards).await?;
 
     Ok(())
 }
@@ -47,12 +47,29 @@ pub async fn cardtext(
     let opts = card::SearchOptions::search_for(search_term).with_text(true);
     let cards = card::lookup(&opts)?;
 
-    inner_card_search(ctx, cards).await?;
+    inner_card_print(ctx, cards).await?;
 
     Ok(())
 }
 
-async fn inner_card_search(
+/// Search includes all cards, including noncollectibles. Expect some nonsense.
+#[poise::command(slash_command)]
+pub async fn allcards(
+    ctx: Context<'_>,
+    #[description = "search term"] search_term: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let opts = card::SearchOptions::search_for(search_term).include_noncollectibles(true);
+    let cards = card::lookup(&opts)?;
+
+    inner_card_print(ctx, cards).await?;
+
+    Ok(())
+}
+
+
+async fn inner_card_print(
     ctx: Context<'_>,
     cards: impl Iterator<Item = card::Card>,
 ) -> Result<(), Error> {

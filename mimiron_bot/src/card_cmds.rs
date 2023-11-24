@@ -78,7 +78,7 @@ async fn terse_card_print(
 
     ctx.send(|reply| {
         for card in cards {
-            reply.embed(|embed| inner_create_embed(&card, embed));
+            reply.embed(|embed| inner_card_embed(&card, embed));
         }
         reply
     })
@@ -104,20 +104,21 @@ async fn paginated_card_print(
     let mut current_page = 0;
 
     ctx.send(|reply| {
-        for card in &card_chunks[0] {
-            reply.embed(|embed| inner_create_embed(card, embed));
+        for card in &card_chunks[current_page] {
+            reply.embed(|embed| inner_card_embed(card, embed));
         }
+
         if card_chunks.len() > 1 {
             reply.components(|component| {
                 component.create_action_row(|action_row| {
                     action_row
-                        .create_button(|button| button.custom_id(&prev_button_id).label("<"))
-                        .create_button(|button| button.custom_id(&next_button_id).label(">"))
+                        .create_button(|b| b.custom_id(&prev_button_id).label("<"))
+                        .create_button(|b| b.custom_id(&next_button_id).label(">"))
                 })
-            })
-        } else {
-            reply
+            });
         }
+
+        reply
     })
     .await?;
 
@@ -140,7 +141,7 @@ async fn paginated_card_print(
                     .kind(serenity::InteractionResponseType::UpdateMessage)
                     .interaction_response_data(|res_data| {
                         for card in &card_chunks[current_page] {
-                            res_data.embed(|embed| inner_create_embed(card, embed));
+                            res_data.embed(|embed| inner_card_embed(card, embed));
                         }
                         res_data
                     })
@@ -151,7 +152,7 @@ async fn paginated_card_print(
     Ok(())
 }
 
-fn inner_create_embed<'e>(
+fn inner_card_embed<'e>(
     card: &card::Card,
     embed: &'e mut serenity::CreateEmbed,
 ) -> &'e mut serenity::CreateEmbed {

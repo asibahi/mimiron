@@ -79,16 +79,12 @@ fn img_adaptable_format(deck: &Deck) -> Result<DynamicImage> {
 
         // slightly more sophisticated hack for Reno Renathal decks.
         let col_count = (length / 15 + 1).max(2);
-        let cards_in_col = if length % col_count == 0 {
-            length / col_count
-        } else {
-            length / col_count + 1
-        };
+        let cards_in_col = length / col_count + (length % col_count).min(1);
 
         // main canvas
         let img = draw_main_canvas(
             COLUMN_WIDTH * col_count + MARGIN,
-            (cards_in_col + 1) * ROW_HEIGHT + MARGIN,
+            ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
             (255, 255, 255),
         );
 
@@ -148,9 +144,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<Dy
         ROW_HEIGHT
     };
 
-    let deck_img_width = COLUMN_WIDTH * col_count + MARGIN;
-
-    let cards_in_col = {
+    let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
 
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
@@ -160,17 +154,17 @@ fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<Dy
 
         let length = (main_deck_length + sideboards_length) as u32;
 
-        if length % col_count == 0 {
-            length / col_count
-        } else {
-            length / col_count + 1
-        }
+        let cards_in_col = length / col_count + (length % col_count).min(1);
+
+        // main canvas
+        let img = draw_main_canvas(
+            COLUMN_WIDTH * col_count + MARGIN,
+            ROW_HEIGHT + cards_in_col * actual_row_height + MARGIN,
+            (255, 255, 255),
+        );
+
+        (img, cards_in_col)
     };
-
-    let deck_img_height = ROW_HEIGHT + cards_in_col * actual_row_height + MARGIN;
-
-    // main canvas
-    let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     draw_deck_title(&mut img, deck)?;
 

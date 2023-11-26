@@ -58,6 +58,7 @@ enum ImageFormat {
     Square,
     Wide,
     Text,
+    Adapt,
 }
 
 pub(crate) fn run(args: DeckArgs) -> Result<()> {
@@ -86,6 +87,7 @@ pub(crate) fn run(args: DeckArgs) -> Result<()> {
         let opts = 'opts: {
             let (columns, with_text) = match args.format {
                 ImageFormat::Groups => break 'opts deck::ImageOptions::Groups,
+                ImageFormat::Adapt => break 'opts deck::ImageOptions::Adaptable,
                 ImageFormat::Single => (1, false),
                 ImageFormat::Square => (2, false),
                 ImageFormat::Wide => (3, false),

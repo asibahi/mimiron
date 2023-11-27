@@ -130,7 +130,13 @@ pub fn lookup(code: &str) -> Result<Deck> {
         .query("locale", "en-US")
         .query("code", code)
         .query("access_token", &get_access_token())
-        .call()?
+        .call()
+        .map_err(|e| match e {
+            ureq::Error::Status(status, _) => {
+                anyhow!("Encountered Error: Status {status}. Code may be invalid.")
+            }
+            ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
+        })?
         .into_json::<Deck>()?;
 
     // ugly hack for double class decks. Doesn't work if card id's don't exist in API.

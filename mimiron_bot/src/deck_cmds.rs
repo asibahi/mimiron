@@ -13,6 +13,11 @@ pub async fn deck(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
+    let _title = code
+        .strip_prefix("###")
+        .and_then(|s| s.split_once("#"))
+        .map(|(s, _)| s.trim());
+
     let code = code
         .split_ascii_whitespace()
         .find(|s| s.starts_with("AA"))

@@ -15,38 +15,7 @@ pub async fn deck(
 
     let deck = deck::lookup(&code)?;
 
-    let cursor = inner_get_image(&deck)?;
-
-    ctx.send(|reply| {
-        reply
-            .embed(|embed| {
-                embed
-                    .title(format!("{} Deck", deck.class))
-                    .url(format!(
-                        "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
-                        urlencoding::encode(&deck.deck_code)
-                    ))
-                    .description(code)
-                    .color(deck.class.color())
-                    .attachment("deck.png")
-            })
-            .attachment(serenity::AttachmentType::Bytes {
-                data: Cow::Owned(cursor.into_inner()),
-                filename: "deck.png".into(),
-            })
-    })
-    .await?;
-
-    Ok(())
-}
-
-fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
-    let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
-
-    let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
-    img.write_to(&mut cursor, image::ImageOutputFormat::Png)?;
-
-    Ok(cursor)
+    send_deck_reply(ctx, deck).await
 }
 
 /// Add band to a deck without a band.
@@ -63,6 +32,19 @@ pub async fn addband(
     let mut deck = deck::lookup(&code)?;
     mimiron::deck::add_band(&mut deck, vec![member1, member2, member3])?;
 
+    send_deck_reply(ctx, deck).await
+}
+
+fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
+    let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
+
+    let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
+    img.write_to(&mut cursor, image::ImageOutputFormat::Png)?;
+
+    Ok(cursor)
+}
+
+async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     let cursor = inner_get_image(&deck)?;
 
     ctx.send(|reply| {

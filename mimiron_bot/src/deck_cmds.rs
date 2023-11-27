@@ -13,6 +13,11 @@ pub async fn deck(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
+    let code = code
+        .split_ascii_whitespace()
+        .find(|s| s.starts_with("AA"))
+        .unwrap_or(&code);
+
     let deck = deck::lookup(&code)?;
 
     send_deck_reply(ctx, deck).await
@@ -30,7 +35,7 @@ pub async fn addband(
     ctx.defer().await?;
 
     let mut deck = deck::lookup(&code)?;
-    mimiron::deck::add_band(&mut deck, vec![member1, member2, member3])?;
+    deck::add_band(&mut deck, vec![member1, member2, member3])?;
 
     send_deck_reply(ctx, deck).await
 }

@@ -37,8 +37,7 @@ pub(crate) fn get_set_by_id(id: usize) -> String {
                 .is_some_and(|aliases| aliases.into_iter().any(|a| a == id))
     });
 
-    set.map(|s| s.name.clone())
-        .unwrap_or_else(|| format!("Set {id}"))
+    set.map_or_else(|| format!("Set {id}"), |s| s.name.clone())
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
@@ -109,6 +108,7 @@ impl From<ClassData> for Class {
     }
 }
 impl Class {
+    #[must_use]
     pub fn color(&self) -> (u8, u8, u8) {
         match self {
             // colors from d0nkey.top
@@ -169,6 +169,7 @@ impl From<u8> for Rarity {
     }
 }
 impl Rarity {
+    #[must_use]
     pub fn color(&self) -> (u8, u8, u8) {
         // colors from https://wowpedia.fandom.com/wiki/Quality
         match self {

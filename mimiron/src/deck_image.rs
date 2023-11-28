@@ -404,10 +404,10 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs<'d>(
-    deck: &'d Deck,
+fn order_deck_and_get_slugs(
+    deck: &Deck,
     with_text: bool,
-) -> (BTreeMap<&'d Card, usize>, HashMap<&'d Card, DynamicImage>) {
+) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards

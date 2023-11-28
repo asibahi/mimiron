@@ -215,8 +215,8 @@ pub struct SearchOptions {
 }
 
 impl SearchOptions {
-    #[must_use]
-    pub fn new() -> Self {
+#[must_use]
+    pub fn empty() -> Self {
         Self {
             search_term: None,
             tier: None,
@@ -248,7 +248,7 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> + 'c> {
+pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut res = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", &get_access_token())

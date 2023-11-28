@@ -14,7 +14,7 @@ pub async fn battlegrounds(
     #[description = "search term"] search_term: String,
 ) -> Result<(), Error> {
     ctx.defer().await?;
-    let opts = mimiron::bg::SearchOptions::new().search_for(Some(search_term));
+    let opts = mimiron::bg::SearchOptions::empty().search_for(Some(search_term));
     let cards = mimiron::bg::lookup(&opts)?.take(3);
 
     ctx.send(|reply| {

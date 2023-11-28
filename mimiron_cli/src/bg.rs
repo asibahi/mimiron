@@ -28,7 +28,7 @@ pub struct BGArgs {
 }
 
 pub(crate) fn run(args: BGArgs) -> Result<()> {
-    let opts = bg::SearchOptions::new()
+    let opts = bg::SearchOptions::empty()
         .search_for(args.name)
         .with_tier(args.tier)
         .with_type(args.minion_type)

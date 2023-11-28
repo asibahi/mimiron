@@ -30,7 +30,7 @@ pub(crate) fn get_set_by_id(id: usize) -> String {
             .unwrap_or_default()
     });
 
-    let set = sets.into_iter().find(|s| {
+    let set = sets.iter().find(|s| {
         s.id == id
             || s.alias_set_ids
                 .clone()

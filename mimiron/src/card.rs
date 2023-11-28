@@ -226,7 +226,7 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup<'c>(opts: &'c SearchOptions) -> Result<impl Iterator<Item = Card> + 'c> {
+pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let search_term = &opts.search_term;
 
     let mut res = get_agent()

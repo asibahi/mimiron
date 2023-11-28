@@ -137,7 +137,7 @@ impl From<CardData> for Card {
         Self {
             id: c.id,
             card_set: get_set_by_id(c.card_set_id),
-            name: c.name.clone(),
+            name: c.name,
             class: if c.multi_class_ids.is_empty() {
                 HashSet::from([c.class_id.unwrap_or_default().into()])
             } else {

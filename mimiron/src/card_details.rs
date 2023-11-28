@@ -33,11 +33,12 @@ pub(crate) fn get_set_by_id(id: usize) -> String {
     let set = sets.iter().find(|s| {
         s.id == id
             || s.alias_set_ids
-                .clone()
-                .is_some_and(|aliases| aliases.into_iter().any(|a| a == id))
+                .as_ref()
+                .is_some_and(|aliases| aliases.contains(&id))
     });
 
-    set.map_or_else(|| format!("Set {id}"), |s| s.name.clone())
+    set.map(|s| s.name.clone())
+        .unwrap_or_else(|| format!("Set {id}"))
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]

@@ -46,7 +46,7 @@ pub async fn addband(
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
-    let attachment_name = format!("{}'s_{}_deck.png", ctx.author().name, deck.class);
+    let attachment_name = format!("{}s_{}_deck.png", ctx.author().name, deck.class);
 
     let attachment = {
         let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;

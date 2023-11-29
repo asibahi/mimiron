@@ -10,8 +10,8 @@ license = "MIT"
 [dependencies]
 mimiron = { path = "../mimiron" }
 anyhow = "1.0.68"
-poise = "0.5.2"
-shuttle-poise = "0.34"
+poise = "0.6.0"
+shuttle-serenity = "0.34"
 shuttle-runtime = "0.34"
 shuttle-secrets = "0.34"
 tracing = "0.1.37"

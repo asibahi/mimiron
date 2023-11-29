@@ -1,6 +1,7 @@
 // use crate::markdown;
 use itertools::Itertools;
 use mimiron::bg;
+use poise::serenity_prelude as serenity;
 
 use crate::markdown;
 
@@ -14,36 +15,28 @@ pub async fn battlegrounds(
     #[description = "search term"] search_term: String,
 ) -> Result<(), Error> {
     ctx.defer().await?;
-    let opts = mimiron::bg::SearchOptions::empty().search_for(Some(search_term));
-    let cards = mimiron::bg::lookup(&opts)?.take(3);
+    let opts = bg::SearchOptions::empty().search_for(Some(search_term));
+    let cards = bg::lookup(&opts)?.take(3);
 
-    ctx.send(|reply| {
-        for card in cards {
-            reply.embed(|embed| {
-                let text = format_card_type(&card);
-                embed
-                    .title(&card.name)
-                    .url(format!(
-                        "https://hearthstone.blizzard.com/en-us/battlegrounds/{}",
-                        card.id
-                    ))
-                    .thumbnail(&card.image)
-                    .field(" ", text, false);
+    let embeds = cards.map(|card| {
+        serenity::CreateEmbed::default()
+            .title(&card.name)
+            .url(format!(
+                "https://hearthstone.blizzard.com/en-us/battlegrounds/{}",
+                card.id
+            ))
+            .thumbnail(&card.image)
+            .field(" ", format_card_type(&card), false)
+    });
 
-                for associated_card in bg::get_and_print_associated_cards(card) {
-                    let field_title = match associated_card.card_type {
-                        bg::BGCardType::Minion { .. } => "Golden",
-                        bg::BGCardType::HeroPower { .. } => "Hero Power",
-                        _ => "",
-                    };
-                    embed.field(field_title, format_card_type(&associated_card), false);
-                }
-                embed
-            });
-        }
-        reply
-    })
-    .await?;
+    let mut reply = poise::CreateReply::default();
+    reply.embeds.extend(embeds);
+    // for embed in embeds {
+    //     reply = reply.embed(embed);
+    // }
+
+    ctx.send(reply).await?;
+
     Ok(())
 }
 

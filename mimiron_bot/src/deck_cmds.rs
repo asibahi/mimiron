@@ -1,6 +1,6 @@
 use mimiron::deck::{self, Deck};
 use poise::serenity_prelude as serenity;
-use std::{borrow::Cow, io::Cursor};
+use std::io::Cursor;
 
 type Error = crate::Error;
 type Context<'a> = crate::Context<'a>;
@@ -45,37 +45,33 @@ pub async fn addband(
     send_deck_reply(ctx, deck).await
 }
 
-fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
-    let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
-
-    let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
-    img.write_to(&mut cursor, image::ImageOutputFormat::Png)?;
-
-    Ok(cursor)
-}
-
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
-    let cursor = inner_get_image(&deck)?;
+    let attachment_name = format!("{}s_{}_deck.png", ctx.author().name, deck.class);
 
-    ctx.send(|reply| {
-        reply
-            .embed(|embed| {
-                embed
-                    .title(format!("{} Deck", deck.class))
-                    .url(format!(
-                        "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
-                        urlencoding::encode(&deck.deck_code)
-                    ))
-                    .description(&deck.deck_code)
-                    .color(deck.class.color())
-                    .attachment("deck.png")
-            })
-            .attachment(serenity::AttachmentType::Bytes {
-                data: Cow::Owned(cursor.into_inner()),
-                filename: "deck.png".into(),
-            })
-    })
-    .await?;
+    let attachment = {
+        let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
+
+        let mut image_data = Cursor::new(Vec::<u8>::new());
+        img.write_to(&mut image_data, image::ImageOutputFormat::Png)?;
+
+        serenity::CreateAttachment::bytes(image_data.into_inner(), &attachment_name)
+    };
+
+    let embed = serenity::CreateEmbed::new()
+        .title(format!("{} Deck", deck.class))
+        .url(format!(
+            "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
+            urlencoding::encode(&deck.deck_code)
+        ))
+        .description(&deck.deck_code)
+        .color(deck.class.color())
+        .attachment(attachment_name);
+
+    let reply = poise::CreateReply::default()
+        .attachment(attachment)
+        .embed(embed);
+
+    ctx.send(reply).await?;
 
     Ok(())
 }

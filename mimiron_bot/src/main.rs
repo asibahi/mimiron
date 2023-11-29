@@ -1,7 +1,7 @@
 use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
-use shuttle_serenity::ShuttleSerenity;
 use shuttle_secrets::SecretStore;
+use shuttle_serenity::ShuttleSerenity;
 
 mod bg_cmds;
 mod card_cmds;
@@ -30,7 +30,6 @@ pub async fn help(
 
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
-    // The below code is almost the template from `cargo shuttle init`
     let discord_token = secret_store
         .get("DISCORD_TOKEN")
         .context("'DISCORD_TOKEN' was not found")?;
@@ -60,11 +59,8 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::addband(),
                 help(),
             ],
-
             ..Default::default()
         })
-        // .token(discord_token)
-        // .intents(serenity::GatewayIntents::non_privileged())
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;

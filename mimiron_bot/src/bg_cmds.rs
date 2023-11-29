@@ -31,9 +31,6 @@ pub async fn battlegrounds(
 
     let mut reply = poise::CreateReply::default();
     reply.embeds.extend(embeds);
-    // for embed in embeds {
-    //     reply = reply.embed(embed);
-    // }
 
     ctx.send(reply).await?;
 

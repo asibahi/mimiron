@@ -125,18 +125,6 @@ async fn paginated_card_print(
         } else {
             current_page.saturating_sub(1)
         };
-        // if press.data.custom_id == next_button_id {
-        //     current_page += 1;
-        //     if current_page >= embed_chunks.len() {
-        //         current_page = 0;
-        //     }
-        // } else if press.data.custom_id == prev_button_id {
-        //     current_page = current_page
-        //         .checked_sub(1)
-        //         .unwrap_or(embed_chunks.len() - 1);
-        // } else {
-        //     continue;
-        // }
 
         press
             .create_response(

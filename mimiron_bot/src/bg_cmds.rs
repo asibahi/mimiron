@@ -8,7 +8,7 @@ type Error = crate::Error;
 type Context<'a> = crate::Context<'a>;
 
 /// Search for a battlegrounds card by name. Be precise!
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Battlegrounds")]
 pub async fn battlegrounds(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,

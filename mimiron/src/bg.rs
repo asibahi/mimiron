@@ -215,7 +215,7 @@ pub struct SearchOptions {
 }
 
 impl SearchOptions {
-#[must_use]
+    #[must_use]
     pub fn empty() -> Self {
         Self {
             search_term: None,

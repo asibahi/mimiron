@@ -7,7 +7,7 @@ type Error = crate::Error;
 type Context<'a> = crate::Context<'a>;
 
 /// Search for a constructed card by name. Be precise!
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Constructed")]
 pub async fn card(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -23,7 +23,7 @@ pub async fn card(
 }
 
 /// Search for a constructed card by name, including reprints. Be precise!
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Constructed")]
 pub async fn cardreprints(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -39,7 +39,7 @@ pub async fn cardreprints(
 }
 
 /// Search for a constructed card by text.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Constructed")]
 pub async fn cardtext(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -55,7 +55,7 @@ pub async fn cardtext(
 }
 
 /// Search includes all cards, including noncollectibles. Expect some nonsense.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Constructed")]
 pub async fn allcards(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,

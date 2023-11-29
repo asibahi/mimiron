@@ -6,7 +6,7 @@ type Error = crate::Error;
 type Context<'a> = crate::Context<'a>;
 
 /// Get deck cards from code.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Deck")]
 pub async fn deck(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,
@@ -29,7 +29,7 @@ pub async fn deck(
 }
 
 /// Add band to a deck without a band.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, category = "Deck")]
 pub async fn addband(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,

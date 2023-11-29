@@ -15,6 +15,19 @@ fn markdown(i: &str) -> String {
     mimiron::card_text_to_markdown(i)
 }
 
+#[poise::command(slash_command, hide_in_help)]
+pub async fn help(
+    ctx: Context<'_>,
+    #[description = "Specific command to show help about"] command: Option<String>,
+) -> Result<(), Error> {
+    let configuration = poise::builtins::HelpConfiguration {
+        ephemeral: true,
+        ..Default::default()
+    };
+    poise::builtins::help(ctx, command.as_deref(), configuration).await?;
+    Ok(())
+}
+
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttlePoise<Data, Error> {
     // The below code is almost the template from `cargo shuttle init`
@@ -45,6 +58,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 bg_cmds::battlegrounds(),
                 deck_cmds::deck(),
                 deck_cmds::addband(),
+                help(),
             ],
 
             ..Default::default()

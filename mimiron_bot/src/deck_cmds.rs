@@ -45,20 +45,17 @@ pub async fn addband(
     send_deck_reply(ctx, deck).await
 }
 
-fn inner_get_image(deck: &Deck) -> Result<Cursor<Vec<u8>>, anyhow::Error> {
-    let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
-
-    let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
-    img.write_to(&mut cursor, image::ImageOutputFormat::Png)?;
-
-    Ok(cursor)
-}
-
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
-    let image_data = inner_get_image(&deck)?;
     let attachment_name = format!("{}'s_{}_deck.png", ctx.author().name, deck.class);
 
-    let attachment = serenity::CreateAttachment::bytes(image_data.into_inner(), &attachment_name);
+    let attachment = {
+        let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
+
+        let mut image_data = Cursor::new(Vec::<u8>::new());
+        img.write_to(&mut image_data, image::ImageOutputFormat::Png)?;
+
+        serenity::CreateAttachment::bytes(image_data.into_inner(), &attachment_name)
+    };
 
     let embed = serenity::CreateEmbed::new()
         .title(format!("{} Deck", deck.class))

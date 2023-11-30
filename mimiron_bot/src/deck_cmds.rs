@@ -11,17 +11,8 @@ pub async fn deck(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let _title = code
-        .strip_prefix("###")
-        .and_then(|s| s.split_once("#"))
-        .map(|(s, _)| s.trim());
-
-    let code = code
-        .split_ascii_whitespace()
-        .find(|s| s.starts_with("AA"))
-        .unwrap_or(&code);
-
-    let deck = deck::lookup(&code)?;
+    let code = get_code_from_msg(&code).await;
+    let deck = deck::lookup(code)?;
 
     send_deck_reply(ctx, deck).await
 }
@@ -30,23 +21,12 @@ pub async fn deck(
 #[poise::command(context_menu_command = "Get Deck", category = "Deck")]
 pub async fn deck_context_menu(
     ctx: Context<'_>,
-    #[description = "deck code"] code: serenity::Message,
+    #[description = "deck code"] msg: serenity::Message,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code = code.content;
-
-    let _title = code
-        .strip_prefix("###")
-        .and_then(|s| s.split_once("#"))
-        .map(|(s, _)| s.trim());
-
-    let code = code
-        .split_ascii_whitespace()
-        .find(|s| s.starts_with("AA"))
-        .unwrap_or(&code);
-
-    let deck = deck::lookup(&code)?;
+    let code = get_code_from_msg(&msg.content).await;
+    let deck = deck::lookup(code)?;
 
     send_deck_reply(ctx, deck).await
 }
@@ -66,6 +46,27 @@ pub async fn addband(
     deck::add_band(&mut deck, vec![member1, member2, member3])?;
 
     send_deck_reply(ctx, deck).await
+}
+
+async fn get_code_from_msg(code: &str) -> &str {
+    /* For when someone pastes something like this:
+     * ### Custom Shaman
+     * # etc
+     * #
+     * AAECAfWfAwjy3QT0oAXmowXipAXFpQX9xAX0yAX00AUL1bIE4LUEssEExc4Exs4Euu0Eyu0EhaoFw9AFxNAFr9EFAAED2aAE/cQFr8MF/cQF0p4G/cQFAAA=
+     * #
+     * # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
+     */
+
+    // use this later?
+    let _title = code
+        .strip_prefix("###")
+        .and_then(|s| s.split_once("#"))
+        .map(|(s, _)| s.trim());
+
+    code.split_ascii_whitespace()
+        .find(|s| s.starts_with("AA"))
+        .unwrap_or(&code)
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {

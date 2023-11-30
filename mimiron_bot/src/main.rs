@@ -6,27 +6,11 @@ use shuttle_serenity::ShuttleSerenity;
 mod bg_cmds;
 mod card_cmds;
 mod deck_cmds;
+mod helpers;
 
 pub struct Data {}
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-
-fn markdown(i: &str) -> String {
-    mimiron::card_text_to_markdown(i)
-}
-
-#[poise::command(slash_command, hide_in_help)]
-pub async fn help(
-    ctx: Context<'_>,
-    #[description = "Specific command to show help about"] command: Option<String>,
-) -> Result<(), Error> {
-    let configuration = poise::builtins::HelpConfiguration {
-        ephemeral: true,
-        ..Default::default()
-    };
-    poise::builtins::help(ctx, command.as_deref(), configuration).await?;
-    Ok(())
-}
 
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
@@ -57,8 +41,9 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 bg_cmds::battlegrounds(),
                 deck_cmds::deck(),
                 deck_cmds::addband(),
-                help(),
+                helpers::help(),
             ],
+            on_error: |error| Box::pin(helpers::on_error(error)),
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

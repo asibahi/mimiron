@@ -1,9 +1,7 @@
+use crate::{Context, Error};
 use mimiron::deck::{self, Deck};
 use poise::serenity_prelude as serenity;
 use std::io::Cursor;
-
-type Error = crate::Error;
-type Context<'a> = crate::Context<'a>;
 
 /// Get deck cards from code.
 #[poise::command(slash_command, category = "Deck")]

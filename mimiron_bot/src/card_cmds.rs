@@ -1,10 +1,7 @@
-use crate::markdown;
+use crate::{helpers::markdown, Context, Error};
 use itertools::Itertools;
 use mimiron::card;
 use poise::serenity_prelude as serenity;
-
-type Error = crate::Error;
-type Context<'a> = crate::Context<'a>;
 
 /// Search for a constructed card by name. Be precise!
 #[poise::command(slash_command, category = "Constructed")]

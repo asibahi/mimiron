@@ -1,4 +1,4 @@
-use crate::{Context, Data, Error};
+use crate::{Context, Error};
 
 pub(crate) fn markdown(i: &str) -> String {
     mimiron::card_text_to_markdown(i)

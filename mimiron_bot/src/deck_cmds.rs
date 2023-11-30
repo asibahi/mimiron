@@ -26,6 +26,31 @@ pub async fn deck(
     send_deck_reply(ctx, deck).await
 }
 
+/// Get deck cards from code.
+#[poise::command(context_menu_command = "Get Deck", category = "Deck")]
+pub async fn deck_context_menu(
+    ctx: Context<'_>,
+    #[description = "deck code"] code: serenity::Message,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let code = code.content;
+
+    let _title = code
+        .strip_prefix("###")
+        .and_then(|s| s.split_once("#"))
+        .map(|(s, _)| s.trim());
+
+    let code = code
+        .split_ascii_whitespace()
+        .find(|s| s.starts_with("AA"))
+        .unwrap_or(&code);
+
+    let deck = deck::lookup(&code)?;
+
+    send_deck_reply(ctx, deck).await
+}
+
 /// Add band to a deck without a band.
 #[poise::command(slash_command, category = "Deck")]
 pub async fn addband(

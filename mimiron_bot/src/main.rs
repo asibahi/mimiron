@@ -41,6 +41,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 bg_cmds::battlegrounds(),
                 deck_cmds::deck(),
                 deck_cmds::addband(),
+                deck_cmds::deck_context_menu(),
                 helpers::help(),
             ],
             on_error: |error| Box::pin(helpers::on_error(error)),

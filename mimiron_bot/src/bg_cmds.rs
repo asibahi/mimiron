@@ -54,6 +54,9 @@ fn format_card_type(card: &bg::Card) -> String {
                 markdown(text)
             )
         }
+        bg::BGCardType::Spell { tier, cost, text } => {
+            format!("Tier-{tier}, {cost}-Cost spell: {}", markdown(text))
+        }
         bg::BGCardType::Quest { text } => {
             format!("Battlegrounds Quest: {}", markdown(text))
         }

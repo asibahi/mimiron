@@ -62,6 +62,11 @@ pub enum BGCardType {
         minion_types: HashSet<MinionType>,
         upgrade_id: Option<usize>,
     },
+    Spell {
+        tier: u8,
+        cost: u8,
+        text: String,
+    },
     Quest {
         text: String,
     },
@@ -111,6 +116,10 @@ impl Display for BGCardType {
                     let types = minion_types.iter().join("/");
                     write!(f, "{types}")?;
                 }
+                inner(text, f)
+            }
+            Self::Spell { tier, cost, text } => {
+                write!(f, "Tier-{tier}, {cost}-Cost spell")?;
                 inner(text, f)
             }
             Self::Quest { text } => {
@@ -182,6 +191,9 @@ impl From<CardData> for Card {
                 buddy_id: bg.companion_id.filter(|x| *x != 0),
                 child_ids: c.child_ids.unwrap_or_default(),
             },
+            //  TODO
+            //  Insert Spell data conversion here
+            //
             Some(bg) if bg.quest => BGCardType::Quest { text: c.text },
             Some(bg) if bg.reward => BGCardType::Reward { text: c.text },
             _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },

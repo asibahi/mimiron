@@ -79,7 +79,7 @@ impl PartialEq for Card {
 }
 impl PartialOrd for Card {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cost.cmp(&other.cost).then(self.name.cmp(&other.name)))
+        Some(self.cmp(other))
     }
 }
 impl Hash for Card {

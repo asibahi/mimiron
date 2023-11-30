@@ -222,13 +222,15 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
 
     let class_cards = ordered_cards
         .iter()
-        .filter_map(|(c, _)| (!c.class.contains(&Class::Neutral)).then(|| &slug_map[c]))
+        .filter(|&(c, _)| !c.class.contains(&Class::Neutral))
+        .map(|(c, _)| &slug_map[c])
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
-        .filter_map(|(c, _)| c.class.contains(&Class::Neutral).then(|| &slug_map[c]))
+        .filter(|&(c, _)| c.class.contains(&Class::Neutral))
+        .map(|(c, _)| &slug_map[c])
         .enumerate()
         .collect::<Vec<_>>();
 

@@ -103,7 +103,8 @@ pub(crate) fn run(args: DeckArgs) -> Result<()> {
             deck.class,
             deck.format
                 .chars()
-                .filter_map(|c| c.is_alphanumeric().then(|| c.to_ascii_uppercase()))
+                .filter(|c| c.is_alphanumeric())
+                .map(|c| c.to_ascii_uppercase())
                 .collect::<String>(),
             chrono::Local::now().format("%Y%m%d %H%M")
         );

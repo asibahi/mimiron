@@ -44,7 +44,6 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::deck_context_menu(),
                 helpers::help(),
             ],
-            on_error: |error| Box::pin(helpers::on_error(error)),
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

@@ -22,6 +22,18 @@ pub async fn battlegrounds(
             ))
             .thumbnail(&card.image)
             .field(" ", format_card_type(&card), false)
+            .fields(
+                bg::get_and_print_associated_cards(card)
+                    .into_iter()
+                    .map(|c| {
+                        let field_title = match c.card_type {
+                            bg::BGCardType::Minion { .. } => "Triple",
+                            bg::BGCardType::HeroPower { .. } => "Hero Power",
+                            _ => "",
+                        };
+                        (field_title, format_card_type(&c), false)
+                    }),
+            )
     });
 
     let mut reply = poise::CreateReply::default();

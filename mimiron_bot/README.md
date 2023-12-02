@@ -12,7 +12,9 @@ As an alternative, I set up a small discord server to host the bot and play with
 
 ## Usage
 
-**Note:** The bot currently restricts itself to showing three cards to avoid overwhelming the chat more than it does now.
+**Note:** The bot currently restricts itself to showing three cards to avoid overwhelming the chat more than it does now. Tho `/cardtext` is paginated.
+
+There are other commands not covered here. Join the bot's server and experiment!
 
 ### Card Lookup
 
@@ -76,7 +78,6 @@ Looking up cards by tier and/or type is planned, but not currently implemented.
 ## Roadmap
 
 Please use the bot and give me feedback, either here in Github issues or in the [Mimiron Bot Server](https://discord.gg/HyW3nEMZKH) (where you can also try bot!!) Some ideas include:
-- Search for tokens, noncollectible cards
 - Mercenaries support???
 
 ## License

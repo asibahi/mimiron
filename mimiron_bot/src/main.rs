@@ -2,6 +2,7 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use shuttle_secrets::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
+use tracing::info;
 
 mod bg_cmds;
 mod card_cmds;
@@ -31,8 +32,6 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
             .context("'BLIZZARD_CLIENT_SECRET' was not found")?,
     );
 
-    // tracing_subscriber::fmt::init();
-
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
@@ -48,6 +47,17 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::deck_context_menu(),
                 helpers::help(),
             ],
+            post_command: |ctx| {
+                Box::pin(async move {
+                    let command = ctx.command().name.clone();
+                    let guild = ctx
+                        .guild()
+                        .map(|g| g.name.clone())
+                        .unwrap_or("Direct Messages".into());
+
+                    info!("Command called successfully: {command} in {guild}.");
+                })
+            },
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

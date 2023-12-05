@@ -2,7 +2,6 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use shuttle_secrets::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
-use tracing_subscriber;
 
 mod bg_cmds;
 mod card_cmds;
@@ -32,7 +31,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
             .context("'BLIZZARD_CLIENT_SECRET' was not found")?,
     );
 
-    tracing_subscriber::fmt::init();
+    // tracing_subscriber::fmt::init();
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {

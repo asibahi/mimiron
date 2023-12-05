@@ -1400,7 +1400,7 @@ dependencies = [
  "shuttle-secrets",
  "shuttle-serenity",
  "tokio",
- "tracing-subscriber",
+ "tracing",
  "urlencoding",
 ]
 

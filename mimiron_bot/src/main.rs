@@ -39,6 +39,8 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 card_cmds::cardreprints(),
                 card_cmds::allcards(),
                 bg_cmds::battlegrounds(),
+                bg_cmds::bgtext(),
+                bg_cmds::bgtier(),
                 deck_cmds::deck(),
                 deck_cmds::addband(),
                 deck_cmds::deck_context_menu(),

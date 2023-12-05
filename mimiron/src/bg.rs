@@ -170,6 +170,13 @@ impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         let card_type = match &c.battlegrounds {
             Some(BGData {
+                tier: Some(tier), ..
+            }) if c.card_type_id == 42 => BGCardType::Spell {
+                tier: *tier,
+                cost: c.mana_cost,
+                text: c.text,
+            },
+            Some(BGData {
                 tier: Some(tier),
                 upgrade_id,
                 ..
@@ -191,11 +198,10 @@ impl From<CardData> for Card {
                 buddy_id: bg.companion_id.filter(|x| *x != 0),
                 child_ids: c.child_ids.unwrap_or_default(),
             },
-            //  TODO
-            //  Insert Spell data conversion here
-            //
+
             Some(bg) if bg.quest => BGCardType::Quest { text: c.text },
             Some(bg) if bg.reward => BGCardType::Reward { text: c.text },
+
             _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },
             _ => BGCardType::HeroPower {
                 text: c.text,
@@ -295,6 +301,15 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
                 || opts.search_term.as_ref().map_or(true, |name| {
                     c.name.to_lowercase().contains(&name.to_lowercase())
                 })
+        })
+        .sorted_by_key(|c| {
+            !c.name.to_lowercase().starts_with(
+                &opts
+                    .search_term
+                    .as_deref()
+                    .unwrap_or_default()
+                    .to_lowercase(),
+            )
         })
         .peekable();
 

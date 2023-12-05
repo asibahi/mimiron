@@ -247,22 +247,19 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         ));
     }
 
-    let mut cards = res.cards;
-    cards.sort_by_key(|c| {
-        !c.name
-            .to_lowercase()
-            .starts_with(&search_term.to_lowercase())
-    });
-
-    let mut cards = cards
+    let mut cards = res
+        .cards
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the opts.with_text variable
-        .filter(move |c| {
-            opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())
-        })
+        .filter(|c| opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
         // cards have copies in different sets
         .unique_by(|c| opts.reprints.either(c.id, c.name.clone()))
+        .sorted_by_key(|c| {
+            !c.name
+                .to_lowercase()
+                .starts_with(&search_term.to_lowercase())
+        })
         .peekable();
 
     if cards.peek().is_none() {

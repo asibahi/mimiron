@@ -55,7 +55,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                         .map(|g| g.name.clone())
                         .unwrap_or("Direct Messages".into());
 
-                    info!("Command called successfully: {command} in {guild}.");
+                    info!(command, guild, "Command called successfully.");
                 })
             },
             ..Default::default()

@@ -114,7 +114,7 @@ pub async fn deckcomp(
     ];
 
     let embed = serenity::CreateEmbed::default()
-        .title(format!("{} Deck", deck1.class))
+        .title(format!("{} Deck Comparison", deck1.class))
         .color(deck1.class.color())
         .fields(fields);
 

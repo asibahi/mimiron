@@ -147,7 +147,7 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
     let mut fields = vec![
         (
             " ",
-            format!("{} mana {}\n{}", card.cost, card.card_type, class),
+            format!("{} {} mana {}", class, card.cost, card.card_type),
             true,
         ),
         (" ", card.card_set.clone(), true),

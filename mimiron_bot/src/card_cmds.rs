@@ -147,6 +147,12 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
         fields.push(("Flavor Text", markdown(&card.flavor_text), false));
     }
 
+    let class = card
+        .class
+        .into_iter()
+        .map(crate::helpers::class_to_emoji)
+        .collect::<String>();
+
     serenity::CreateEmbed::default()
         .title(&card.name)
         .url(format!(
@@ -154,6 +160,7 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
             &card.id
         ))
         .description(markdown(&card.text))
+        .author(serenity::CreateEmbedAuthor::new(class))
         .color(card.rarity.color())
         .thumbnail(&card.image)
         .fields(fields)

@@ -178,16 +178,17 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
 }
 
 fn square_count(card: &card::Card, count: usize) -> (&str, String) {
+    // emojis defined on Mimiron Bot Server.
     let square = match card.rarity {
-        Rarity::Legendary => ":large_orange_diamond:",
-        Rarity::Epic => ":purple_circle:",
-        Rarity::Rare => ":small_blue_diamond:",
-        _ => ":white_small_square:",
+        Rarity::Legendary => "<:legendary:1182038161099067522>",
+        Rarity::Epic => "<:epic:1182038156841844837>",
+        Rarity::Rare => "<:rare:1182038164781678674>",
+        _ => "<:common:1182038153767419986>",
     };
-    let count = if count == 1 {
-        "   ".into()
-    } else {
-        format!("{}x ", count)
-    };
+
+    let count = (count > 1)
+        .then(|| format!("{}x ", count))
+        .unwrap_or_default();
+
     (square, count)
 }

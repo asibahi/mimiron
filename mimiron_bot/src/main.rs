@@ -45,6 +45,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::deck(),
                 deck_cmds::addband(),
                 deck_cmds::deck_context_menu(),
+                deck_cmds::deckcomp(),
                 helpers::help(),
             ],
             post_command: |ctx| {

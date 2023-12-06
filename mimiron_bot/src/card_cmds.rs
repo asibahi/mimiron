@@ -138,20 +138,24 @@ async fn paginated_card_print(
 }
 
 fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
+    let class = card
+        .class
+        .into_iter()
+        .map(crate::helpers::class_to_emoji)
+        .collect::<String>();
+
     let mut fields = vec![
-        (" ", format!("{} mana {}", card.cost, card.card_type), true),
+        (
+            " ",
+            format!("{} mana {}\n{}", card.cost, card.card_type, class),
+            true,
+        ),
         (" ", card.card_set.clone(), true),
     ];
 
     if !card.flavor_text.is_empty() {
         fields.push(("Flavor Text", markdown(&card.flavor_text), false));
     }
-
-    let class = card
-        .class
-        .into_iter()
-        .map(crate::helpers::class_to_emoji)
-        .collect::<String>();
 
     serenity::CreateEmbed::default()
         .title(&card.name)
@@ -160,7 +164,6 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
             &card.id
         ))
         .description(markdown(&card.text))
-        .author(serenity::CreateEmbedAuthor::new(class))
         .color(card.rarity.color())
         .thumbnail(&card.image)
         .fields(fields)

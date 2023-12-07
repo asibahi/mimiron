@@ -175,8 +175,7 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
                     if minion_types.is_empty() {
                         "minion".into()
                     } else {
-                        let types = minion_types.iter().join("/");
-                        format!("{types}")
+                        minion_types.iter().join("/")
                     }
                 ),
                 true,
@@ -221,7 +220,6 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
 
                     Some((title, content, false))
                 }
-
                 bg::BGCardType::HeroPower { cost, text } => Some((
                     "Hero Power",
                     format!("{cost}-Cost: {}", markdown(&text)),

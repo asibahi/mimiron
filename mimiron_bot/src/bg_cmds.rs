@@ -86,8 +86,11 @@ async fn paginated_card_print(
 
     if embed_chunks.len() > 1 {
         reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
-            serenity::CreateButton::new(&prev_button_id).label("<"), 
-            serenity::CreateButton::new(&next_button_id).label(">"),
+            serenity::CreateButton::new(&prev_button_id)
+                .label("<")
+                .disabled(true),
+            serenity::CreateButton::new(&next_button_id)
+                .label(format!("2/{} >", embed_chunks.len())),
         ])]);
     }
 
@@ -104,12 +107,40 @@ async fn paginated_card_print(
             current_page.saturating_sub(1)
         };
 
+        let prev_button = if current_page == 0 {
+            serenity::CreateButton::new(&prev_button_id)
+                .label("<")
+                .disabled(true)
+        } else {
+            serenity::CreateButton::new(&prev_button_id).label(format!(
+                "< {}/{}",
+                current_page,
+                embed_chunks.len()
+            ))
+        };
+
+        let next_button = if current_page == embed_chunks.len() - 1 {
+            serenity::CreateButton::new(&next_button_id)
+                .label(">")
+                .disabled(true)
+        } else {
+            serenity::CreateButton::new(&next_button_id).label(format!(
+                "{}/{} >",
+                current_page + 2,
+                embed_chunks.len()
+            ))
+        };
+
         press
             .create_response(
                 ctx.serenity_context(),
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::new()
-                        .embeds(embed_chunks[current_page].clone()),
+                        .embeds(embed_chunks[current_page].clone())
+                        .components(vec![serenity::CreateActionRow::Buttons(vec![
+                            prev_button,
+                            next_button,
+                        ])]),
                 ),
             )
             .await?;
@@ -119,6 +150,87 @@ async fn paginated_card_print(
 }
 
 fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
+    let description = match &card.card_type {
+        bg::BGCardType::Hero { armor, .. } => format!("Hero with {armor} armor"),
+        bg::BGCardType::Minion { text, .. }
+        | bg::BGCardType::Spell { text, .. }
+        | bg::BGCardType::Quest { text }
+        | bg::BGCardType::Reward { text }
+        | bg::BGCardType::Anomaly { text }
+        | bg::BGCardType::HeroPower { text, .. } => markdown(text),
+    };
+
+    let mut fields = match &card.card_type {
+        bg::BGCardType::Minion {
+            tier,
+            attack,
+            health,
+            minion_types,
+            ..
+        } => {
+            vec![(
+                " ",
+                format!(
+                    "Tier-{tier} {attack}/{health} {}",
+                    if minion_types.is_empty() {
+                        "minion".into()
+                    } else {
+                        let types = minion_types.iter().join("/");
+                        format!("{types}")
+                    }
+                ),
+                true,
+            )]
+        }
+        bg::BGCardType::Spell { tier, cost, .. } => {
+            vec![(" ", format!("Tier-{tier}, {cost}-Cost Tavern Spell"), true)]
+        }
+        bg::BGCardType::Quest { .. } => vec![(" ", "Battlegrounds Quest".into(), true)],
+        bg::BGCardType::Reward { .. } => vec![(" ", "Battlegrounds Reward".into(), true)],
+        bg::BGCardType::Anomaly { .. } => vec![(" ", "Battlegrounds Anomaly".into(), true)],
+        bg::BGCardType::Hero { .. } | bg::BGCardType::HeroPower { .. } => vec![],
+    };
+
+    fields.extend(
+        bg::get_and_print_associated_cards(card.clone())
+            .into_iter()
+            .filter_map(|assoc_card| match assoc_card.card_type {
+                bg::BGCardType::Minion {
+                    tier,
+                    attack,
+                    health,
+                    text,
+                    minion_types,
+                    ..
+                } => {
+                    let title = match card.card_type {
+                        bg::BGCardType::Minion { .. } => "Triple",
+                        bg::BGCardType::Hero { .. } => "Buddy",
+                        _ => "UNKNOWN",
+                    };
+
+                    let content = format!(
+                        "Tier-{tier} {attack}/{health} {}: {}",
+                        if minion_types.is_empty() {
+                            "minion".into()
+                        } else {
+                            minion_types.iter().join("/")
+                        },
+                        markdown(&text)
+                    );
+
+                    Some((title, content, false))
+                }
+
+                bg::BGCardType::HeroPower { cost, text } => Some((
+                    "Hero Power",
+                    format!("{cost}-Cost: {}", markdown(&text)),
+                    false,
+                )),
+                _ => None,
+            }),
+    );
+
     serenity::CreateEmbed::default()
         .title(&card.name)
         .url(format!(
@@ -126,57 +238,6 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
             card.id
         ))
         .thumbnail(&card.image)
-        .field(" ", format_card_type(&card), false)
-        .fields(
-            bg::get_and_print_associated_cards(card)
-                .into_iter()
-                .map(|c| {
-                    let field_title = match c.card_type {
-                        bg::BGCardType::Minion { .. } => "Triple",
-                        bg::BGCardType::HeroPower { .. } => "Hero Power",
-                        _ => "",
-                    };
-                    (field_title, format_card_type(&c), false)
-                }),
-        )
-}
-
-fn format_card_type(card: &bg::Card) -> String {
-    match &card.card_type {
-        bg::BGCardType::Hero { armor, .. } => format!("Hero with {armor} armor"),
-        bg::BGCardType::Minion {
-            tier,
-            attack,
-            health,
-            text,
-            minion_types,
-            ..
-        } => {
-            format!(
-                "Tier-{tier} {attack}/{health} {}\n{}",
-                if minion_types.is_empty() {
-                    format!("minion")
-                } else {
-                    let types = minion_types.iter().join("/");
-                    format!("{types}")
-                },
-                markdown(text)
-            )
-        }
-        bg::BGCardType::Spell { tier, cost, text } => {
-            format!("Tier-{tier}, {cost}-Cost spell: {}", markdown(text))
-        }
-        bg::BGCardType::Quest { text } => {
-            format!("Battlegrounds Quest: {}", markdown(text))
-        }
-        bg::BGCardType::Reward { text } => {
-            format!("Battlegrounds Reward: {}", markdown(text))
-        }
-        bg::BGCardType::Anomaly { text } => {
-            format!("Battlegrounds Anomaly: {}", markdown(text))
-        }
-        bg::BGCardType::HeroPower { cost, text } => {
-            format!("({cost}) Gold: {}", markdown(text))
-        }
-    }
+        .description(description)
+        .fields(fields)
 }

@@ -104,8 +104,11 @@ async fn paginated_card_print(
 
     if embed_chunks.len() > 1 {
         reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
-            serenity::CreateButton::new(&prev_button_id).label("<"), //  .disabled(true)
-            serenity::CreateButton::new(&next_button_id).label(">"),
+            serenity::CreateButton::new(&prev_button_id)
+                .label("<")
+                .disabled(true),
+            serenity::CreateButton::new(&next_button_id)
+                .label(format!("2/{} >", embed_chunks.len())),
         ])]);
     }
 
@@ -123,12 +126,40 @@ async fn paginated_card_print(
             current_page.saturating_sub(1)
         };
 
+        let prev_button = if current_page == 0 {
+            serenity::CreateButton::new(&prev_button_id)
+                .label("<")
+                .disabled(true)
+        } else {
+            serenity::CreateButton::new(&prev_button_id).label(format!(
+                "< {}/{}",
+                current_page,
+                embed_chunks.len()
+            ))
+        };
+
+        let next_button = if current_page == embed_chunks.len() - 1 {
+            serenity::CreateButton::new(&next_button_id)
+                .label(">")
+                .disabled(true)
+        } else {
+            serenity::CreateButton::new(&next_button_id).label(format!(
+                "{}/{} >",
+                current_page + 2,
+                embed_chunks.len()
+            ))
+        };
+
         press
             .create_response(
                 ctx.serenity_context(),
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::new()
-                        .embeds(embed_chunks[current_page].clone()),
+                        .embeds(embed_chunks[current_page].clone())
+                        .components(vec![serenity::CreateActionRow::Buttons(vec![
+                            prev_button,
+                            next_button,
+                        ])]),
                 ),
             )
             .await?;

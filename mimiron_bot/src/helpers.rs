@@ -1,5 +1,6 @@
 use crate::{Context, Data, Error};
 use mimiron::card_details::Class;
+use poise::serenity_prelude as serenity;
 
 pub(crate) fn markdown(i: &str) -> String {
     mimiron::card_text_to_markdown(i)
@@ -36,8 +37,10 @@ pub fn class_to_emoji(class: Class) -> &'static str {
     }
 }
 
-pub(crate) async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
-    if let Err(e) = match error {
+pub(crate) async fn on_error(
+    error: poise::FrameworkError<'_, Data, Error>,
+) -> Result<(), serenity::Error> {
+    match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
             let command = ctx.command().name.clone();
             let guild = ctx
@@ -46,19 +49,16 @@ pub(crate) async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
                 .unwrap_or("Direct Messages".into());
             let invocation = ctx.invocation_string();
             let error = error.to_string();
-            tracing::info!(
+            tracing::error!(
                 command,
                 guild,
                 invocation,
                 error,
-                "Command Failed.\n\tDetails: "
+                "Command Failed.\n\tDetails:"
             );
-            ctx.send(poise::CreateReply::default().ephemeral(true).content(error))
-                .await
-                .map(drop)
+            ctx.say(error).await?;
         }
-        error => poise::builtins::on_error(error).await,
-    } {
-        tracing::error!("Error while handling error: {}", e);
+        error => poise::builtins::on_error(error).await?,
     }
+    Ok(())
 }

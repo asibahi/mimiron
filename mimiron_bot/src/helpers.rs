@@ -1,6 +1,5 @@
+use crate::{Context, Data, Error};
 use mimiron::card_details::Class;
-
-use crate::{Context, Error};
 
 pub(crate) fn markdown(i: &str) -> String {
     mimiron::card_text_to_markdown(i)
@@ -20,6 +19,7 @@ pub async fn help(
 }
 
 pub fn class_to_emoji(class: Class) -> &'static str {
+    // emojis are in Mimiron Bot server
     match class {
         Class::DeathKnight => "<:dk:1182031994822086786>",
         Class::DemonHunter => "<:dh:1182032009359528116>",
@@ -33,5 +33,32 @@ pub fn class_to_emoji(class: Class) -> &'static str {
         Class::Warlock => "<:wk:1182032014757601340>",
         Class::Warrior => "<:wr:1182032006171861152>",
         _ => "",
+    }
+}
+
+pub(crate) async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
+    if let Err(e) = match error {
+        poise::FrameworkError::Command { error, ctx, .. } => {
+            let command = ctx.command().name.clone();
+            let guild = ctx
+                .guild()
+                .map(|g| g.name.clone())
+                .unwrap_or("Direct Messages".into());
+            let invocation = ctx.invocation_string();
+            let error = error.to_string();
+            tracing::info!(
+                command,
+                guild,
+                invocation,
+                error,
+                "Command Failed.\n\tDetails: "
+            );
+            ctx.send(poise::CreateReply::default().ephemeral(true).content(error))
+                .await
+                .map(drop)
+        }
+        error => poise::builtins::on_error(error).await,
+    } {
+        tracing::error!("Error while handling error: {}", e);
     }
 }

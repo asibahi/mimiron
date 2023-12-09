@@ -48,6 +48,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::deckcomp(),
                 helpers::help(),
             ],
+            on_error: |error| Box::pin(helpers::on_error(error)),
             post_command: |ctx| {
                 Box::pin(async move {
                     let command = ctx.command().name.clone();
@@ -56,7 +57,12 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
                         .map(|g| g.name.clone())
                         .unwrap_or("Direct Messages".into());
 
-                    info!(command, guild, "Command called successfully.");
+                    let invocation = ctx.invocation_string();
+
+                    info!(
+                        command,
+                        guild, invocation, "Command called successfully.\n\tDetails: "
+                    );
                 })
             },
             ..Default::default()

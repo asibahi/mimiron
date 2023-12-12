@@ -2,7 +2,6 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use shuttle_secrets::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
-use tracing::info;
 
 mod bg_cmds;
 mod card_cmds;
@@ -57,18 +56,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
             },
             post_command: |ctx| {
                 Box::pin(async move {
-                    let command = ctx.command().name.clone();
-                    let guild = ctx
-                        .guild()
-                        .map(|g| g.name.clone())
-                        .unwrap_or("Direct Messages".into());
-
-                    let invocation = ctx.invocation_string();
-
-                    info!(
-                        command,
-                        guild, invocation, "Command called successfully.\n\tDetails: "
-                    );
+                    helpers::on_success(&ctx);
                 })
             },
             ..Default::default()

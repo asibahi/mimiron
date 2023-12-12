@@ -49,16 +49,33 @@ pub(crate) async fn on_error(
                 .unwrap_or("Direct Messages".into());
             let invocation = ctx.invocation_string();
             let error = error.to_string();
-            tracing::error!(
+            tracing::warn!(
                 command,
                 guild,
                 invocation,
                 error,
-                "Command Failed.\n\tDetails:"
+                "Command returned an error.\n\tDetails:"
             );
             ctx.say(error).await?;
         }
         error => poise::builtins::on_error(error).await?,
     }
     Ok(())
+}
+
+pub(crate) fn on_success(ctx: &Context) {
+    let command = ctx.command().name.clone();
+    let guild = ctx
+        .guild()
+        .map(|g| g.name.clone())
+        .unwrap_or("Direct Messages".into());
+
+    let invocation = ctx.invocation_string();
+
+    tracing::info!(
+        command,
+        guild,
+        invocation,
+        "Command called successfully.\n\tDetails: "
+    );
 }

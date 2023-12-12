@@ -93,9 +93,6 @@ pub(crate) async fn paginated_card_print<T>(
 ) -> Result<(), Error> {
     // pagination elements
     let ctx_id = ctx.id();
-    let prev_button_id = format!("{ctx_id}prev");
-    let next_button_id = format!("{ctx_id}next");
-
     let embed_chunks = cards
         .map(inner_card_embed)
         .chunks(3)
@@ -107,18 +104,26 @@ pub(crate) async fn paginated_card_print<T>(
     let mut reply = poise::CreateReply::default();
     reply.embeds.extend(embed_chunks[current_page].clone());
 
+    let prev_button = serenity::CreateButton::new(&(format!("{ctx_id}prev")))
+        .label("<")
+        .disabled(true);
+
+    let pages_indicator = serenity::CreateButton::new("pagination_view")
+        .label(format!("{}/{}", current_page + 1, embed_chunks.len()))
+        .style(serenity::ButtonStyle::Secondary)
+        .disabled(true);
+
+    let next_button = serenity::CreateButton::new(&(format!("{ctx_id}next"))).label(">");
+
     if embed_chunks.len() > 1 {
         reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
-            serenity::CreateButton::new(&prev_button_id)
-                .label("<")
-                .disabled(true),
-            serenity::CreateButton::new("pagination_view")
-                .label(format!("1/{}", embed_chunks.len())),
-            serenity::CreateButton::new(&next_button_id).label(">"),
+            prev_button.clone(),
+            pages_indicator.clone(),
+            next_button.clone(),
         ])]);
     }
 
-    ctx.send(reply).await?;
+    let msg = ctx.send(reply).await?;
 
     // Code copied from poise pagination sample with relevant edits. See comments there for explanation
     while let Some(press) = serenity::collector::ComponentInteractionCollector::new(ctx)
@@ -126,24 +131,20 @@ pub(crate) async fn paginated_card_print<T>(
         .timeout(std::time::Duration::from_secs(3600 / 4))
         .await
     {
-        current_page = if press.data.custom_id.eq(&next_button_id) {
+        current_page = if press.data.custom_id.eq(&(format!("{ctx_id}next"))) {
             (current_page + 1).min(embed_chunks.len() - 1)
         } else {
             current_page.saturating_sub(1)
         };
 
         let button_row = vec![
-            serenity::CreateButton::new(&prev_button_id)
-                .label("<")
-                .disabled(current_page == 0),
-            serenity::CreateButton::new("pagination_view").label(format!(
-                "{}/{}",
-                current_page + 1,
-                embed_chunks.len()
-            )),
-            serenity::CreateButton::new(&next_button_id)
-                .label(">")
-                .disabled(current_page == embed_chunks.len() - 1),
+            prev_button.clone().disabled(current_page == 0),
+            pages_indicator
+                .clone()
+                .label(format!("{}/{}", current_page + 1, embed_chunks.len())),
+            next_button
+                .clone()
+                .disabled(current_page > embed_chunks.len()),
         ];
 
         press
@@ -157,6 +158,17 @@ pub(crate) async fn paginated_card_print<T>(
             )
             .await?;
     }
+
+    let mut last_reply =
+        poise::CreateReply::default().components(vec![serenity::CreateActionRow::Buttons(vec![
+            prev_button.disabled(true),
+            pages_indicator.label(format!("{}/{}", current_page + 1, embed_chunks.len())),
+            next_button.disabled(true),
+        ])]);
+
+    last_reply.embeds = embed_chunks[current_page].clone();
+
+    msg.edit(ctx, last_reply).await?;
 
     Ok(())
 }

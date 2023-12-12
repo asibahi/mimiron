@@ -144,7 +144,7 @@ pub(crate) async fn paginated_card_print<T>(
                 .label(format!("{}/{}", current_page + 1, embed_chunks.len())),
             next_button
                 .clone()
-                .disabled(current_page > embed_chunks.len()),
+                .disabled(current_page == embed_chunks.len() - 1),
         ];
 
         press

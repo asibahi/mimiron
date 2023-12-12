@@ -8,7 +8,7 @@ use mimiron::{
 use poise::serenity_prelude as serenity;
 use std::io::Cursor;
 
-/// Get deck cards from code.
+/// Get deck cards from code
 #[poise::command(slash_command, category = "Deck")]
 pub async fn deck(
     ctx: Context<'_>,
@@ -27,7 +27,7 @@ pub async fn deck(
     send_deck_reply(ctx, deck).await
 }
 
-/// Get deck cards from code.
+/// Get deck cards from by right-clicking a message with a deck code.
 #[poise::command(context_menu_command = "Get Deck", category = "Deck")]
 pub async fn deck_context_menu(
     ctx: Context<'_>,
@@ -41,7 +41,7 @@ pub async fn deck_context_menu(
     send_deck_reply(ctx, deck).await
 }
 
-/// Add band to a deck without a band.
+/// Add a band to a deck with ETC but without a band.
 #[poise::command(slash_command, category = "Deck")]
 pub async fn addband(
     ctx: Context<'_>,
@@ -58,7 +58,7 @@ pub async fn addband(
     send_deck_reply(ctx, deck).await
 }
 
-/// Get deck cards from code.
+/// Compare two decks. Provide both codes.
 #[poise::command(slash_command, category = "Deck")]
 pub async fn deckcomp(
     ctx: Context<'_>,

@@ -12,7 +12,12 @@ pub async fn help(
     #[description = "Specific command to show help about"] command: Option<String>,
 ) -> Result<(), Error> {
     let configuration = poise::builtins::HelpConfiguration {
-        ephemeral: true,
+        ephemeral: false,
+        show_context_menu_commands: true,
+        extra_text_at_bottom: "This bot uses the official Blizzard API, the one used in the official card library. \
+                               Code is available at https://github.com/asibahi/mimiron/ . If you have requests or \
+                               suggestions, raise a GitHub Issue or ping @asibahi in the Mimiron Bot server at \
+                               https://discord.gg/Xh6ed56ePV . The bot is hosted on the free tier of http://shuttle.rs .",
         ..Default::default()
     };
     poise::builtins::help(ctx, command.as_deref(), configuration).await?;

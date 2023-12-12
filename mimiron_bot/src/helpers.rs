@@ -16,8 +16,8 @@ pub async fn help(
         show_context_menu_commands: true,
         extra_text_at_bottom: "This bot uses the official Blizzard API, the one used in the official card library. \
                                Code is available at https://github.com/asibahi/mimiron/ . If you have requests or \
-                               suggestions, raise a GitHub Issue or ping @asibahi in the Mimiron Bot server at \
-                               https://discord.gg/Xh6ed56ePV . The bot is hosted on the free tier of http://shuttle.rs .",
+                               suggestions, raise a GitHub Issue or ping @asibahi in the Mimiron Bot server. The bot \
+                               is hosted on the free tier of http://shuttle.rs .",
         ..Default::default()
     };
     poise::builtins::help(ctx, command.as_deref(), configuration).await?;

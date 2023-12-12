@@ -1,4 +1,5 @@
 use crate::{Context, Data, Error};
+use itertools::Itertools;
 use mimiron::card_details::Class;
 use poise::serenity_prelude as serenity;
 
@@ -83,4 +84,79 @@ pub(crate) fn on_success(ctx: &Context) {
         invocation,
         "Command called successfully.\n\tDetails: "
     );
+}
+
+pub(crate) async fn paginated_card_print<T>(
+    ctx: Context<'_>,
+    cards: impl Iterator<Item = T>,
+    inner_card_embed: impl Fn(T) -> serenity::CreateEmbed,
+) -> Result<(), Error> {
+    // pagination elements
+    let ctx_id = ctx.id();
+    let prev_button_id = format!("{ctx_id}prev");
+    let next_button_id = format!("{ctx_id}next");
+
+    let embed_chunks = cards
+        .map(inner_card_embed)
+        .chunks(3)
+        .into_iter()
+        .map(|c| c.collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+    let mut current_page = 0;
+
+    let mut reply = poise::CreateReply::default();
+    reply.embeds.extend(embed_chunks[current_page].clone());
+
+    if embed_chunks.len() > 1 {
+        reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
+            serenity::CreateButton::new(&prev_button_id)
+                .label("<")
+                .disabled(true),
+            serenity::CreateButton::new("pagination_view")
+                .label(format!("1/{}", embed_chunks.len())),
+            serenity::CreateButton::new(&next_button_id).label(">"),
+        ])]);
+    }
+
+    ctx.send(reply).await?;
+
+    // Code copied from poise pagination sample with relevant edits. See comments there for explanation
+    while let Some(press) = serenity::collector::ComponentInteractionCollector::new(ctx)
+        .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
+        .timeout(std::time::Duration::from_secs(3600 / 4))
+        .await
+    {
+        current_page = if press.data.custom_id.eq(&next_button_id) {
+            (current_page + 1).min(embed_chunks.len() - 1)
+        } else {
+            current_page.saturating_sub(1)
+        };
+
+        let button_row = vec![
+            serenity::CreateButton::new(&prev_button_id)
+                .label("<")
+                .disabled(current_page == 0),
+            serenity::CreateButton::new("pagination_view").label(format!(
+                "{}/{}",
+                current_page + 1,
+                embed_chunks.len()
+            )),
+            serenity::CreateButton::new(&next_button_id)
+                .label(">")
+                .disabled(current_page == embed_chunks.len() - 1),
+        ];
+
+        press
+            .create_response(
+                ctx.serenity_context(),
+                serenity::CreateInteractionResponse::UpdateMessage(
+                    serenity::CreateInteractionResponseMessage::new()
+                        .embeds(embed_chunks[current_page].clone())
+                        .components(vec![serenity::CreateActionRow::Buttons(button_row)]),
+                ),
+            )
+            .await?;
+    }
+
+    Ok(())
 }

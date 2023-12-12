@@ -1,9 +1,11 @@
-use std::str::FromStr;
-
-use crate::{helpers::markdown, Context, Error};
+use crate::{
+    helpers::{markdown, paginated_card_print},
+    Context, Error,
+};
 use itertools::Itertools;
 use mimiron::{bg, card_details::MinionType};
 use poise::serenity_prelude as serenity;
+use std::str::FromStr;
 
 /// Search for a battlegrounds card by name. Be precise!
 #[poise::command(slash_command, category = "Battlegrounds")]
@@ -39,7 +41,7 @@ pub async fn bgtext(
         .with_text(true);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards).await
+    paginated_card_print(ctx, cards, inner_card_embed).await
 }
 
 /// Search for a battlegrounds card by tier and optionally minion type.
@@ -61,92 +63,7 @@ pub async fn bgtier(
         .with_type(mt);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards).await
-}
-
-// code copied almost as-is from card_cmds version. Might want to DRY it?
-async fn paginated_card_print(
-    ctx: Context<'_>,
-    cards: impl Iterator<Item = bg::Card>,
-) -> Result<(), Error> {
-    let ctx_id = ctx.id();
-    let prev_button_id = format!("{ctx_id}prev");
-    let next_button_id = format!("{ctx_id}next");
-
-    let embed_chunks = cards
-        .map(inner_card_embed)
-        .chunks(3)
-        .into_iter()
-        .map(|c| c.collect::<Vec<_>>())
-        .collect::<Vec<_>>();
-    let mut current_page = 0;
-
-    let mut reply = poise::CreateReply::default();
-    reply.embeds.extend(embed_chunks[current_page].clone());
-
-    if embed_chunks.len() > 1 {
-        reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
-            serenity::CreateButton::new(&prev_button_id)
-                .label("<")
-                .disabled(true),
-            serenity::CreateButton::new(&next_button_id)
-                .label(format!("2/{} >", embed_chunks.len())),
-        ])]);
-    }
-
-    ctx.send(reply).await?;
-
-    while let Some(press) = serenity::collector::ComponentInteractionCollector::new(ctx)
-        .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
-        .timeout(std::time::Duration::from_secs(3600 / 4))
-        .await
-    {
-        current_page = if press.data.custom_id.eq(&next_button_id) {
-            (current_page + 1).min(embed_chunks.len() - 1)
-        } else {
-            current_page.saturating_sub(1)
-        };
-
-        let prev_button = if current_page == 0 {
-            serenity::CreateButton::new(&prev_button_id)
-                .label("<")
-                .disabled(true)
-        } else {
-            serenity::CreateButton::new(&prev_button_id).label(format!(
-                "< {}/{}",
-                current_page,
-                embed_chunks.len()
-            ))
-        };
-
-        let next_button = if current_page == embed_chunks.len() - 1 {
-            serenity::CreateButton::new(&next_button_id)
-                .label(">")
-                .disabled(true)
-        } else {
-            serenity::CreateButton::new(&next_button_id).label(format!(
-                "{}/{} >",
-                current_page + 2,
-                embed_chunks.len()
-            ))
-        };
-
-        press
-            .create_response(
-                ctx.serenity_context(),
-                serenity::CreateInteractionResponse::UpdateMessage(
-                    serenity::CreateInteractionResponseMessage::new()
-                        .embeds(embed_chunks[current_page].clone())
-                        .components(vec![serenity::CreateActionRow::Buttons(vec![
-                            prev_button,
-                            next_button,
-                        ])]),
-                ),
-            )
-            .await?;
-    }
-
-    Ok(())
+    paginated_card_print(ctx, cards, inner_card_embed).await
 }
 
 fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {

@@ -128,7 +128,7 @@ pub(crate) async fn paginated_card_print<T>(
     // Code copied from poise pagination sample with relevant edits. See comments there for explanation
     while let Some(press) = serenity::collector::ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
-        .timeout(std::time::Duration::from_secs(3600 / 4))
+        .timeout(std::time::Duration::from_secs(300)) // 5 minutes
         .await
     {
         current_page = if press.data.custom_id.eq(&(format!("{ctx_id}next"))) {
@@ -166,7 +166,7 @@ pub(crate) async fn paginated_card_print<T>(
             next_button.disabled(true),
         ])]);
 
-    last_reply.embeds = embed_chunks[current_page].clone();
+    last_reply.embeds.extend(embed_chunks[current_page].clone());
 
     msg.edit(ctx, last_reply).await?;
 

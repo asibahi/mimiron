@@ -108,7 +108,6 @@ pub(crate) async fn paginated_card_print<T>(
     inner_card_embed: impl Fn(T) -> serenity::CreateEmbed,
 ) -> Result<(), Error> {
     // pagination elements
-    let ctx_id = ctx.id();
     let embed_chunks = cards
         .map(inner_card_embed)
         .chunks(3)
@@ -119,6 +118,13 @@ pub(crate) async fn paginated_card_print<T>(
 
     let mut reply = poise::CreateReply::default();
     reply.embeds.extend(embed_chunks[current_page].clone());
+
+    if embed_chunks.len() <= 1 {
+        ctx.send(reply).await?;
+        return Ok(());
+    }
+
+    let ctx_id = ctx.id();
 
     let prev_button = serenity::CreateButton::new(&(format!("{ctx_id}prev")))
         .label("<")
@@ -131,13 +137,11 @@ pub(crate) async fn paginated_card_print<T>(
 
     let next_button = serenity::CreateButton::new(&(format!("{ctx_id}next"))).label(">");
 
-    if embed_chunks.len() > 1 {
-        reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
-            prev_button.clone(),
-            pages_indicator.clone(),
-            next_button.clone(),
-        ])]);
-    }
+    reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
+        prev_button.clone(),
+        pages_indicator.clone(),
+        next_button.clone(),
+    ])]);
 
     let msg = ctx.send(reply).await?;
 

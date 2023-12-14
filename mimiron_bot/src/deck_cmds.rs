@@ -17,7 +17,7 @@ pub async fn deck(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code = get_code_from_msg(&code).await;
+    let code = get_code_from_msg(&code);
     let mut deck = deck::lookup(code)?;
 
     if let Some(fmt) = format {
@@ -35,7 +35,7 @@ pub async fn deck_context_menu(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code = get_code_from_msg(&msg.content).await;
+    let code = get_code_from_msg(&msg.content);
     let deck = deck::lookup(code)?;
 
     send_deck_reply(ctx, deck).await
@@ -67,10 +67,10 @@ pub async fn deckcomp(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code1 = get_code_from_msg(&code1).await;
+    let code1 = get_code_from_msg(&code1);
     let deck1 = deck::lookup(code1)?;
 
-    let code2 = get_code_from_msg(&code2).await;
+    let code2 = get_code_from_msg(&code2);
     let deck2 = deck::lookup(code2)?;
 
     let deckcomp = deck1.compare_with(&deck2);
@@ -125,7 +125,7 @@ pub async fn deckcomp(
     Ok(())
 }
 
-async fn get_code_from_msg(code: &str) -> &str {
+fn get_code_from_msg(code: &str) -> &str {
     /* For when someone pastes something like this:
      * ### Custom Shaman
      * # etc

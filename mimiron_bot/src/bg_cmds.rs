@@ -1,5 +1,5 @@
 use crate::{
-    helpers::{markdown, paginated_card_print},
+    helpers::{markdown, paginated_card_print, terse_card_print},
     Context, Error,
 };
 use itertools::Itertools;
@@ -16,16 +16,9 @@ pub async fn battlegrounds(
     ctx.defer().await?;
 
     let opts = bg::SearchOptions::empty().search_for(Some(search_term));
-    let cards = bg::lookup(&opts)?.take(3);
+    let cards = bg::lookup(&opts)?;
 
-    let embeds = cards.map(inner_card_embed);
-    let mut reply = poise::CreateReply::default();
-
-    reply.embeds.extend(embeds);
-
-    ctx.send(reply).await?;
-
-    Ok(())
+    terse_card_print(ctx, cards, inner_card_embed).await
 }
 
 /// Search for a battlegrounds card by text.

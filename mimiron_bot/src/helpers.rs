@@ -86,6 +86,22 @@ pub(crate) fn on_success(ctx: &Context) {
     );
 }
 
+pub(crate) async fn terse_card_print<T>(
+    ctx: Context<'_>,
+    cards: impl Iterator<Item = T>,
+    inner_card_embed: impl Fn(T) -> serenity::CreateEmbed,
+) -> Result<(), Error> {
+    let cards = cards.take(3);
+    let embeds = cards.map(inner_card_embed);
+
+    let mut reply = poise::CreateReply::default();
+    reply.embeds.extend(embeds);
+
+    ctx.send(reply).await?;
+
+    Ok(())
+}
+
 pub(crate) async fn paginated_card_print<T>(
     ctx: Context<'_>,
     cards: impl Iterator<Item = T>,

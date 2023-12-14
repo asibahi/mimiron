@@ -10,12 +10,12 @@ license = "MIT"
 [dependencies]
 mimiron = { path = "../mimiron" }
 anyhow = "1"
-poise = "0.6.0"
-shuttle-serenity = { version = "0.35.0", default-features = false, features = [
+poise = "0.6.1-rc1"
+shuttle-serenity = { version = "0.35.1", default-features = false, features = [
     "serenity-0-12-rustls_backend",
 ] }
-shuttle-runtime = "0.35.0"
-shuttle-secrets = "0.35.0"
+shuttle-runtime = "0.35.1"
+shuttle-secrets = "0.35.1"
 tracing = "0.1.40"
 tokio = "1"
 itertools = "0.12.0"

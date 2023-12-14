@@ -6,7 +6,7 @@ use mimiron::{
     deck::{self, Deck},
 };
 use poise::serenity_prelude as serenity;
-use std::io::Cursor;
+use std::{collections::HashMap, io::Cursor};
 
 /// Get deck cards from code
 #[poise::command(slash_command, category = "Deck")]
@@ -75,35 +75,19 @@ pub async fn deckcomp(
 
     let deckcomp = deck1.compare_with(&deck2);
 
-    let uniques_1 = deckcomp
-        .deck1_uniques
-        .into_iter()
-        .sorted()
-        .map(|(card, count)| {
-            let (square, count) = square_count(&card, count);
-            format!("{} {}{}\n", square, count, card.name)
-        })
-        .collect::<String>();
+    let sort_and_set = |map: HashMap<card::Card, usize>| {
+        map.into_iter()
+            .sorted()
+            .map(|(card, count)| {
+                let (square, count) = square_count(&card, count);
+                format!("{} {}{}\n", square, count, card.name)
+            })
+            .collect::<String>()
+    };
 
-    let uniques_2 = deckcomp
-        .deck2_uniques
-        .into_iter()
-        .sorted()
-        .map(|(card, count)| {
-            let (square, count) = square_count(&card, count);
-            format!("{} {}{}\n", square, count, card.name)
-        })
-        .collect::<String>();
-
-    let shared = deckcomp
-        .shared_cards
-        .into_iter()
-        .sorted()
-        .map(|(card, count)| {
-            let (square, count) = square_count(&card, count);
-            format!("{} {}{}\n", square, count, card.name)
-        })
-        .collect::<String>();
+    let uniques_1 = sort_and_set(deckcomp.deck1_uniques);
+    let uniques_2 = sort_and_set(deckcomp.deck2_uniques);
+    let shared = sort_and_set(deckcomp.shared_cards);
 
     let fields = vec![
         ("Code 1", code1, false),
@@ -187,7 +171,7 @@ fn square_count(card: &card::Card, count: usize) -> (&str, String) {
     };
 
     let count = (count > 1)
-        .then(|| format!("{}x ", count))
+        .then(|| format!("{count}x "))
         .unwrap_or_default();
 
     (square, count)

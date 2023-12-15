@@ -33,13 +33,18 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
             let cmds = cmds
                 .into_iter()
                 .filter(|cmd| !cmd.hide_in_help)
+                // get context menu commands at the bottom.
+                .sorted_by_key(|cmd| cmd.slash_action.is_none()) 
                 .map(|cmd| {
+                    let name = cmd.context_menu_name.as_deref().unwrap_or(&cmd.name);
+                    let prefix = cmd
+                        .slash_action
+                        .map(|_| "`/")
+                        .unwrap_or("Context menu: `");
                     format!(
-                        "{}{}: {}",
-                        cmd.slash_action
-                            .map(|_| "/")
-                            .unwrap_or("Message context menu: "),
-                        cmd.name,
+                        "{}{}`: _{}_",
+                        prefix,
+                        name,
                         cmd.description.as_deref().unwrap_or_default()
                     )
                 })
@@ -49,6 +54,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
         });
 
     let embed = serenity::CreateEmbed::new()
+        .title("Help")
         .fields(fields)
         .footer(serenity::CreateEmbedFooter::new(footer));
 

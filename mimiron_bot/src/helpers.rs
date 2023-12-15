@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{Context, Data, Error};
 use itertools::Itertools;
 use mimiron::card_details::Class;
@@ -8,20 +10,52 @@ pub(crate) fn markdown(i: &str) -> String {
 }
 
 #[poise::command(slash_command, hide_in_help)]
-pub async fn help(
-    ctx: Context<'_>,
-    #[description = "Specific command to show help about"] command: Option<String>,
-) -> Result<(), Error> {
-    let configuration = poise::builtins::HelpConfiguration {
-        ephemeral: false,
-        show_context_menu_commands: true,
-        extra_text_at_bottom: "This bot uses the official Blizzard API, the one used in the official card library. \
-                               Code is available at https://github.com/asibahi/mimiron/ . If you have requests or \
-                               suggestions, raise a GitHub Issue or ping @asibahi in the Mimiron Bot server. The bot \
-                               is hosted on the free tier of http://shuttle.rs .",
-        ..Default::default()
-    };
-    poise::builtins::help(ctx, command.as_deref(), configuration).await?;
+pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
+    let footer = "This unofficial bot uses the official Blizzard API, the one used in the official card \
+                 library. Code is available at https://github.com/asibahi/mimiron/ . If you have requests \
+                 or suggestions, raise a GitHub Issue or ping @asibahi in the Mimiron Bot server. The bot \
+                 is hosted on the free tier of http://shuttle.rs .";
+
+    // funny new ordering every call.
+    let mut categories = HashMap::new();
+
+    for cmd in &ctx.framework().options().commands {
+        categories
+            .entry(cmd.category.as_deref())
+            .or_insert(Vec::new())
+            .push(cmd);
+    }
+
+    let fields = categories
+        .into_iter()
+        .filter(|(_, cmds)| !cmds.is_empty())
+        .map(|(category, cmds)| {
+            let cmds = cmds
+                .into_iter()
+                .filter(|cmd| !cmd.hide_in_help)
+                .map(|cmd| {
+                    format!(
+                        "{}{}: {}",
+                        cmd.slash_action
+                            .map(|_| "/")
+                            .unwrap_or("Message context menu: "),
+                        cmd.name,
+                        cmd.description.as_deref().unwrap_or_default()
+                    )
+                })
+                .join("\n");
+
+            (category.unwrap_or_default(), cmds, false)
+        });
+
+    let embed = serenity::CreateEmbed::new()
+        .fields(fields)
+        .footer(serenity::CreateEmbedFooter::new(footer));
+
+    let reply = poise::CreateReply::default().embed(embed).ephemeral(true);
+
+    ctx.send(reply).await?;
+
     Ok(())
 }
 

@@ -34,13 +34,10 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                 .into_iter()
                 .filter(|cmd| !cmd.hide_in_help)
                 // get context menu commands at the bottom.
-                .sorted_by_key(|cmd| cmd.slash_action.is_none()) 
+                .sorted_by_key(|cmd| cmd.slash_action.is_none())
                 .map(|cmd| {
                     let name = cmd.context_menu_name.as_deref().unwrap_or(&cmd.name);
-                    let prefix = cmd
-                        .slash_action
-                        .map(|_| "`/")
-                        .unwrap_or("Context menu: `");
+                    let prefix = cmd.slash_action.map(|_| "`/").unwrap_or("Context menu: `");
                     format!(
                         "{}{}`: _{}_",
                         prefix,
@@ -100,7 +97,7 @@ pub(crate) async fn on_error(
                 guild,
                 invocation,
                 error,
-                "Command returned an error.\n\tDetails:"
+                "Command returned an error."
             );
             ctx.say(error).await?;
         }
@@ -118,12 +115,7 @@ pub(crate) fn on_success(ctx: &Context) {
 
     let invocation = ctx.invocation_string();
 
-    tracing::info!(
-        command,
-        guild,
-        invocation,
-        "Command called successfully.\n\tDetails: "
-    );
+    tracing::info!(command, guild, invocation, "Command called successfully.");
 }
 
 pub(crate) async fn terse_card_print<T>(

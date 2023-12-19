@@ -17,8 +17,7 @@ pub async fn deck(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code = get_code_from_msg(&code);
-    let mut deck = deck::lookup(code)?;
+    let mut deck = deck::lookup(&code)?;
 
     if let Some(fmt) = format {
         deck.format = fmt;
@@ -35,8 +34,7 @@ pub async fn deck_context_menu(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code = get_code_from_msg(&msg.content);
-    let deck = deck::lookup(code)?;
+    let deck = deck::lookup(&msg.content)?;
 
     send_deck_reply(ctx, deck).await
 }
@@ -67,11 +65,9 @@ pub async fn deckcomp(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let code1 = get_code_from_msg(&code1);
-    let deck1 = deck::lookup(code1)?;
+    let deck1 = deck::lookup(&code1)?;
 
-    let code2 = get_code_from_msg(&code2);
-    let deck2 = deck::lookup(code2)?;
+    let deck2 = deck::lookup(&code2)?;
 
     let deckcomp = deck1.compare_with(&deck2);
 
@@ -79,7 +75,18 @@ pub async fn deckcomp(
         map.into_iter()
             .sorted()
             .map(|(card, count)| {
-                let (square, count) = square_count(&card, count);
+                // emojis defined on Mimiron Bot Server.
+                let square = match card.rarity {
+                    Rarity::Legendary => "<:legendary:1182038161099067522>",
+                    Rarity::Epic => "<:epic:1182038156841844837>",
+                    Rarity::Rare => "<:rare:1182038164781678674>",
+                    _ => "<:common:1182038153767419986>",
+                };
+
+                let count = (count > 1)
+                    .then(|| format!("_{count}x_ "))
+                    .unwrap_or_default();
+
                 format!("{} {}{}\n", square, count, card.name)
             })
             .collect::<String>()
@@ -90,11 +97,11 @@ pub async fn deckcomp(
     let shared = sort_and_set(deckcomp.shared_cards);
 
     let fields = vec![
-        ("Code 1", code1, false),
-        ("Code 2", code2, false),
-        ("Deck 1", &uniques_1, true),
-        ("Deck 2", &uniques_2, true),
-        ("Shared", &shared, true),
+        (deck1.title.as_deref().unwrap_or("Code 1"), code1, false),
+        (deck2.title.as_deref().unwrap_or("Code 2"), code2, false),
+        (deck1.title.as_deref().unwrap_or("Deck 1"), uniques_1, true),
+        (deck2.title.as_deref().unwrap_or("Deck 2"), uniques_2, true),
+        ("Shared", shared, true),
     ];
 
     let embed = serenity::CreateEmbed::default()
@@ -107,27 +114,6 @@ pub async fn deckcomp(
     ctx.send(reply).await?;
 
     Ok(())
-}
-
-fn get_code_from_msg(code: &str) -> &str {
-    /* For when someone pastes something like this:
-     * ### Custom Shaman
-     * # etc
-     * #
-     * AAECAfWfAwjy3QT0oAXmowXipAXFpQX9xAX0yAX00AUL1bIE4LUEssEExc4Exs4Euu0Eyu0EhaoFw9AFxNAFr9EFAAED2aAE/cQFr8MF/cQF0p4G/cQFAAA=
-     * #
-     * # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
-     */
-
-    // use this later?
-    let _title = code
-        .strip_prefix("###")
-        .and_then(|s| s.split_once("#"))
-        .map(|(s, _)| s.trim());
-
-    code.split_ascii_whitespace()
-        .find(|s| s.starts_with("AA"))
-        .unwrap_or(&code)
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
@@ -143,7 +129,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     };
 
     let embed = serenity::CreateEmbed::new()
-        .title(format!("{} Deck", deck.class))
+        .title(deck.title.unwrap_or(format!("{} Deck", deck.class)))
         .url(format!(
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::encode(&deck.deck_code)
@@ -159,20 +145,4 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     ctx.send(reply).await?;
 
     Ok(())
-}
-
-fn square_count(card: &card::Card, count: usize) -> (&str, String) {
-    // emojis defined on Mimiron Bot Server.
-    let square = match card.rarity {
-        Rarity::Legendary => "<:legendary:1182038161099067522>",
-        Rarity::Epic => "<:epic:1182038156841844837>",
-        Rarity::Rare => "<:rare:1182038164781678674>",
-        _ => "<:common:1182038153767419986>",
-    };
-
-    let count = (count > 1)
-        .then(|| format!("{count}x "))
-        .unwrap_or_default();
-
-    (square, count)
 }

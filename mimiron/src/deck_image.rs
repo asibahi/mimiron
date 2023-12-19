@@ -37,6 +37,7 @@ const TEXT_BOLD_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Medium.ttf")
 const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf");
 const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
 
+#[derive(Clone, Copy)]
 pub enum ImageOptions {
     /// Each group in its own column. (HS Top Decks)
     Groups,
@@ -469,10 +470,11 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
 }
 
 fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
-    let title = get_title_slug(
-        &format!("{} - {}", deck.class, deck.format.to_uppercase()),
-        CROP_HEIGHT as i32,
-    );
+    let title = deck
+        .title
+        .clone()
+        .unwrap_or_else(|| format!("{} - {}", deck.class, deck.format.to_uppercase()));
+    let title = get_title_slug(&title, CROP_HEIGHT as i32);
     img.copy_from(&title, MARGIN, MARGIN)?;
 
     if let Ok(class_img) = get_class_icon(&deck.class) {

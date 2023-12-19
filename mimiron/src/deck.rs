@@ -26,6 +26,7 @@ pub struct Sideboard {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Deck {
+    pub title: Option<String>,
     pub deck_code: String,
     pub format: String,
     pub class: Class,
@@ -53,9 +54,16 @@ impl Deck {
 impl Display for Deck {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let code = &self.deck_code;
-        let class = &self.class.to_string().bold();
-        let format = &self.format.to_uppercase().bold();
-        writeln!(f, "{format:>10} {class} deck.")?;
+
+        if let Some(title) = &self.title {
+            writeln!(f, "\t{}", title.bold())?;
+        }
+        writeln!(
+            f,
+            "\t{} {} deck.",
+            &self.format.to_uppercase().bold(),
+            &self.class.to_string().bold()
+        )?;
 
         let cards = self
             .cards
@@ -125,6 +133,7 @@ impl Display for DeckDifference {
 }
 
 pub fn lookup(code: &str) -> Result<Deck> {
+    let (title, code) = extract_title_and_code(code);
     let mut deck = get_agent()
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en-US")
@@ -138,6 +147,8 @@ pub fn lookup(code: &str) -> Result<Deck> {
             ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
         })?
         .into_json::<Deck>()?;
+
+    deck.title = title;
 
     // ugly hack for double class decks. Doesn't work if card id's don't exist in API.
     // e.g. Works for Duels double class decks.   Doesn't work with Core Brann when Brann is not in Core.
@@ -206,4 +217,29 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
         .into_json::<Deck>()?;
 
     Ok(())
+}
+
+#[inline(always)]
+fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
+    /* For when someone pastes something like this:
+     * ### Custom Shaman
+     * # etc
+     * #
+     * AAECAfWfAwjy3QT0oAXmowXipAXFpQX9xAX0yAX00AUL1bIE4LUEssEExc4Exs4Euu0Eyu0EhaoFw9AFxNAFr9EFAAED2aAE/cQFr8MF/cQF0p4G/cQFAAA=
+     * #
+     * # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
+     */
+
+    // use this later?
+    let title = code
+        .strip_prefix("###")
+        .and_then(|s| s.split_once('#'))
+        .map(|(s, _)| s.trim().to_owned());
+
+    let code = code
+        .split_ascii_whitespace()
+        .find(|s| s.starts_with("AA"))
+        .unwrap_or(code);
+
+    (title, code)
 }

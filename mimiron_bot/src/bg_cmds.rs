@@ -3,9 +3,8 @@ use crate::{
     Context, Error,
 };
 use itertools::Itertools;
-use mimiron::{bg, card_details::MinionType};
+use mimiron::bg;
 use poise::serenity_prelude as serenity;
-use std::str::FromStr;
 
 /// Search for a battlegrounds card by name. Be precise!
 #[poise::command(slash_command, category = "Battlegrounds")]
@@ -46,14 +45,9 @@ pub async fn bgtier(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let mt = match minion_type {
-        Some(s) => Some(MinionType::from_str(&s)?),
-        None => None,
-    };
-
     let opts = bg::SearchOptions::empty()
         .with_tier(Some(tier))
-        .with_type(mt);
+        .with_type(minion_type.map(|s| s.parse()).transpose()?);
     let cards = bg::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, inner_card_embed).await
@@ -101,7 +95,7 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
     };
 
     fields.extend(
-        bg::get_and_print_associated_cards(card.clone())
+        bg::get_and_print_associated_cards(&card)
             .into_iter()
             .filter_map(|assoc_card| match assoc_card.card_type {
                 bg::BGCardType::Minion {

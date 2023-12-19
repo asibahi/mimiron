@@ -1,7 +1,6 @@
 use anyhow::Result;
 use clap::{ArgGroup, Args};
 use mimiron::{bg, card_details::MinionType};
-use std::str::FromStr;
 
 #[derive(Args)]
 #[command(group = ArgGroup::new("search").required(true).multiple(true))]
@@ -15,7 +14,7 @@ pub struct BGArgs {
     tier: Option<u8>,
 
     // Search by Minion type
-    #[arg(short = 'T', long = "type", group = "search", value_parser = MinionType::from_str)]
+    #[arg(short = 'T', long = "type", group = "search", value_parser = str::parse::<MinionType>)]
     minion_type: Option<MinionType>,
 
     /// Include text inside text boxes.
@@ -37,7 +36,7 @@ pub(crate) fn run(args: BGArgs) -> Result<()> {
 
     for card in cards {
         println!("{card:#}");
-        _ = bg::get_and_print_associated_cards(card);
+        _ = bg::get_and_print_associated_cards(&card);
     }
 
     Ok(())

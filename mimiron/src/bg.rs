@@ -323,7 +323,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 }
 
 #[must_use]
-pub fn get_and_print_associated_cards(card: Card) -> Vec<Card> {
+pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
     let mut cards = vec![];
 
     match &card.card_type {

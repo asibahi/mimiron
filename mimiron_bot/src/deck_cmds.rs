@@ -97,8 +97,16 @@ pub async fn deckcomp(
     let shared = sort_and_set(deckcomp.shared_cards);
 
     let fields = vec![
-        (deck1.title.as_deref().unwrap_or("Code 1"), code1, false),
-        (deck2.title.as_deref().unwrap_or("Code 2"), code2, false),
+        (
+            deck1.title.as_deref().unwrap_or("Code 1"),
+            deck1.deck_code,
+            false,
+        ),
+        (
+            deck2.title.as_deref().unwrap_or("Code 2"),
+            deck2.deck_code,
+            false,
+        ),
         (deck1.title.as_deref().unwrap_or("Deck 1"), uniques_1, true),
         (deck2.title.as_deref().unwrap_or("Deck 2"), uniques_2, true),
         ("Shared", shared, true),

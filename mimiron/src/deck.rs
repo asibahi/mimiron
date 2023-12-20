@@ -230,10 +230,9 @@ fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
      * # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
      */
 
-    // use this later?
     let title = code
-        .strip_prefix("###")
-        .and_then(|s| s.split_once('#'))
+        .split_once("###")
+        .and_then(|(_, s)| s.split_once('#'))
         .map(|(s, _)| s.trim().to_owned());
 
     let code = code

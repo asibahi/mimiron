@@ -10,10 +10,7 @@ use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{drawing, rect::Rect};
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
-use std::{
-    collections::{BTreeMap, HashMap},
-    ops::Not,
-};
+use std::collections::{BTreeMap, HashMap};
 
 //  Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -114,7 +111,7 @@ fn img_adaptable_format(deck: &Deck) -> Result<DynamicImage> {
                 sb_pos_tracker % cards_in_col + 1,
             );
             img.copy_from(
-                &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
+                &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
             )?;
@@ -192,7 +189,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<Dy
             let title_offset = if with_text { TEXT_BOX_HEIGHT } else { 0 };
 
             img.copy_from(
-                &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
+                &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 ROW_HEIGHT + title_offset + row * actual_row_height + MARGIN,
             )?;
@@ -239,7 +236,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     // assumes decks will always have class cards
     let deck_img_width = {
         let mut columns = 1;
-        if neutral_cards.is_empty().not() {
+        if !neutral_cards.is_empty() {
             columns += 1;
         }
         if let Some(sideboards) = &deck.sideboard_cards {
@@ -260,8 +257,10 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
     draw_deck_title(&mut img, deck)?;
-    if neutral_cards.is_empty().not() {
-        let neutrals_title = get_title_slug("Neutrals", 0);
+
+    // Doesn't currently accomodate longer deck titles
+    if !neutral_cards.is_empty() {
+        let neutrals_title = get_heading_slug("Neutrals");
         img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
     }
 
@@ -280,12 +279,13 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
         for (sb_i, sb) in sideboards.iter().enumerate() {
+            // 2 can be assumed here because all one of current sideboard cards are neutral.
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
 
             img.copy_from(
-                &get_title_slug(&format!("Sideboard: {}", sb.sideboard_card.name), 0),
+                &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
                 column_start,
-                MARGIN,
+                ROW_HEIGHT + MARGIN,
             )?;
 
             for (i, slug) in order_cards(&sb.cards_in_sideboard)
@@ -293,7 +293,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
                 .enumerate()
                 .map(|(i, (c, _))| (i, &slug_map[c]))
             {
-                let i = i as u32 + 1;
+                let i = i as u32 + 2;
                 img.copy_from(slug, column_start, i * ROW_HEIGHT + MARGIN)?;
             }
         }
@@ -435,7 +435,7 @@ fn order_deck_and_get_slugs(
     (ordered_cards, slug_map)
 }
 
-fn get_title_slug(title: &str, margin: i32) -> DynamicImage {
+fn get_heading_slug(title: &str) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
@@ -449,7 +449,7 @@ fn get_title_slug(title: &str, margin: i32) -> DynamicImage {
     drawing::draw_text_mut(
         &mut img,
         Rgba([10, 10, 10, 255]),
-        15 + margin,
+        15,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
@@ -474,8 +474,23 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
         .title
         .clone()
         .unwrap_or_else(|| format!("{} - {}", deck.class, deck.format.to_uppercase()));
-    let title = get_title_slug(&title, CROP_HEIGHT as i32);
-    img.copy_from(&title, MARGIN, MARGIN)?;
+
+    // font and size
+    let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let scale = Scale::uniform(50.0);
+
+    let (_, th) = drawing::text_size(scale, &font, "E");
+
+    // title
+    drawing::draw_text_mut(
+        img,
+        Rgba([10, 10, 10, 255]),
+        15 + CROP_HEIGHT as i32,
+        (CROP_HEIGHT as i32 - th) / 2,
+        scale,
+        &font,
+        &title,
+    );
 
     if let Ok(class_img) = get_class_icon(&deck.class) {
         img.copy_from(

@@ -435,7 +435,7 @@ fn order_deck_and_get_slugs(
     (ordered_cards, slug_map)
 }
 
-fn get_heading_slug(title: &str) -> DynamicImage {
+fn get_heading_slug(heading: &str) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
@@ -445,7 +445,6 @@ fn get_heading_slug(title: &str) -> DynamicImage {
 
     let (_, th) = drawing::text_size(scale, &font, "E");
 
-    // title
     drawing::draw_text_mut(
         &mut img,
         Rgba([10, 10, 10, 255]),
@@ -453,7 +452,7 @@ fn get_heading_slug(title: &str) -> DynamicImage {
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
-        title, //.to_uppercase(),
+        heading, //.to_uppercase(),
     );
 
     DynamicImage::ImageRgba8(img)
@@ -485,8 +484,8 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
     drawing::draw_text_mut(
         img,
         Rgba([10, 10, 10, 255]),
-        15 + CROP_HEIGHT as i32,
-        (CROP_HEIGHT as i32 - th) / 2,
+        MARGIN as i32 + CROP_HEIGHT as i32 + 10,
+        MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
         &title,

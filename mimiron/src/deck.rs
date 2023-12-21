@@ -232,7 +232,7 @@ fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
 
     let title = code
         .split_once("###")
-        .and_then(|(_, s)| s.split_once('#'))
+        .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
         .map(|(s, _)| s.trim().to_owned());
 
     let code = code

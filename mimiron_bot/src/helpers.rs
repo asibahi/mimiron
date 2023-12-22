@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::{Context, Data, Error};
 use itertools::Itertools;
 use mimiron::card_details::{Class, Rarity};
+use once_cell::unsync::Lazy;
 use poise::serenity_prelude as serenity;
 
 pub(crate) fn markdown(i: &str) -> String {
@@ -151,7 +152,7 @@ pub(crate) async fn paginated_card_print<T>(
 ) -> Result<(), Error> {
     // pagination elements
     let embed_chunks = cards
-        .map(inner_card_embed)
+        .map(|c| Lazy::new(|| inner_card_embed(c)))
         .chunks(3)
         .into_iter()
         .map(|c| c.collect::<Vec<_>>())
@@ -159,7 +160,9 @@ pub(crate) async fn paginated_card_print<T>(
     let mut current_page = 0;
 
     let mut reply = poise::CreateReply::default();
-    reply.embeds.extend(embed_chunks[current_page].clone());
+    reply
+        .embeds
+        .extend(embed_chunks[current_page].iter().map(|l| &**l).cloned());
 
     if embed_chunks.len() <= 1 {
         ctx.send(reply).await?;
@@ -214,7 +217,13 @@ pub(crate) async fn paginated_card_print<T>(
                 ctx.serenity_context(),
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::new()
-                        .embeds(embed_chunks[current_page].clone())
+                        .embeds(
+                            embed_chunks[current_page]
+                                .iter()
+                                .map(|l| &**l)
+                                .cloned()
+                                .collect_vec(),
+                        )
                         .components(vec![serenity::CreateActionRow::Buttons(button_row)]),
                 ),
             )
@@ -228,7 +237,9 @@ pub(crate) async fn paginated_card_print<T>(
             next_button.disabled(true),
         ])]);
 
-    last_reply.embeds.extend(embed_chunks[current_page].clone());
+    last_reply
+        .embeds
+        .extend(embed_chunks[current_page].iter().map(|l| &**l).cloned());
 
     msg.edit(ctx, last_reply).await?;
 

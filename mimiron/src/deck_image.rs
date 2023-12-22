@@ -361,9 +361,9 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     let scale = Scale::uniform(40.0);
 
     // card name
-    drawing::draw_text_mut(
+    draw_text(
         &mut img,
-        Rgba([255, 255, 255, 255]),
+        (255, 255, 255),
         CROP_HEIGHT as i32 + 10,
         15,
         scale,
@@ -374,9 +374,9 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     // card cost
     let cost = card.cost.to_string();
     let (tw, _) = drawing::text_size(scale, &font, &cost);
-    drawing::draw_text_mut(
+    draw_text(
         &mut img,
-        Rgba([255, 255, 255, 255]),
+        (255, 255, 255),
         (CROP_HEIGHT as i32 - tw) / 2,
         15,
         scale,
@@ -387,9 +387,9 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     // card count
     let count = (count > 1 || card.rarity != Rarity::Legendary).thus_or_default(count.to_string());
     let (tw, _) = drawing::text_size(scale, &font, &count);
-    drawing::draw_text_mut(
+    draw_text(
         &mut img,
-        Rgba([255, 255, 255, 255]),
+        (255, 255, 255),
         SLUG_WIDTH as i32 - (CROP_HEIGHT as i32 + tw) / 2,
         15,
         scale,
@@ -445,9 +445,9 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
 
     let (_, th) = drawing::text_size(scale, &font, "E");
 
-    drawing::draw_text_mut(
+    draw_text(
         &mut img,
-        Rgba([10, 10, 10, 255]),
+        (10, 10, 10),
         15,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
@@ -481,9 +481,9 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
     let (_, th) = drawing::text_size(scale, &font, "E");
 
     // title
-    drawing::draw_text_mut(
+    draw_text(
         img,
-        Rgba([10, 10, 10, 255]),
+        (10, 10, 10),
         MARGIN as i32 + CROP_HEIGHT as i32 + 10,
         MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
         scale,
@@ -595,9 +595,9 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             cursor = (15, cursor.1 + line_height);
         }
 
-        drawing::draw_text_mut(
+        draw_text(
             &mut img,
-            Rgba([255, 255, 255, 255]),
+            (255, 255, 255),
             cursor.0,
             cursor.1,
             text_scale,
@@ -614,4 +614,25 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     }
 
     DynamicImage::ImageRgba8(img)
+}
+
+// isolate the function and leave potential to implement local font fallback behaviour
+fn draw_text<'a>(
+    canvas: &'a mut RgbaImage,
+    color: (u8, u8, u8),
+    x: i32,
+    y: i32,
+    scale: Scale,
+    font: &'a Font<'a>,
+    text: &'a str,
+) {
+    drawing::draw_text_mut(
+        canvas,
+        Rgba([color.0, color.1, color.2, 255]),
+        x,
+        y,
+        scale,
+        font,
+        text,
+    );
 }

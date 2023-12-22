@@ -1,5 +1,5 @@
 use crate::{
-    helpers::{markdown, paginated_card_print, terse_card_print},
+    helpers::{class_to_emoji, markdown, paginated_card_print, rarity_to_emoji, terse_card_print},
     Context, Error,
 };
 use mimiron::card;
@@ -65,8 +65,10 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
     let class = card
         .class
         .into_iter()
-        .map(crate::helpers::class_to_emoji)
+        .map(class_to_emoji)
         .collect::<String>();
+
+    let rarity = rarity_to_emoji(card.rarity.clone());
 
     let mut fields = vec![
         (
@@ -74,7 +76,7 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
             format!("{} {} mana {}", class, card.cost, card.card_type),
             true,
         ),
-        (" ", card.card_set.clone(), true),
+        (" ", format!("{} {}", rarity, card.card_set.clone()), true),
     ];
 
     if !card.flavor_text.is_empty() {

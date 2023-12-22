@@ -2,7 +2,6 @@ use crate::{Context, Error};
 use itertools::Itertools;
 use mimiron::{
     card,
-    card_details::Rarity,
     deck::{self, Deck},
 };
 use poise::serenity_prelude as serenity;
@@ -76,13 +75,7 @@ pub async fn deckcomp(
             .sorted()
             .map(|(card, count)| {
                 // emojis defined on Mimiron Bot Server.
-                let square = match card.rarity {
-                    Rarity::Legendary => "<:legendary:1182038161099067522>",
-                    Rarity::Epic => "<:epic:1182038156841844837>",
-                    Rarity::Rare => "<:rare:1182038164781678674>",
-                    _ => "<:common:1182038153767419986>",
-                };
-
+                let square = crate::helpers::rarity_to_emoji(card.rarity);
                 let count = (count > 1)
                     .then(|| format!("_{count}x_ "))
                     .unwrap_or_default();
@@ -142,7 +135,11 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::encode(&deck.deck_code)
         ))
-        .description(&deck.deck_code)
+        .description(format!(
+            "{} {}",
+            crate::helpers::class_to_emoji(deck.class.clone()),
+            &deck.deck_code
+        ))
         .color(deck.class.color())
         .attachment(attachment_name);
 

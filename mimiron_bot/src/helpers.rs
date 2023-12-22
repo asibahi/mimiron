@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{Context, Data, Error};
 use itertools::Itertools;
-use mimiron::card_details::Class;
+use mimiron::card_details::{Class, Rarity};
 use poise::serenity_prelude as serenity;
 
 pub(crate) fn markdown(i: &str) -> String {
@@ -77,6 +77,16 @@ pub fn class_to_emoji(class: Class) -> &'static str {
         Class::Warlock => "<:wk:1182032014757601340>",
         Class::Warrior => "<:wr:1182032006171861152>",
         _ => "",
+    }
+}
+
+pub fn rarity_to_emoji(rarity: Rarity) -> &'static str {
+    // emojis are in Mimiron Bot server
+    match rarity {
+        Rarity::Legendary => "<:legendary:1182038161099067522>",
+        Rarity::Epic => "<:epic:1182038156841844837>",
+        Rarity::Rare => "<:rare:1182038164781678674>",
+        _ => "<:common:1182038153767419986>",
     }
 }
 

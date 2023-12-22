@@ -162,7 +162,7 @@ pub(crate) async fn paginated_card_print<T>(
     let mut reply = poise::CreateReply::default();
     reply
         .embeds
-        .extend(embed_chunks[current_page].iter().map(|l| &**l).cloned());
+        .extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
 
     if embed_chunks.len() <= 1 {
         ctx.send(reply).await?;
@@ -212,18 +212,18 @@ pub(crate) async fn paginated_card_print<T>(
                 .disabled(current_page == embed_chunks.len() - 1),
         ];
 
+        let content = embed_chunks[current_page]
+            .iter()
+            .map(Lazy::force)
+            .cloned()
+            .collect_vec();
+
         press
             .create_response(
                 ctx.serenity_context(),
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::new()
-                        .embeds(
-                            embed_chunks[current_page]
-                                .iter()
-                                .map(|l| &**l)
-                                .cloned()
-                                .collect_vec(),
-                        )
+                        .embeds(content)
                         .components(vec![serenity::CreateActionRow::Buttons(button_row)]),
                 ),
             )
@@ -239,7 +239,7 @@ pub(crate) async fn paginated_card_print<T>(
 
     last_reply
         .embeds
-        .extend(embed_chunks[current_page].iter().map(|l| &**l).cloned());
+        .extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
 
     msg.edit(ctx, last_reply).await?;
 

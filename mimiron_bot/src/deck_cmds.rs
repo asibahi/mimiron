@@ -135,11 +135,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::encode(&deck.deck_code)
         ))
-        .description(format!(
-            "{} {}",
-            crate::helpers::class_to_emoji(deck.class.clone()),
-            &deck.deck_code
-        ))
+        .description(&deck.deck_code)
         .color(deck.class.color())
         .attachment(attachment_name);
 

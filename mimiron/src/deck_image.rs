@@ -3,7 +3,7 @@ use crate::{
     card_details::{Class, Rarity},
     deck::Deck,
     get_agent,
-    helpers::{get_boxes_and_glue, TextStyle, Thusable},
+    helpers::{get_boxes_and_glue, TextStyle},
 };
 use anyhow::{anyhow, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
@@ -385,7 +385,9 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     );
 
     // card count
-    let count = (count > 1 || card.rarity != Rarity::Legendary).thus_or_default(count.to_string());
+    let count = (count > 1 || card.rarity != Rarity::Legendary)
+        .then(|| count.to_string())
+        .unwrap_or_default();
     let (tw, _) = drawing::text_size(scale, &font, &count);
     draw_text(
         &mut img,

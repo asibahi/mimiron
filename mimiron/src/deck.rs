@@ -2,7 +2,6 @@ use crate::{
     card::{self, Card},
     card_details::Class,
     get_access_token, get_agent,
-    helpers::Thusable,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
@@ -74,7 +73,7 @@ impl Display for Deck {
             });
 
         for (card, count) in cards {
-            let count = (count > 1).thus_or_default(format!("{count}x"));
+            let count = format_count(count);
             writeln!(f, "{count:>4} {card}")?;
         }
 
@@ -91,7 +90,7 @@ impl Display for Deck {
                 );
 
                 for (card, count) in cards {
-                    let count = (count > 1).thus_or_default(format!("{count}x"));
+                    let count = format_count(count);
                     writeln!(f, "{count:>4} {card}")?;
                 }
             }
@@ -113,19 +112,19 @@ pub struct DeckDifference {
 impl Display for DeckDifference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (card, count) in &self.shared_cards.iter().collect::<BTreeMap<_, _>>() {
-            let count = (**count > 1).thus_or_default(format!("{count}x"));
+            let count = format_count(**count);
             writeln!(f, "{count:>4} {card}")?;
         }
 
         writeln!(f, "\n{}", self.deck1_code)?;
         for (card, count) in &self.deck1_uniques.iter().collect::<BTreeMap<_, _>>() {
-            let count = (**count > 1).thus_or_default(format!("{count}x"));
+            let count = format_count(**count);
             writeln!(f, "{}{count:>3} {card}", "+".green())?;
         }
 
         writeln!(f, "\n{}", self.deck2_code)?;
         for (card, count) in &self.deck2_uniques.iter().collect::<BTreeMap<_, _>>() {
-            let count = (**count > 1).thus_or_default(format!("{count}x"));
+            let count = format_count(**count);
             writeln!(f, "{}{count:>3} {card}", "-".red())?;
         }
         Ok(())
@@ -241,4 +240,8 @@ fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
         .unwrap_or(code);
 
     (title, code)
+}
+
+fn format_count(count: usize) -> String {
+    (count > 1).then(|| format!("{count}x")).unwrap_or_default()
 }

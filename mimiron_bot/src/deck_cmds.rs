@@ -65,16 +65,13 @@ pub async fn deckcomp(
     ctx.defer().await?;
 
     let deck1 = deck::lookup(&code1)?;
-
     let deck2 = deck::lookup(&code2)?;
-
     let deckcomp = deck1.compare_with(&deck2);
 
     let sort_and_set = |map: HashMap<card::Card, usize>| {
         map.into_iter()
             .sorted()
             .map(|(card, count)| {
-                // emojis defined on Mimiron Bot Server.
                 let square = crate::helpers::rarity_to_emoji(card.rarity);
                 let count = (count > 1)
                     .then(|| format!("_{count}x_ "))

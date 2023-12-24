@@ -6,14 +6,27 @@ use itertools::Itertools;
 use mimiron::bg;
 use poise::serenity_prelude as serenity;
 
-/// Search for a battlegrounds card by name. Be precise!
-#[poise::command(slash_command, category = "Battlegrounds")]
+/// alias for /bg
+#[poise::command(slash_command, hide_in_help)]
 pub async fn battlegrounds(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
 ) -> Result<(), Error> {
     ctx.defer().await?;
+    bg_inner(ctx, search_term).await
+}
 
+/// Search for a battlegrounds card by name. Be precise!
+#[poise::command(slash_command, category = "Battlegrounds")]
+pub async fn bg(
+    ctx: Context<'_>,
+    #[description = "search term"] search_term: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+    bg_inner(ctx, search_term).await
+}
+
+pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error> {
     let opts = bg::SearchOptions::empty().search_for(Some(search_term));
     let cards = bg::lookup(&opts)?;
 

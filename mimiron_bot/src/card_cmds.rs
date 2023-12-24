@@ -1,5 +1,5 @@
 use crate::{
-    helpers::{class_to_emoji, markdown, paginated_card_print, rarity_to_emoji, terse_card_print},
+    helpers::{class_to_emoji, markdown, paginated_card_print, rarity_to_emoji},
     Context, Error,
 };
 use mimiron::card;
@@ -16,7 +16,7 @@ pub async fn card(
     let opts = card::SearchOptions::search_for(search_term);
     let cards = card::lookup(&opts)?;
 
-    terse_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, inner_card_embed).await
 }
 
 /// Search for a constructed card by name, including reprints. Be precise!
@@ -30,7 +30,7 @@ pub async fn cardreprints(
     let opts = card::SearchOptions::search_for(search_term).include_reprints(true);
     let cards = card::lookup(&opts)?;
 
-    terse_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, inner_card_embed).await
 }
 
 /// Search for a constructed card by text.
@@ -58,7 +58,7 @@ pub async fn allcards(
     let opts = card::SearchOptions::search_for(search_term).include_noncollectibles(true);
     let cards = card::lookup(&opts)?;
 
-    terse_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, inner_card_embed).await
 }
 
 fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {

@@ -129,6 +129,7 @@ pub(crate) fn on_success(ctx: &Context) {
     tracing::info!(command, guild, invocation, "Command called successfully.");
 }
 
+#[allow(unused)] // maybe use for later?
 pub(crate) async fn terse_card_print<T>(
     ctx: Context<'_>,
     cards: impl Iterator<Item = T>,

@@ -1,5 +1,5 @@
 use crate::{
-    helpers::{markdown, paginated_card_print, terse_card_print},
+    helpers::{markdown, paginated_card_print},
     Context, Error,
 };
 use itertools::Itertools;
@@ -30,7 +30,7 @@ pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error
     let opts = bg::SearchOptions::empty().search_for(Some(search_term));
     let cards = bg::lookup(&opts)?;
 
-    terse_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, inner_card_embed).await
 }
 
 /// Search for a battlegrounds card by text.

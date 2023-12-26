@@ -3,3 +3,19 @@
 resolver = "2"
 members = ["mimiron", "mimiron_cli", "mimiron_bot"]
 default-members = ["mimiron", "mimiron_cli"]
+
+[workspace.lints.clippy]
+pedantic = "warn"
+module-name-repetitions = "allow"
+
+# no real reason unless officially released
+missing-errors-doc = "allow" 
+missing_panics_doc = "allow"
+
+# let me use `as` liberally 
+cast_possible_truncation = "allow"
+cast-possible-wrap = "allow"
+cast_lossless = "allow"
+
+# bad lint
+map_unwrap_or = "allow"

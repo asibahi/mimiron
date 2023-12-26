@@ -6,6 +6,9 @@ authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
 description = "A library to query Blizzard Hearthstone API"
 license = "MIT"
 
+[lints]
+workspace = true
+
 [dependencies]
 colored = "2"
 serde = { version = "1", features = ["derive"] }

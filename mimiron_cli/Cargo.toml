@@ -6,6 +6,9 @@ authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
 description = "A CLI application to query Blizzard Hearthstone API"
 license = "MIT"
 
+[lints]
+workspace = true
+
 [dependencies]
 mimiron = { path = "../mimiron" }
 clap = { version = "4", features = ["derive"] }

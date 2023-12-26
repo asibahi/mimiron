@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Args;
 use mimiron::card;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
 pub(crate) struct CardArgs {
     /// Text to search for

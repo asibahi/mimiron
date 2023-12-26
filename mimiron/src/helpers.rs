@@ -223,6 +223,7 @@ pub(crate) fn get_boxes_and_glue(i: &str) -> impl Iterator<Item = TextPiece> {
     traverse_text_tree(tree)
 }
 
+#[must_use]
 pub fn card_text_to_markdown(i: &str) -> String {
     let mut buffer = String::new();
     let mut prev_style = TextStyle::Plain;

@@ -218,7 +218,6 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-#[inline(always)]
 fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
     /* For when someone pastes something like this:
      * ### Custom Shaman

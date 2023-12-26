@@ -14,7 +14,7 @@ missing_panics_doc = "allow"
 
 # let me use `as` liberally 
 cast_possible_truncation = "allow"
-cast-possible-wrap = "allow"
+cast_possible_wrap = "allow"
 cast_lossless = "allow"
 
 # bad lint

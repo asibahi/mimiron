@@ -1,3 +1,9 @@
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless
+)]
+
 use crate::{
     card::Card,
     card_details::{Class, Rarity},

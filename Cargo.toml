@@ -12,10 +12,5 @@ module-name-repetitions = "allow"
 missing-errors-doc = "allow" 
 missing_panics_doc = "allow"
 
-# let me use `as` liberally 
-cast_possible_truncation = "allow"
-cast_possible_wrap = "allow"
-cast_lossless = "allow"
-
 # bad lint
 map_unwrap_or = "allow"

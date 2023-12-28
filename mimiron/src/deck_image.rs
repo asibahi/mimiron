@@ -391,9 +391,11 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     );
 
     // card count
-    let count = (count > 1 || card.rarity != Rarity::Legendary)
-        .then(|| count.to_string())
-        .unwrap_or_default();
+    let count = match (count, &card.rarity) {
+        (1, Rarity::Noncollectible) => String::from("!"),
+        (1, Rarity::Legendary) => String::new(),
+        _ => count.to_string(),
+    };
     let (tw, _) = drawing::text_size(scale, &font, &count);
     draw_text(
         &mut img,

@@ -132,14 +132,14 @@ struct ClassData {
     id: u8,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub enum Rarity {
     Legendary,
     Epic,
     Rare,
     Common,
     Free,
-    Unknown,
+    Noncollectible,
 }
 impl Display for Rarity {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -149,7 +149,7 @@ impl Display for Rarity {
             Self::Rare => "rare".blue(),
             Self::Epic => "epic".purple(),
             Self::Legendary => "LEGENDARY".bright_yellow().bold(),
-            Self::Unknown => "Noncollectible".clear(),
+            Self::Noncollectible => "Noncollectible".clear(),
         }
         .italic();
         write!(f, "{r}")
@@ -163,7 +163,7 @@ impl From<u8> for Rarity {
             3 => Self::Rare,
             4 => Self::Epic,
             5 => Self::Legendary,
-            _ => Self::Unknown,
+            _ => Self::Noncollectible,
         }
     }
 }
@@ -175,6 +175,7 @@ impl Rarity {
             Self::Legendary => (255, 128, 0),
             Self::Epic => (163, 53, 238),
             Self::Rare => (0, 112, 221),
+            Self::Noncollectible => (0, 204, 255),
             _ => (157, 157, 157),
         }
     }

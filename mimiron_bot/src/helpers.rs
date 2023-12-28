@@ -77,7 +77,7 @@ pub fn class_to_emoji(class: Class) -> &'static str {
         Class::Shaman => "<:sh:1182031998802464808>",
         Class::Warlock => "<:wk:1182032014757601340>",
         Class::Warrior => "<:wr:1182032006171861152>",
-        _ => "",
+        Class::Neutral | Class::Unknown => "",
     }
 }
 
@@ -87,7 +87,8 @@ pub fn rarity_to_emoji(rarity: Rarity) -> &'static str {
         Rarity::Legendary => "<:legendary:1182038161099067522>",
         Rarity::Epic => "<:epic:1182038156841844837>",
         Rarity::Rare => "<:rare:1182038164781678674>",
-        _ => "<:common:1182038153767419986>",
+        Rarity::Noncollectible => "<:artifact:1189986811079045282>",
+        Rarity::Common | Rarity::Free => "<:common:1182038153767419986>",
     }
 }
 

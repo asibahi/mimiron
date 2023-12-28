@@ -537,7 +537,7 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
             crate::card_details::get_hearth_sim_id(card)
                 .map(|id| format!("https://art.hearthstonejson.com/v1/tiles/{id}.png"))
         })
-        .ok_or(anyhow!("Card {} has no crop image", card.name))?;
+        .ok_or_else(|| anyhow!("Card {} has no crop image", card.name))?;
 
     let mut buf = Vec::new();
     AGENT

@@ -26,7 +26,7 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub(crate) fn run(args: BGArgs) -> Result<()> {
+pub fn run(args: BGArgs) -> Result<()> {
     let opts = bg::SearchOptions::empty()
         .search_for(args.name)
         .with_tier(args.tier)

@@ -105,10 +105,10 @@ impl Display for Card {
         let name = self.name.bold();
         let cost = self.cost;
 
-        let runes = match &self.rune_cost {
-            Some(r) => format!("{r} "),
-            None => String::new(),
-        };
+        let runes = self
+            .rune_cost
+            .as_ref()
+            .map_or_else(String::new, |r| format!("{r} "));
 
         let set = &self.card_set;
         let text = prettify(&self.text);

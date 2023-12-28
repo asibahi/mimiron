@@ -4,7 +4,7 @@ use mimiron::card;
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
-pub(crate) struct CardArgs {
+pub struct CardArgs {
     /// Text to search for
     name: String,
 
@@ -25,7 +25,7 @@ pub(crate) struct CardArgs {
     image: bool,
 }
 
-pub(crate) fn run(args: CardArgs) -> Result<()> {
+pub fn run(args: CardArgs) -> Result<()> {
     let opts = card::SearchOptions::search_for(args.name)
         .with_text(args.text)
         .include_reprints(args.reprints)

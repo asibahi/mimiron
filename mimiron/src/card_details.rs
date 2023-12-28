@@ -35,8 +35,7 @@ pub(crate) fn get_set_by_id(id: usize) -> String {
                 .is_some_and(|aliases| aliases.contains(&id))
     });
 
-    set.map(|s| s.name.clone())
-        .unwrap_or_else(|| format!("Set {id}"))
+    set.map_or_else(|| format!("Set {id}"), |s| s.name.clone())
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
@@ -61,8 +60,8 @@ pub enum Class {
 impl Display for Class {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            Self::DeathKnight => "DeathKnight",
-            Self::DemonHunter => "DemonHunter",
+            Self::DeathKnight => "Death Knight",
+            Self::DemonHunter => "Demon Hunter",
             Self::Druid => "Druid",
             // Self::Evoker => "Evoker",
             Self::Hunter => "Hunter",
@@ -122,7 +121,7 @@ impl Class {
             Self::Shaman => (43, 125, 180),
             Self::Warlock => (162, 112, 153),
             Self::Warrior => (200, 21, 24),
-            _ => (169, 169, 169),
+            Self::Neutral | Self::Unknown => (169, 169, 169),
         }
     }
 }
@@ -175,8 +174,8 @@ impl Rarity {
             Self::Legendary => (255, 128, 0),
             Self::Epic => (163, 53, 238),
             Self::Rare => (0, 112, 221),
+            Self::Common | Self::Free => (157, 157, 157),
             Self::Noncollectible => (0, 204, 255),
-            _ => (157, 157, 157),
         }
     }
 }

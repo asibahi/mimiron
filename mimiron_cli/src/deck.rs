@@ -61,7 +61,7 @@ enum ImageFormat {
     Adapt,
 }
 
-pub(crate) fn run(args: DeckArgs) -> Result<()> {
+pub fn run(args: DeckArgs) -> Result<()> {
     let mut deck = deck::lookup(&args.code)?;
 
     // Add Band resolution.

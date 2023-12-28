@@ -68,10 +68,8 @@ fn to_text_tree(i: &str) -> Result<TextTree, &str> {
     all_consuming(parse_body)(i).map(|(_, s)| s).map_err(|_| i)
 }
 
-pub(crate) fn prettify(i: &str) -> String {
-    to_text_tree(i)
-        .map(|s| s.to_string())
-        .unwrap_or(i.to_owned())
+pub fn prettify(i: &str) -> String {
+    to_text_tree(i).map_or_else(|_| i.to_owned(), |s| s.to_string())
 }
 
 #[cfg(test)]
@@ -135,14 +133,14 @@ mod prettify_tests {
 // ====================
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct TextPiece {
+pub struct TextPiece {
     text: String,
     style: TextStyle,
 }
 
 impl TextPiece {
     pub fn new(text: &str, style: TextStyle) -> Self {
-        TextPiece {
+        Self {
             text: text.into(),
             style,
         }
@@ -180,7 +178,7 @@ impl TextPiece {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum TextStyle {
+pub enum TextStyle {
     Plain,
     Bold,
     Italic,
@@ -214,7 +212,7 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
     })
 }
 
-pub(crate) fn get_boxes_and_glue(i: &str) -> impl Iterator<Item = TextPiece> {
+pub fn get_boxes_and_glue(i: &str) -> impl Iterator<Item = TextPiece> {
     let tree = match to_text_tree(i) {
         Ok(inner) => inner,
         Err(text) => TextTree::String(text.to_owned()),

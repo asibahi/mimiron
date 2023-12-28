@@ -12,8 +12,6 @@ As an alternative, I set up a small discord server to host the bot and play with
 
 ## Usage
 
-**Note:** The bot currently restricts itself to showing three cards to avoid overwhelming the chat more than it does now. Tho `/cardtext` is paginated.
-
 There are other commands not covered here. Join the bot's server and experiment!
 
 ### Card Lookup
@@ -29,22 +27,22 @@ Look up a card:
 Include card text boxes in search (which is the default mode for Blizzard's API):
 
 ```sh
-/cardtext ragnaros
+/cardtext deal 6 damage
 ```
 
 ![Card text box search](README/cardtextlookup.png)
 
-Include reprints of a card in the search. This may be useful for Classic Cards (rip classic mode).
+Search for non-collectible cards. Note that this might include a lot of weird results.
 
 ```sh
-/cardreprints ragnaros
+/allcards the azerite
 ```
 
-![Alt text](README/cardreprintlookup.png)
+![Non-collectible card search](README/allcardslookup.png)
 
 ### Deck Lookup
 
-Look up a deck:
+Look up a deck: (also availble when right-clicking any message with a Deck Code)
 
 ```sh
 /deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA==
@@ -52,33 +50,56 @@ Look up a deck:
 
 ![Deck look up in Discord](README/decklookup.png)
 
-
-This also handles Duels mode dual-class deck *mostly* correctly. (It doesn't edit the class name dynamically. Also the link to Blizzard's website will not work.)
+You can also paste directly from the Hearthstone client, and it picks up on the deck title, _and_ it (mostly) works for Duels.
 
 ```sh
-/deck AAEBAa6aBQ/6Du/3ApXNA5PQA6bvA/D2A+CLBMeyBN65BJzHBJbUBJ+kBeKkBc+eBrChBgAAAA==
+/deck ### Duels Deck # Class: Shaman # Format: Wild # # 1x (1) Cold Storage # 1x (1) Corrupt the Waters # 1x (1) Fire Fly # 1x (1) Frost Shock # 1x (1) Glacial Shard # 1x (1) Windchill # 1x (2) Bolner Hammerbeak # 1x (2) Fire Plume Harbinger # 1x (2) Sleetbreaker # 1x (3) Brilliant Macaw # 1x (3) Snowball Fight! # 1x (4) Granite Forgeborn # 1x (5) Living Prairie # 1x (7) Kalimos, Primal Lord # 1x (7) Skarr, the Catastrophe # 1x (8) Elemental Chaos # AAEBAaaPBRDLB5PBAuvCAvPCAuGoA8D2A4b6A9OABKeRBJWSBNySBPyABemjBb6PBsCPBtOeBgAAAA== # # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
 ```
 
 ![Deck image](README/duelsdecklookup.png)
 
-I am looking for feedback on how best to format the deck output. There are different ways to format/shape the image (you can see examples of which on the [main repo's README](../README.md)). Should I use those or use a text output? 
+Note re-Duels: Limitations on duels are mostly because of shortcomings in Blizzard's API. Some treasures are not available in the API at all, and links to the official deckbuilder will not work as expected.
+
+You can also compare two decks:
+
+```sh
+/deckcomp code1: AAEBAZ8FCr2GA86HA/voA8j5A+CLBMDiBP3EBZX1BfiUBs6cBgqzA9wK+NICkeQDyaAEmY4G444GvI8G9ZUG0Z4GAAEDiLED/cQFwOIE/cQFo+8E/cQFAAA= code2: AAEBAZ8FCL2GA86HA/voA5HsA+WwBP3EBY6VBp2iBguzA9wK2f4CzOsD2tkEwOIElo4GmY4G444GvI8G9ZUGAAED+7AD/cQFiLED/cQFo+8E/cQFAAA=
+```
+
+![Deck image](README/compdecklookup.png)
+
+Feedback on how to improve the formatting is welcome. Some of the card images are sadly missing from Blizzard's API and are instead acquired from https://hearthstonejson.com 
 
 ### Battlegrounds Lookup
 
 Look up Battlegrounds minions and Heroes:
 
 ```sh
-/battlegrounds elise
+/bg elise
 ```
 
 ![Battleground lookup](README/bglookup.png)
 
-Looking up cards by tier and/or type is planned, but not currently implemented.
+Look up cards by tier and, optioanlly, minion type:
+
+```sh
+/bgtier tier: 1 minion_type: beast
+```
+
+![Battleground lookup](README/bgtierlookup.png)
+
+Or look up cards by text:
+
+```sh
+/bgtext Wheel of Yogg-Saron
+```
+
+![Battleground lookup](README/bgtextlookup.png)
+
 
 ## Roadmap
 
-Please use the bot and give me feedback, either here in Github issues or in the [Mimiron Bot Server](https://discord.gg/HyW3nEMZKH) (where you can also try bot!!) Some ideas include:
-- Mercenaries support???
+Feedback is welcome either here in Github issues or in the [Mimiron Bot Server](https://discord.gg/HyW3nEMZKH) (where you can also try bot!!). No current specific thing planned.
 
 ## License
 

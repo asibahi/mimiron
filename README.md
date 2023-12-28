@@ -78,7 +78,9 @@ mimiron deck AAEBAa6aBQ/6Du/3ApXNA5PQA6bvA/D2A+CLBMeyBN65BJzHBJbUBJ+kBeKkBc+eBrC
 
 ![Deck image](README/duelsdecklookup.png)
 
-Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`:
+Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`.
+
+Note: Most images are acquired from Blizzard's servers. Ommissions are filled from https://hearthstonejson.com 
 
 ```sh
 mimiron deck --image AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 

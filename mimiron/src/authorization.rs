@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
     ops::Add,
-    sync::{OnceLock, RwLock},
+    sync::RwLock,
     time::{Duration, Instant},
 };
 
@@ -31,17 +32,13 @@ impl From<Authorization> for AccessToken {
     }
 }
 
-static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+pub(crate) static AGENT: Lazy<ureq::Agent> = Lazy::new(|| {
+    ureq::AgentBuilder::new()
+        .timeout_connect(Duration::from_secs(2))
+        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
+        .build()
+});
 static TOKEN: RwLock<Option<AccessToken>> = RwLock::new(None);
-
-pub(crate) fn get_agent() -> &'static ureq::Agent {
-    AGENT.get_or_init(|| {
-        ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(2))
-            .user_agent("mimiron cli https://github.com/asibahi/mimiron")
-            .build()
-    })
-}
 
 fn internal_get_access_token() -> Result<AccessToken> {
     // need to replace later with something that allows people to input their own creds
@@ -52,7 +49,7 @@ fn internal_get_access_token() -> Result<AccessToken> {
 
     let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 
-    let access_token = get_agent()
+    let access_token = AGENT
         .post("https://oauth.battle.net/token")
         .set("Authorization", &format!("Basic {creds}"))
         .query("grant_type", "client_credentials")

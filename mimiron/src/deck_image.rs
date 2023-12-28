@@ -5,10 +5,10 @@
 )]
 
 use crate::{
+    authorization::AGENT,
     card::Card,
     card_details::{Class, Rarity},
     deck::Deck,
-    get_agent,
     helpers::{get_boxes_and_glue, TextStyle},
 };
 use anyhow::{anyhow, Result};
@@ -512,7 +512,7 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
 
 fn get_class_icon(class: &Class) -> Result<DynamicImage> {
     let mut buf = Vec::new();
-    get_agent()
+    AGENT
         .get(
             &(format!(
                 "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
@@ -531,14 +531,14 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
         .crop_image
         .clone()
         .or_else(|| {
-            // refer to: https://hearthstonejson.com/docs/images.html 
+            // refer to: https://hearthstonejson.com/docs/images.html
             crate::card_details::get_hearth_sim_id(card)
                 .map(|id| format!("https://art.hearthstonejson.com/v1/tiles/{id}.png"))
         })
         .ok_or(anyhow!("Card {} has no crop image", card.name))?;
 
     let mut buf = Vec::new();
-    get_agent()
+    AGENT
         .get(&link)
         .call()?
         .into_reader()

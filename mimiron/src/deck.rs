@@ -1,7 +1,8 @@
 use crate::{
+    authorization::AGENT,
     card::{self, Card},
     card_details::Class,
-    get_access_token, get_agent,
+    get_access_token,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
@@ -133,7 +134,7 @@ impl Display for DeckDifference {
 
 pub fn lookup(code: &str) -> Result<Deck> {
     let (title, code) = extract_title_and_code(code);
-    let mut deck = get_agent()
+    let mut deck = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en-US")
         .query("code", code)
@@ -158,7 +159,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
 
         let card_ids = invalid_ids.iter().join(",");
 
-        let response = get_agent()
+        let response = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", "en-US")
             .query("access_token", &get_access_token())
@@ -206,7 +207,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
         .collect::<Result<Vec<String>>>()?
         .join(",");
 
-    *deck = get_agent()
+    *deck = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", "en-US")
         .query("access_token", &get_access_token())

@@ -1,6 +1,7 @@
 use crate::{
+    authorization::AGENT,
     card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
-    get_access_token, get_agent,
+    get_access_token,
     helpers::prettify,
 };
 use anyhow::{anyhow, Result};
@@ -233,7 +234,7 @@ impl SearchOptions {
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let search_term = &opts.search_term;
 
-    let mut res = get_agent()
+    let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", "en-US")
         .query("textFilter", search_term)

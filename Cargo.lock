@@ -1378,6 +1378,7 @@ dependencies = [
  "imageproc",
  "itertools 0.12.0",
  "nom",
+ "once_cell",
  "rayon",
  "rusttype",
  "serde",

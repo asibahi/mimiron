@@ -1,4 +1,4 @@
-use crate::{card_details::MinionType, get_access_token, get_agent, helpers::prettify};
+use crate::{authorization::AGENT, card_details::MinionType, get_access_token, helpers::prettify};
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use itertools::Itertools;
@@ -267,7 +267,7 @@ impl SearchOptions {
 }
 
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
-    let mut res = get_agent()
+    let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", &get_access_token())
         .query("locale", "en-US")
@@ -418,7 +418,7 @@ pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
 }
 
 fn get_card_by_id(id: usize) -> Result<Card> {
-    let res = get_agent()
+    let res = AGENT
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))

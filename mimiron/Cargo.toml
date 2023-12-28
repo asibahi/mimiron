@@ -21,7 +21,7 @@ itertools = "0.12.0"
 counter = "0.5.7"
 nom = "7.1.3"
 textwrap = { version = "0.16.0", default-features = false, features = [
-    "terminal_size", 
+    "terminal_size",
 ] }
 image = { version = "0.24.7", default-features = false, features = [
     "png",
@@ -32,3 +32,4 @@ rusttype = "0.9"
 rayon = "1.7.0"
 eitherable = "0.1.0"
 unicode-width = "0.1"
+once_cell = "1.19"

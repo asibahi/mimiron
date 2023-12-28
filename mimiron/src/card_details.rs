@@ -1,15 +1,23 @@
-use crate::{get_access_token, get_agent};
+use crate::{authorization::AGENT, get_access_token};
 use colored::Colorize;
 use itertools::Itertools;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
     collections::HashSet,
     fmt::{Display, Formatter},
     str::FromStr,
-    sync::OnceLock,
 };
 
-static SETS: OnceLock<Vec<Set>> = OnceLock::new();
+static SETS: Lazy<Vec<Set>> = Lazy::new(|| {
+    AGENT
+        .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
+        .query("locale", "en-US")
+        .query("access_token", &get_access_token())
+        .call()
+        .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
+        .unwrap_or_default()
+});
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,17 +28,7 @@ struct Set {
 }
 
 pub(crate) fn get_set_by_id(id: usize) -> String {
-    let sets = SETS.get_or_init(|| {
-        get_agent()
-            .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
-            .query("locale", "en-US")
-            .query("access_token", &get_access_token())
-            .call()
-            .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
-            .unwrap_or_default()
-    });
-
-    let set = sets.iter().find(|s| {
+    let set = SETS.iter().find(|s| {
         s.id == id
             || s.alias_set_ids
                 .as_ref()
@@ -376,7 +374,13 @@ impl Display for CardType {
 // Hearthstone Json unofficial (from HearthSim)
 // Uses https://hearthstonejson.com data for back up if needed.
 
-static HEARTH_SIM_IDS: OnceLock<Vec<HearthSimData>> = OnceLock::new();
+static HEARTH_SIM_IDS: Lazy<Vec<HearthSimData>> = Lazy::new(|| {
+    AGENT
+        .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.collectible.json")
+        .call()
+        .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
+        .unwrap_or_default()
+});
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -387,15 +391,8 @@ struct HearthSimData {
 }
 
 pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
-    let data = HEARTH_SIM_IDS.get_or_init(|| {
-        get_agent()
-            .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.collectible.json")
-            .call()
-            .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
-            .unwrap_or_default()
-    });
-
-    data.iter()
+    HEARTH_SIM_IDS
+        .iter()
         .find(|c| c.dbf_id == card.id || c.name == card.name)
         .map(|c| c.id.clone())
 }

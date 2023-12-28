@@ -1,4 +1,4 @@
-use crate::{authorization::AGENT, card_details::MinionType, get_access_token, helpers::prettify};
+use crate::{card_details::MinionType, get_access_token, helpers::prettify, AGENT};
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use itertools::Itertools;

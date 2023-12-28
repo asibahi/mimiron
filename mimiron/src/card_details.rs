@@ -1,4 +1,4 @@
-use crate::{authorization::AGENT, get_access_token};
+use crate::{get_access_token, AGENT};
 use colored::Colorize;
 use itertools::Itertools;
 use once_cell::sync::Lazy;

@@ -1,15 +1,12 @@
+use crate::AGENT;
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
     ops::Add,
     sync::RwLock,
     time::{Duration, Instant},
 };
-
-const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
-const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
 
 #[derive(Deserialize)]
 struct Authorization {
@@ -32,13 +29,10 @@ impl From<Authorization> for AccessToken {
     }
 }
 
-pub(crate) static AGENT: Lazy<ureq::Agent> = Lazy::new(|| {
-    ureq::AgentBuilder::new()
-        .timeout_connect(Duration::from_secs(2))
-        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
-        .build()
-});
 static TOKEN: RwLock<Option<AccessToken>> = RwLock::new(None);
+
+const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
+const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
 
 fn internal_get_access_token() -> Result<AccessToken> {
     // need to replace later with something that allows people to input their own creds

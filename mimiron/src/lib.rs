@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 mod authorization;
 pub mod bg;
 pub mod card;
@@ -7,5 +9,11 @@ mod deck_image;
 mod helpers;
 
 pub use authorization::get_access_token;
-
 pub use helpers::card_text_to_markdown;
+
+pub(crate) static AGENT: Lazy<ureq::Agent> = Lazy::new(|| {
+    ureq::AgentBuilder::new()
+        .timeout_connect(std::time::Duration::from_secs(2))
+        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
+        .build()
+});

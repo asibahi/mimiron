@@ -1,8 +1,7 @@
 use crate::{
-    authorization::AGENT,
     card::{self, Card},
     card_details::Class,
-    get_access_token,
+    get_access_token, AGENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;

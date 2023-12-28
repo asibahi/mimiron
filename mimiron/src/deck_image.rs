@@ -5,11 +5,11 @@
 )]
 
 use crate::{
-    authorization::AGENT,
     card::Card,
     card_details::{Class, Rarity},
     deck::Deck,
     helpers::{get_boxes_and_glue, TextStyle},
+    AGENT,
 };
 use anyhow::{anyhow, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};

@@ -1,8 +1,8 @@
 use crate::{
-    authorization::AGENT,
     card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     helpers::prettify,
+    AGENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;

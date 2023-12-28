@@ -372,3 +372,30 @@ impl Display for CardType {
         }
     }
 }
+
+// Hearthstone Json unofficial (from HearthSim)
+// Uses https://hearthstonejson.com data for back up if needed.
+
+static HEARTH_SIM_IDS: OnceLock<Vec<HearthSimData>> = OnceLock::new();
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HearthSimData {
+    dbf_id: usize,
+    id: String,
+    name: String,
+}
+
+pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
+    let data = HEARTH_SIM_IDS.get_or_init(|| {
+        get_agent()
+            .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.collectible.json")
+            .call()
+            .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
+            .unwrap_or_default()
+    });
+
+    data.iter()
+        .find(|c| c.dbf_id == card.id || c.name == card.name)
+        .map(|c| c.id.clone())
+}

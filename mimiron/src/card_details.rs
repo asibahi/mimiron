@@ -376,7 +376,7 @@ impl Display for CardType {
 
 static HEARTH_SIM_IDS: Lazy<Vec<HearthSimData>> = Lazy::new(|| {
     AGENT
-        .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.collectible.json")
+        .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.json")
         .call()
         .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
         .unwrap_or_default()

@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "mimiron_bot"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "image",
@@ -1408,7 +1408,7 @@ dependencies = [
 
 [[package]]
 name = "mimiron_cli"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "anyhow",
  "chrono",

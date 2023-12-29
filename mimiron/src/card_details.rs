@@ -65,8 +65,8 @@ pub trait Localize {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize)]
-struct LocalizedName {
+#[derive(Deserialize, Clone)]
+pub(crate) struct LocalizedName {
     #[serde(rename = "de_DE")]
     deDE: String,
     #[serde(rename = "en_US")]
@@ -99,20 +99,20 @@ struct LocalizedName {
 impl Localize for LocalizedName {
     fn in_locale(&self, locale: Locale) -> String {
         match locale {
-            Locale::deDE => self.deDE,
-            Locale::enUS => self.enUS,
-            Locale::esES => self.esES,
-            Locale::esMX => self.esMX,
-            Locale::frFR => self.frFR,
-            Locale::itIT => self.itIT,
-            Locale::jaJP => self.jaJP,
-            Locale::koKR => self.koKR,
-            Locale::plPL => self.plPL,
-            Locale::ptBR => self.ptBR,
-            Locale::ruRU => self.ruRU,
-            Locale::thTH => self.thTH,
-            Locale::zhCN => self.zhCN.unwrap_or(self.zhTW),
-            Locale::zhTW => self.zhTW,
+            Locale::deDE => self.deDE.clone(),
+            Locale::enUS => self.enUS.clone(),
+            Locale::esES => self.esES.clone(),
+            Locale::esMX => self.esMX.clone(),
+            Locale::frFR => self.frFR.clone(),
+            Locale::itIT => self.itIT.clone(),
+            Locale::jaJP => self.jaJP.clone(),
+            Locale::koKR => self.koKR.clone(),
+            Locale::plPL => self.plPL.clone(),
+            Locale::ptBR => self.ptBR.clone(),
+            Locale::ruRU => self.ruRU.clone(),
+            Locale::thTH => self.thTH.clone(),
+            Locale::zhCN => self.zhCN.clone().unwrap_or(self.zhTW.clone()),
+            Locale::zhTW => self.zhTW.clone(),
         }
     }
 }
@@ -120,28 +120,27 @@ impl Localize for LocalizedName {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Details {
-    pub slug: String,
     pub id: u8,
     pub name: LocalizedName,
 }
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
-        let ln = self.name;
-        let st = search_term.to_lowercase().as_str();
-        ln.deDE.to_lowercase().eq(st)
-            || ln.enUS.to_lowercase().eq(st)
-            || ln.esES.to_lowercase().eq(st)
-            || ln.esMX.to_lowercase().eq(st)
-            || ln.frFR.to_lowercase().eq(st)
-            || ln.itIT.to_lowercase().eq(st)
-            || ln.jaJP.eq(st)
-            || ln.koKR.eq(st)
-            || ln.plPL.to_lowercase().eq(st)
-            || ln.ptBR.to_lowercase().eq(st)
-            || ln.ruRU.to_lowercase().eq(st)
-            || ln.thTH.eq(st)
-            || ln.zhTW.eq(st)
-            || ln.zhCN.is_some_and(|s| s.eq(st))
+        let ln = self.name.clone();
+        let st = search_term.to_lowercase();
+        ln.deDE.to_lowercase().eq(&st)
+            || ln.enUS.to_lowercase().eq(&st)
+            || ln.esES.to_lowercase().eq(&st)
+            || ln.esMX.to_lowercase().eq(&st)
+            || ln.frFR.to_lowercase().eq(&st)
+            || ln.itIT.to_lowercase().eq(&st)
+            || ln.jaJP.eq(&st)
+            || ln.koKR.eq(&st)
+            || ln.plPL.to_lowercase().eq(&st)
+            || ln.ptBR.to_lowercase().eq(&st)
+            || ln.ruRU.to_lowercase().eq(&st)
+            || ln.thTH.eq(&st)
+            || ln.zhTW.eq(&st)
+            || ln.zhCN.is_some_and(|s| s.eq(&st))
     }
 }
 
@@ -156,7 +155,7 @@ pub(crate) static METADATA: Lazy<Metadata> = Lazy::new(|| {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Set {
+pub(crate) struct Set {
     id: usize,
     name: LocalizedName,
     alias_set_ids: Option<Vec<usize>>,
@@ -386,8 +385,6 @@ impl FromStr for MinionType {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.to_lowercase().as_str();
-
         METADATA
             .minion_types
             .iter()

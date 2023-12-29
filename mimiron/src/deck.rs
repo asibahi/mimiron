@@ -1,6 +1,6 @@
 use crate::{
     card::{self, Card},
-    card_details::{Class, Locale},
+    card_details::{Class, Locale, Localize},
     get_access_token, AGENT,
 };
 use anyhow::{anyhow, Result};
@@ -10,7 +10,7 @@ use itertools::Itertools;
 use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashMap},
-    fmt::Display,
+    fmt::{Display, Write},
 };
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
@@ -50,19 +50,22 @@ impl Deck {
         }
     }
 }
-impl Display for Deck {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Localize for Deck {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        let mut buffer = String::new();
+
         let code = &self.deck_code;
 
         if let Some(title) = &self.title {
-            writeln!(f, "\t{}", title.bold())?;
+            writeln!(buffer, "\t{}", title.bold()).ok();
         }
         writeln!(
-            f,
-            "\t{} {} deck.",
+            buffer,
+            "\t{} {}.",
             &self.format.to_uppercase().bold(),
-            &self.class.to_string().bold()
-        )?;
+            &self.class.in_locale(locale).to_string().bold()
+        )
+        .ok();
 
         let cards = self
             .cards
@@ -74,12 +77,12 @@ impl Display for Deck {
 
         for (card, count) in cards {
             let count = format_count(count);
-            writeln!(f, "{count:>4} {card}")?;
+            writeln!(buffer, "{count:>4} {}", card.in_locale(locale)).ok();
         }
 
         if let Some(sideboards) = &self.sideboard_cards {
             for sideboard in sideboards {
-                writeln!(f, "Sideboard of {}:", sideboard.sideboard_card.name)?;
+                writeln!(buffer, "Sideboard: {}", sideboard.sideboard_card.name).ok();
 
                 let cards = sideboard.cards_in_sideboard.iter().fold(
                     BTreeMap::<_, usize>::new(),
@@ -91,15 +94,16 @@ impl Display for Deck {
 
                 for (card, count) in cards {
                     let count = format_count(count);
-                    writeln!(f, "{count:>4} {card}")?;
+                    writeln!(buffer, "{count:>4} {}", card.in_locale(locale)).ok();
                 }
             }
         }
 
-        write!(f, "{code}")
+        write!(buffer, "{code}").ok();
+
+        buffer
     }
 }
-
 pub struct DeckDifference {
     pub shared_cards: HashMap<Card, usize>,
 
@@ -109,25 +113,27 @@ pub struct DeckDifference {
     pub deck2_code: String,
     pub deck2_uniques: HashMap<Card, usize>,
 }
-impl Display for DeckDifference {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Localize for DeckDifference {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        let mut f = String::new();
         for (card, count) in &self.shared_cards.iter().collect::<BTreeMap<_, _>>() {
             let count = format_count(**count);
-            writeln!(f, "{count:>4} {card}")?;
+            writeln!(f, "{count:>4} {}", card.in_locale(locale)).ok();
         }
 
-        writeln!(f, "\n{}", self.deck1_code)?;
+        writeln!(f, "\n{}", self.deck1_code).ok();
         for (card, count) in &self.deck1_uniques.iter().collect::<BTreeMap<_, _>>() {
             let count = format_count(**count);
-            writeln!(f, "{}{count:>3} {card}", "+".green())?;
+            writeln!(f, "{}{count:>3} {}", "+".green(), card.in_locale(locale)).ok();
         }
 
-        writeln!(f, "\n{}", self.deck2_code)?;
+        writeln!(f, "\n{}", self.deck2_code).ok();
         for (card, count) in &self.deck2_uniques.iter().collect::<BTreeMap<_, _>>() {
             let count = format_count(**count);
-            writeln!(f, "{}{count:>3} {card}", "-".red())?;
+            writeln!(f, "{}{count:>3} {}", "-".red(), card.in_locale(locale)).ok();
         }
-        Ok(())
+
+        f
     }
 }
 

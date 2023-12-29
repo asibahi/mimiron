@@ -11,17 +11,17 @@ use std::{
 
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Metadata {
-    sets: Vec<Set>,
-    types: Vec<Details>,
-    rarities: Vec<Details>,
-    classes: Vec<Details>,
-    minion_types: Vec<Details>,
-    spell_schools: Vec<Details>,
+pub(crate) struct Metadata {
+    pub sets: Vec<Set>,
+    pub types: Vec<Details>,
+    pub rarities: Vec<Details>,
+    pub classes: Vec<Details>,
+    pub minion_types: Vec<Details>,
+    pub spell_schools: Vec<Details>,
 }
 
 #[allow(non_camel_case_types, dead_code)]
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Locale {
     deDE,
     enUS,
@@ -61,8 +61,7 @@ impl Display for Locale {
 }
 
 pub trait Localize {
-    // no real need for trait. just to help make the signature consistent.
-    fn in_locale(&self, locale: &Locale) -> impl Display;
+    fn in_locale(&self, locale: Locale) -> impl Display;
 }
 
 #[allow(non_snake_case)]
@@ -98,7 +97,7 @@ struct LocalizedName {
     zhTW: String,
 }
 impl Localize for LocalizedName {
-    fn in_locale(&self, locale: &Locale) -> String {
+    fn in_locale(&self, locale: Locale) -> String {
         match locale {
             Locale::deDE => self.deDE,
             Locale::enUS => self.enUS,
@@ -120,10 +119,10 @@ impl Localize for LocalizedName {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Details {
-    slug: String,
-    id: u8,
-    name: LocalizedName,
+pub(crate) struct Details {
+    pub slug: String,
+    pub id: u8,
+    pub name: LocalizedName,
 }
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
@@ -146,9 +145,9 @@ impl Details {
     }
 }
 
-static METADATA: Lazy<Metadata> = Lazy::new(|| {
+pub(crate) static METADATA: Lazy<Metadata> = Lazy::new(|| {
     AGENT
-        .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
+        .get("https://us.api.blizzard.com/hearthstone/metadata")
         .query("access_token", &get_access_token())
         .call()
         .and_then(|res| Ok(res.into_json::<Metadata>()?))
@@ -163,7 +162,7 @@ struct Set {
     alias_set_ids: Option<Vec<usize>>,
 }
 
-pub(crate) fn get_set_by_id(id: usize, locale: &Locale) -> String {
+pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
     let set = METADATA.sets.iter().find(|s| {
         s.id == id
             || s.alias_set_ids
@@ -191,10 +190,9 @@ pub enum Class {
     Warlock,
     Warrior,
     Neutral,
-    Unknown,
 }
 impl Localize for Class {
-    fn in_locale(&self, locale: &Locale) -> impl Display {
+    fn in_locale(&self, locale: Locale) -> impl Display {
         METADATA
             .classes
             .iter()
@@ -203,28 +201,6 @@ impl Localize for Class {
             .unwrap_or("Noncollectible".into())
     }
 }
-// impl Display for Class {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         let s = match self {
-//             Self::DeathKnight => "Death Knight",
-//             Self::DemonHunter => "Demon Hunter",
-//             Self::Druid => "Druid",
-//             // Self::Evoker => "Evoker",
-//             Self::Hunter => "Hunter",
-//             Self::Mage => "Mage",
-//             // Self::Monk => "Monk",
-//             Self::Paladin => "Paladin",
-//             Self::Priest => "Priest",
-//             Self::Rogue => "Rogue",
-//             Self::Shaman => "Shaman",
-//             Self::Warlock => "Warlock",
-//             Self::Warrior => "Warrior",
-//             Self::Neutral => "Neutral",
-//             Self::Unknown => "UNKNOWN",
-//         };
-//         write!(f, "{s}")
-//     }
-// }
 impl From<u8> for Class {
     fn from(value: u8) -> Self {
         match value {
@@ -241,8 +217,7 @@ impl From<u8> for Class {
             8 => Self::Shaman,
             9 => Self::Warlock,
             10 => Self::Warrior,
-            12 => Self::Neutral,
-            _ => Self::Unknown,
+            _ => Self::Neutral, // 12
         }
     }
 }
@@ -267,11 +242,10 @@ impl Class {
             Self::Shaman => (43, 125, 180),
             Self::Warlock => (162, 112, 153),
             Self::Warrior => (200, 21, 24),
-            Self::Neutral | Self::Unknown => (169, 169, 169),
+            Self::Neutral => (169, 169, 169),
         }
     }
 }
-
 #[derive(Deserialize)]
 struct ClassData {
     id: u8,
@@ -287,29 +261,24 @@ pub enum Rarity {
     Noncollectible,
 }
 impl Localize for Rarity {
-    fn in_locale(&self, locale: &Locale) -> impl Display {
-        METADATA
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        let text: String = METADATA
             .rarities
             .iter()
             .find(|det| *self == Self::from(det.id))
             .map(|det| det.name.in_locale(locale))
-            .unwrap_or("Noncollectible".into())
+            .unwrap_or_default();
+
+        match self {
+            Self::Common | Self::Free => text.to_lowercase().white(),
+            Self::Rare => text.to_lowercase().blue(),
+            Self::Epic => text.to_lowercase().purple(),
+            Self::Legendary => text.to_uppercase().bright_yellow().bold(),
+            Self::Noncollectible => "Noncollectible".clear(),
+        }
+        .italic()
     }
 }
-// impl Display for Rarity {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         let r = match self {
-//             Self::Common => "common".white(),
-//             Self::Free => "free".white(),
-//             Self::Rare => "rare".blue(),
-//             Self::Epic => "epic".purple(),
-//             Self::Legendary => "LEGENDARY".bright_yellow().bold(),
-//             Self::Noncollectible => "Noncollectible".clear(),
-//         }
-//         .italic();
-//         write!(f, "{r}")
-//     }
-// }
 impl From<u8> for Rarity {
     fn from(value: u8) -> Self {
         match value {
@@ -347,7 +316,7 @@ pub enum SpellSchool {
     Fel,
 }
 impl Localize for SpellSchool {
-    fn in_locale(&self, locale: &Locale) -> impl Display {
+    fn in_locale(&self, locale: Locale) -> impl Display {
         METADATA
             .spell_schools
             .iter()
@@ -356,22 +325,6 @@ impl Localize for SpellSchool {
             .unwrap_or("UNKNOWN".into())
     }
 }
-// impl Display for SpellSchool {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         let s = match self {
-//             Self::Arcane => "Arcane",
-//             Self::Fire => "Fire",
-//             Self::Frost => "Frost",
-//             Self::Nature => "Nature",
-//             Self::Holy => "Holy",
-//             Self::Shadow => "Shadow",
-//             Self::Fel => "Fel",
-//             Self::Unknown => "UNKNOWN",
-//         };
-
-//         write!(f, "{s}")
-//     }
-// }
 impl From<u8> for SpellSchool {
     fn from(value: u8) -> Self {
         match value {
@@ -402,7 +355,7 @@ pub enum MinionType {
     Naga,
 }
 impl Localize for MinionType {
-    fn in_locale(&self, locale: &Locale) -> impl Display {
+    fn in_locale(&self, locale: Locale) -> impl Display {
         METADATA
             .minion_types
             .iter()
@@ -411,26 +364,6 @@ impl Localize for MinionType {
             .unwrap_or("UNKNOWN".into())
     }
 }
-// impl Display for MinionType {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         let t = match self {
-//             Self::Undead => "Undead",
-//             Self::Murloc => "Murloc",
-//             Self::Demon => "Demon",
-//             Self::Mech => "Mech",
-//             Self::Elemental => "Elemental",
-//             Self::Beast => "Beast",
-//             Self::Totem => "Totem",
-//             Self::Pirate => "Pirate",
-//             Self::Dragon => "Dragon",
-//             Self::All => "Amalgam",
-//             Self::Quilboar => "Quilboar",
-//             Self::Naga => "Naga",
-//             Self::Unknown => "UNKNOWN",
-//         };
-//         write!(f, "{t}")
-//     }
-// }
 impl From<u8> for MinionType {
     fn from(value: u8) -> Self {
         match value {
@@ -504,12 +437,12 @@ pub enum CardType {
     Unknown,
 }
 impl Localize for CardType {
-    fn in_locale(&self, locale: &Locale) -> impl Display {
+    fn in_locale(&self, locale: Locale) -> impl Display {
         // Wizardry. Implement an InnerType that implements Display with all its
         // ergonomics, and return it!!
-        struct Inner<'a, 'b>(&'a CardType, &'b Locale);
+        struct Inner<'a>(&'a CardType, Locale);
 
-        impl Display for Inner<'_, '_> {
+        impl Display for Inner<'_> {
             fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
                 // f.alternate() is used for text boxes on images. Regular mode for console output.
                 let colon = if f.alternate() { ":" } else { "" };
@@ -555,7 +488,8 @@ impl Localize for CardType {
                         write!(f, "{location} /{durability}{colon}")
                     }
                     CardType::HeroPower => {
-                        let heropower = get_type(10); // 10 for Hero Power
+                        // 10 for Hero Power. these numbers should be in the type itself tbh
+                        let heropower = get_type(10);
                         write!(f, "{heropower}{colon}")
                     }
                     CardType::Unknown => write!(f, "UNKNOWN{colon}"),

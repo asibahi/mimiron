@@ -62,7 +62,7 @@ impl Display for Locale {
 
 pub trait Localize {
     // no real need for trait. just to help make the signature consistent.
-    fn in_locale(&self, locale: &Locale) -> String;
+    fn in_locale(&self, locale: &Locale) -> impl Display;
 }
 
 #[allow(non_snake_case)]
@@ -194,13 +194,13 @@ pub enum Class {
     Unknown,
 }
 impl Localize for Class {
-    fn in_locale(&self, locale: &Locale) -> String {
+    fn in_locale(&self, locale: &Locale) -> impl Display {
         METADATA
-        .classes
-        .iter()
-        .find(|det| *self == Self::from(det.id))
-        .map(|det| det.name.in_locale(locale))
-        .unwrap_or("Noncollectible".into())
+            .classes
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map(|det| det.name.in_locale(locale))
+            .unwrap_or("Noncollectible".into())
     }
 }
 // impl Display for Class {
@@ -287,7 +287,7 @@ pub enum Rarity {
     Noncollectible,
 }
 impl Localize for Rarity {
-    fn in_locale(&self, locale: &Locale) -> String {
+    fn in_locale(&self, locale: &Locale) -> impl Display {
         METADATA
             .rarities
             .iter()
@@ -347,7 +347,7 @@ pub enum SpellSchool {
     Fel,
 }
 impl Localize for SpellSchool {
-    fn in_locale(&self, locale: &Locale) -> String {
+    fn in_locale(&self, locale: &Locale) -> impl Display {
         METADATA
             .spell_schools
             .iter()
@@ -402,7 +402,7 @@ pub enum MinionType {
     Naga,
 }
 impl Localize for MinionType {
-    fn in_locale(&self, locale: &Locale) -> String {
+    fn in_locale(&self, locale: &Locale) -> impl Display {
         METADATA
             .minion_types
             .iter()
@@ -503,34 +503,67 @@ pub enum CardType {
     HeroPower,
     Unknown,
 }
-impl Display for CardType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // f.alternate() is used for text boxes on images. Regular mode for console output.
-        let colon = if f.alternate() { ":" } else { "" };
-        match self {
-            Self::Hero { armor } => write!(f, "Hero card with {armor} armor{colon}"),
-            Self::Minion {
-                attack,
-                health,
-                minion_types,
-            } => {
-                let types = minion_types.iter().join("/");
-                write!(
-                    f,
-                    "{attack}/{health} {}{colon}",
-                    if types.is_empty() { "minion" } else { &types }
-                )
+impl Localize for CardType {
+    fn in_locale(&self, locale: &Locale) -> impl Display {
+        // Wizardry. Implement an InnerType that implements Display with all its
+        // ergonomics, and return it!!
+        struct Inner<'a, 'b>(&'a CardType, &'b Locale);
+
+        impl Display for Inner<'_, '_> {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                // f.alternate() is used for text boxes on images. Regular mode for console output.
+                let colon = if f.alternate() { ":" } else { "" };
+
+                let get_type = |i: u8| {
+                    // all this just to say "Minion"
+                    METADATA
+                        .types
+                        .iter()
+                        .find(|det| det.id == i)
+                        .unwrap()
+                        .name
+                        .in_locale(self.1)
+                };
+
+                match self.0 {
+                    CardType::Hero { armor } => {
+                        let hero = get_type(3); // 3 for Hero
+                        write!(f, "{hero} [{armor}]{colon}")
+                    }
+                    CardType::Minion {
+                        attack,
+                        health,
+                        minion_types,
+                    } => {
+                        let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
+                        let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
+                        write!(f, "{attack}/{health} {blurp}{colon}")
+                    }
+                    CardType::Spell { school } => {
+                        let spell = get_type(5); // 5 for Spell
+                        match school {
+                            Some(s) => write!(f, "{} {spell}{colon}", s.in_locale(self.1)),
+                            None => write!(f, "{spell}{colon}"),
+                        }
+                    }
+                    CardType::Weapon { attack, durability } => {
+                        let weapon = get_type(7); // 7 for Weapon
+                        write!(f, "{attack}/{durability} {weapon}{colon}")
+                    }
+                    CardType::Location { durability } => {
+                        let location = get_type(39); // 39 for Location
+                        write!(f, "{location} /{durability}{colon}")
+                    }
+                    CardType::HeroPower => {
+                        let heropower = get_type(10); // 10 for Hero Power
+                        write!(f, "{heropower}{colon}")
+                    }
+                    CardType::Unknown => write!(f, "UNKNOWN{colon}"),
+                }
             }
-            Self::Spell { school } => match school {
-                Some(s) => write!(f, "{s} spell{colon}"),
-                None if f.alternate() => write!(f, "Spell:"),
-                None => write!(f, "spell"),
-            },
-            Self::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon{colon}"),
-            Self::Location { durability } => write!(f, "{durability} durability location{colon}"),
-            Self::HeroPower => write!(f, "Hero Power{colon}"),
-            Self::Unknown => write!(f, "UNKNOWN{colon}"),
         }
+
+        Inner(self, locale)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     card::{self, Card},
-    card_details::Class,
+    card_details::{Class, Locale},
     get_access_token, AGENT,
 };
 use anyhow::{anyhow, Result};
@@ -135,7 +135,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
     let (title, code) = extract_title_and_code(code);
     let mut deck = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", "en-US")
+        .query("locale", &Locale::enUS.to_string())
         .query("code", code)
         .query("access_token", &get_access_token())
         .call()
@@ -160,7 +160,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
 
         let response = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", "en-US")
+            .query("locale", &Locale::enUS.to_string())
             .query("access_token", &get_access_token())
             .query("ids", &card_ids)
             .call();
@@ -208,7 +208,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
 
     *deck = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", "en-US")
+        .query("locale", &Locale::enUS.to_string())
         .query("access_token", &get_access_token())
         .query("ids", &card_ids)
         .query("sideboardCards", &band_ids)

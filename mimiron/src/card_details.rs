@@ -12,7 +12,7 @@ use std::{
 static SETS: Lazy<Vec<Set>> = Lazy::new(|| {
     AGENT
         .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
-        .query("locale", "en-US")
+        .query("locale", &Locale::enUS.to_string())
         .query("access_token", &get_access_token())
         .call()
         .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
@@ -238,6 +238,199 @@ pub enum MinionType {
     Naga,
     Unknown,
 }
+impl MinionType {
+    pub fn in_locale(&self, locale: &Locale) -> String {
+        let s = match self {
+            Self::Undead => match locale {
+                Locale::deDE => "Untot",
+                Locale::enUS => "Undead",
+                Locale::esES | Locale::esMX => "No-muerto",
+                Locale::frFR => "Mort-vivant",
+                Locale::itIT => "Non Morto",
+                Locale::jaJP => "アンデッド",
+                Locale::koKR => "언데드",
+                Locale::plPL => "Nieumarły",
+                Locale::ptBR => "Morto-vivo",
+                Locale::ruRU => "Нежить",
+                Locale::thTH => "อันเดด",
+                Locale::zhCN => "亡灵",
+                Locale::zhTW => "不死族",
+            },
+            Self::Murloc => match locale {
+                Locale::deDE => "Murloc",
+                Locale::enUS => "Murloc",
+                Locale::esES | Locale::esMX => "Múrloc",
+                Locale::frFR => "Murloc",
+                Locale::itIT => "Murloc",
+                Locale::jaJP => "マーロック",
+                Locale::koKR => "멀록",
+                Locale::plPL => "Murlok",
+                Locale::ptBR => "Murloc",
+                Locale::ruRU => "Мурлок",
+                Locale::thTH => "เมอร์ล็อค",
+                Locale::zhCN => "鱼人",
+                Locale::zhTW => "魚人",
+            },
+            Self::Demon => match locale {
+                Locale::deDE => "Dämon",
+                Locale::enUS => "Demon",
+                Locale::esES | Locale::esMX => "Demonio",
+                Locale::frFR => "Démon",
+                Locale::itIT => "Demone",
+                Locale::jaJP => "悪魔",
+                Locale::koKR => "악마",
+                Locale::plPL => "Demon",
+                Locale::ptBR => "Demônio",
+                Locale::ruRU => "Демон",
+                Locale::thTH => "ปีศาจ",
+                Locale::zhCN => "恶魔",
+                Locale::zhTW => "惡魔",
+            },
+            Self::Mech => match locale {
+                Locale::deDE => "Mech",
+                Locale::enUS => "Mech",
+                Locale::esES => "Robot",
+                Locale::esMX => "Meca",
+                Locale::frFR => "Méca",
+                Locale::itIT => "Robot",
+                Locale::jaJP => "メカ",
+                Locale::koKR => "기계",
+                Locale::plPL => "Mech",
+                Locale::ptBR => "Mecanoide",
+                Locale::ruRU => "Механизм",
+                Locale::thTH => "เครื่องจักร",
+                Locale::zhCN => "机械",
+                Locale::zhTW => "機械",
+            },
+            Self::Elemental => match locale {
+                Locale::deDE => "Elementar",
+                Locale::enUS => "Elemental",
+                Locale::esES | Locale::esMX => "Elemental",
+                Locale::frFR => "Élémentaire",
+                Locale::itIT => "Elementale",
+                Locale::jaJP => "エレメンタル",
+                Locale::koKR => "정령",
+                Locale::plPL => "Żywiołak",
+                Locale::ptBR => "Elemental",
+                Locale::ruRU => "Элементаль",
+                Locale::thTH => "วิญญาณธาตุ",
+                Locale::zhCN => "元素",
+                Locale::zhTW => "元素",
+            },
+            Self::Beast => match locale {
+                Locale::deDE => "Wildtier",
+                Locale::enUS => "Beast",
+                Locale::esES | Locale::esMX => "Bestia",
+                Locale::frFR => "Bête",
+                Locale::itIT => "Bestia",
+                Locale::jaJP => "獣",
+                Locale::koKR => "야수",
+                Locale::plPL => "Bestia",
+                Locale::ptBR => "Fera",
+                Locale::ruRU => "Зверь",
+                Locale::thTH => "สัตว์",
+                Locale::zhCN => "野兽",
+                Locale::zhTW => "野獸",
+            },
+            Self::Totem => match locale {
+                Locale::deDE => "Totem",
+                Locale::enUS => "Totem",
+                Locale::esES | Locale::esMX => "Tótem",
+                Locale::frFR => "Totem",
+                Locale::itIT => "Totem",
+                Locale::jaJP => "トーテム",
+                Locale::koKR => "토템",
+                Locale::plPL => "Totem",
+                Locale::ptBR => "Totem",
+                Locale::ruRU => "Тотем",
+                Locale::thTH => "โทเท็ม",
+                Locale::zhCN => "图腾",
+                Locale::zhTW => "圖騰",
+            },
+            Self::Pirate => match locale {
+                Locale::deDE => "Pirat",
+                Locale::enUS => "Pirate",
+                Locale::esES | Locale::esMX => "Pirata",
+                Locale::frFR => "Pirate",
+                Locale::itIT => "Pirata",
+                Locale::jaJP => "海賊",
+                Locale::koKR => "해적",
+                Locale::plPL => "Pirat",
+                Locale::ptBR => "Pirata",
+                Locale::ruRU => "Пират",
+                Locale::thTH => "โจรสลัด",
+                Locale::zhCN => "海盗",
+                Locale::zhTW => "海盜",
+            },
+            Self::Dragon => match locale {
+                Locale::deDE => "Drache",
+                Locale::enUS => "Dragon",
+                Locale::esES | Locale::esMX => "Dragón",
+                Locale::frFR => "Dragon",
+                Locale::itIT => "Drago",
+                Locale::jaJP => "ドラゴン",
+                Locale::koKR => "용족",
+                Locale::plPL => "Smok",
+                Locale::ptBR => "Dragão",
+                Locale::ruRU => "Дракон",
+                Locale::thTH => "มังกร",
+                Locale::zhCN => "龙",
+                Locale::zhTW => "龍類",
+            },
+            Self::All => match locale {
+                Locale::deDE => "Alle",
+                Locale::enUS => "All",
+                Locale::esES => "Todos",
+                Locale::esMX => "Todas",
+                Locale::frFR => "Tout",
+                Locale::itIT => "Tutti",
+                Locale::jaJP => "全て",
+                Locale::koKR => "모두",
+                Locale::plPL => "Wszystkie",
+                Locale::ptBR => "Tudo",
+                Locale::ruRU => "Все",
+                Locale::thTH => "ทุกอย่าง",
+                Locale::zhCN => "全部",
+                Locale::zhTW => "全部",
+            },
+            Self::Quilboar => match locale {
+                Locale::deDE => "Stacheleber",
+                Locale::enUS => "Quilboar",
+                Locale::esES => "Jabaespín",
+                Locale::esMX => "Jabaespín",
+                Locale::frFR => "Huran",
+                Locale::itIT => "Verrospino",
+                Locale::jaJP => "キルボア",
+                Locale::koKR => "가시멧돼지",
+                Locale::plPL => "Kolcozwierz",
+                Locale::ptBR => "Javatusco",
+                Locale::ruRU => "Свинобраз",
+                Locale::thTH => "ควิลบอร์",
+                Locale::zhCN => "野猪人",
+                Locale::zhTW => "野豬人",
+            },
+            Self::Naga => match locale {
+                Locale::deDE
+                | Locale::enUS
+                | Locale::esES
+                | Locale::esMX
+                | Locale::frFR
+                | Locale::itIT
+                | Locale::plPL
+                | Locale::ptBR => "Naga",
+                Locale::jaJP => "ナーガ",
+                Locale::koKR => "나가",
+                Locale::ruRU => "Нага",
+                Locale::thTH => "นากา",
+                Locale::zhCN => "纳迦",
+                Locale::zhTW => "納迦",
+            },
+            Self::Unknown => "UKNOWN",
+        };
+
+        s.into()
+    }
+}
 impl Display for MinionType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let t = match self {
@@ -368,6 +561,46 @@ impl Display for CardType {
             Self::HeroPower => write!(f, "Hero Power{colon}"),
             Self::Unknown => write!(f, "UNKNOWN{colon}"),
         }
+    }
+}
+
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Clone)]
+pub enum Locale {
+    deDE,
+    enUS,
+    esES,
+    esMX,
+    frFR,
+    itIT,
+    jaJP,
+    koKR,
+    plPL,
+    ptBR,
+    ruRU,
+    thTH,
+    zhCN,
+    zhTW,
+}
+impl Display for Locale {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::deDE => "de_DE",
+            Self::enUS => "en_US",
+            Self::esES => "es_ES",
+            Self::esMX => "es_MX",
+            Self::frFR => "fr_FR",
+            Self::itIT => "it_IT",
+            Self::jaJP => "ja_JP",
+            Self::koKR => "ko_KR",
+            Self::plPL => "pl_PL",
+            Self::ptBR => "pt_BR",
+            Self::ruRU => "ru_RU",
+            Self::thTH => "th_TH",
+            Self::zhCN => "zh_CN",
+            Self::zhTW => "zh_TW",
+        };
+        write!(f, "{s}")
     }
 }
 

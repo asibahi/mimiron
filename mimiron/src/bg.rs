@@ -1,4 +1,4 @@
-use crate::{card_details::MinionType, get_access_token, helpers::prettify, AGENT};
+use crate::{card_details::{MinionType, Locale}, get_access_token, helpers::prettify, AGENT};
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use itertools::Itertools;
@@ -270,7 +270,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", &get_access_token())
-        .query("locale", "en-US")
+        .query("locale", &Locale::enUS.to_string())
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &opts.search_term {
@@ -422,7 +422,7 @@ fn get_card_by_id(id: usize) -> Result<Card> {
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
-        .query("locale", "en-US")
+        .query("locale", &Locale::enUS.to_string())
         .query("gameMode", "battlegrounds")
         .query("access_token", &get_access_token())
         .call()?

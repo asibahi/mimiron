@@ -1,5 +1,5 @@
 use crate::{
-    card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
+    card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool, Locale},
     get_access_token,
     helpers::prettify,
     AGENT,
@@ -236,7 +236,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", "en-US")
+        .query("locale", &Locale::enUS.to_string())
         .query("textFilter", search_term)
         .query("access_token", &get_access_token());
 

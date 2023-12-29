@@ -1,0 +1,2336 @@
+{
+  "sets": [
+    {
+      "id": 1892,
+      "name": {
+        "de_DE": "Showdown im Ödland",
+        "en_US": "Showdown in the Badlands",
+        "es_ES": "Duelo en las Tierras Inhóspitas",
+        "es_MX": "Enfrentamiento en las Tierras Inhóspitas",
+        "fr_FR": "Rixe en terres Ingrates",
+        "it_IT": "Resa dei Conti nelle Maleterre",
+        "ja_JP": "バッドランドの決斗",
+        "ko_KR": "황야의 땅 결투",
+        "pl_PL": "Finałowe starcie na Bezludziu",
+        "pt_BR": "Confronto Final nos Ermos",
+        "ru_RU": "Битва в Бесплодных землях",
+        "th_TH": "Showdown in the Badlands",
+        "zh_TW": "《決戰荒蕪之地》"
+      },
+      "slug": "showdown-in-the-badlands",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 145,
+      "collectibleRevealedCount": 145,
+      "nonCollectibleCount": 74,
+      "nonCollectibleRevealedCount": 72
+    },
+    {
+      "id": 1858,
+      "name": {
+        "de_DE": "TITANEN",
+        "en_US": "TITANS",
+        "es_ES": "LOS TITANES",
+        "es_MX": "TITANES",
+        "fr_FR": "TITANS",
+        "it_IT": "TITANI",
+        "ja_JP": "タイタンの目醒め",
+        "ko_KR": "티탄",
+        "pl_PL": "TYTANI",
+        "pt_BR": "TITÃS",
+        "ru_RU": "ТИТАНЫ",
+        "th_TH": "TITANS",
+        "zh_TW": "泰坦創世紀"
+      },
+      "slug": "titans",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 183,
+      "collectibleRevealedCount": 183,
+      "nonCollectibleCount": 168,
+      "nonCollectibleRevealedCount": 155
+    },
+    {
+      "id": 1809,
+      "name": {
+        "de_DE": "Festival der Legenden",
+        "en_US": "Festival of Legends",
+        "es_ES": "El Festival Legendario",
+        "es_MX": "Festival de Leyendas",
+        "fr_FR": "La fête des légendes",
+        "it_IT": "Festival delle Leggende",
+        "ja_JP": "集え！レジェンド・フェス",
+        "ko_KR": "전설노래자랑",
+        "pl_PL": "Festiwal Legend",
+        "pt_BR": "Festival das Lendas",
+        "ru_RU": "Фестиваль легенд",
+        "th_TH": "Festival of Legends",
+        "zh_TW": "傳說音樂祭"
+      },
+      "slug": "festival-of-legends",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 183,
+      "collectibleRevealedCount": 183,
+      "nonCollectibleCount": 75,
+      "nonCollectibleRevealedCount": 61
+    },
+    {
+      "id": 1898,
+      "name": {
+        "de_DE": "Höhlen der Zeit",
+        "en_US": "Caverns of Time",
+        "es_ES": "Las Cavernas del Tiempo",
+        "es_MX": "Cavernas del Tiempo",
+        "fr_FR": "Grottes du Temps",
+        "it_IT": "Caverne del Tempo",
+        "ja_JP": "時の大洞窟",
+        "ko_KR": "시간의 동굴",
+        "pl_PL": "Jaskinie Czasu",
+        "pt_BR": "Cavernas do Tempo",
+        "ru_RU": "Пещеры Времени",
+        "th_TH": "Caverns of Time",
+        "zh_TW": "時光之穴"
+      },
+      "slug": "caverns-of-time",
+      "hyped": false,
+      "type": "",
+      "collectibleCount": 147,
+      "collectibleRevealedCount": 147,
+      "nonCollectibleCount": 25,
+      "nonCollectibleRevealedCount": 23
+    },
+    {
+      "id": 1776,
+      "name": {
+        "de_DE": "Marsch des Lichkönigs",
+        "en_US": "March of the Lich King",
+        "es_ES": "Marcha del Rey Exánime",
+        "es_MX": "El Ascenso del Rey Exánime",
+        "fr_FR": "La marche du roi-liche",
+        "it_IT": "L'Avanzata del Re dei Lich",
+        "ja_JP": "リッチキングの凱旋",
+        "ko_KR": "리치 왕의 진군",
+        "pl_PL": "Pochód Króla Lisza",
+        "pt_BR": "Ascensão do Lich Rei",
+        "ru_RU": "Марш Короля-лича",
+        "th_TH": "March of the Lich King",
+        "zh_TW": "「進擊吧！巫妖王」"
+      },
+      "slug": "march-of-the-lich-king",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 183,
+      "collectibleRevealedCount": 183,
+      "nonCollectibleCount": 137,
+      "nonCollectibleRevealedCount": 64
+    },
+    {
+      "id": 1869,
+      "name": {
+        "de_DE": "Arthas’ Pfad",
+        "en_US": "Path of Arthas",
+        "es_ES": "Camino de Arthas",
+        "es_MX": "Camino de Arthas",
+        "fr_FR": "Voie d’Arthas",
+        "it_IT": "Percorso di Arthas",
+        "ja_JP": "アーサスの旅路",
+        "ko_KR": "아서스의 길",
+        "pl_PL": "Szlak Arthasa",
+        "pt_BR": "Caminho de Arthas",
+        "ru_RU": "Путь Артаса",
+        "th_TH": "Path of Arthas",
+        "zh_TW": "阿薩斯之道"
+      },
+      "slug": "path-of-arthas",
+      "hyped": false,
+      "type": "",
+      "collectibleCount": 26,
+      "collectibleRevealedCount": 26,
+      "nonCollectibleCount": 23,
+      "nonCollectibleRevealedCount": 4
+    },
+    {
+      "id": 1691,
+      "name": {
+        "de_DE": "Mord auf Schloss Nathria",
+        "en_US": "Murder at Castle Nathria",
+        "es_ES": "Asesinato en el Castillo de Nathria",
+        "es_MX": "Asesinato en el Castillo Nathria",
+        "fr_FR": "Meurtre au château Nathria+",
+        "it_IT": "Assassinio al Castello di Nathria",
+        "ja_JP": "ナスリア城殺人事件",
+        "ko_KR": "나스리아 성채 살인 사건",
+        "pl_PL": "Morderstwo w twierdzy Nathria",
+        "pt_BR": "Assassinato no Castelo de Nathria",
+        "ru_RU": "Убийство в замке Нафрия",
+        "th_TH": "Murder at Castle Nathria",
+        "zh_TW": "納撒亞古堡懸案"
+      },
+      "slug": "murder-at-castle-nathria",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 170,
+      "collectibleRevealedCount": 170,
+      "nonCollectibleCount": 125,
+      "nonCollectibleRevealedCount": 53
+    },
+    {
+      "id": 1646,
+      "name": {
+        "de_DE": "Klassikkarten",
+        "en_US": "Classic Cards",
+        "es_ES": "Cartas clásicas",
+        "es_MX": "Cartas clásicas",
+        "fr_FR": "Cartes classiques",
+        "it_IT": "Carte Classiche",
+        "ja_JP": "クラシックカード",
+        "ko_KR": "오리지널 카드",
+        "pl_PL": "Karty klasyczne",
+        "pt_BR": "Cards Clássicos",
+        "ru_RU": "Классические карты",
+        "th_TH": "การ์ดคลาสสิค",
+        "zh_TW": "經典卡牌"
+      },
+      "slug": "classic-cards",
+      "hyped": false,
+      "type": "",
+      "collectibleCount": 382,
+      "collectibleRevealedCount": 382,
+      "nonCollectibleCount": 96,
+      "nonCollectibleRevealedCount": 63
+    },
+    {
+      "id": 1658,
+      "name": {
+        "de_DE": "Reise in die Versunkene Stadt",
+        "en_US": "Voyage to the Sunken City",
+        "es_ES": "Viaje a la Ciudad Sumergida",
+        "es_MX": "Viaje a la Ciudad Sumergida",
+        "fr_FR": "Au cœur de la cité engloutie",
+        "it_IT": "Rotta per la Città Sommersa",
+        "ja_JP": "深淵に眠る海底都市",
+        "ko_KR": "가라앉은 도시로의 항해",
+        "pl_PL": "Wyprawa do Zatopionego Miasta",
+        "pt_BR": "Viagem à Cidade Submersa",
+        "ru_RU": "Путешествие в Затонувший город",
+        "th_TH": "Voyage to the Sunken City",
+        "zh_TW": "《海底歷險記》"
+      },
+      "slug": "voyage-to-the-sunken-city",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 170,
+      "collectibleRevealedCount": 170,
+      "nonCollectibleCount": 522,
+      "nonCollectibleRevealedCount": 78
+    },
+    {
+      "id": 1626,
+      "name": {
+        "de_DE": "Gespalten im Alteractal",
+        "en_US": "Fractured in Alterac Valley",
+        "es_ES": "Divididos en el Valle de Alterac",
+        "es_MX": "Divididos en el Valle de Alterac",
+        "fr_FR": "Divisés dans la vallée d’Alterac",
+        "it_IT": "Divisi nella Valle d'Alterac",
+        "ja_JP": "烈戦のアルタラック",
+        "ko_KR": "알터랙 계곡",
+        "pl_PL": "Rozbici w Dolinie Alterak",
+        "pt_BR": "Divididos no Vale Alterac",
+        "ru_RU": "Разделенные Альтераком",
+        "th_TH": "Fractured in Alterac Valley",
+        "zh_TW": "決戰奧山"
+      },
+      "slug": "fractured-in-alterac-valley",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 170,
+      "collectibleRevealedCount": 170,
+      "nonCollectibleCount": 378,
+      "nonCollectibleRevealedCount": 70
+    },
+    {
+      "id": 1578,
+      "name": {
+        "de_DE": "Vereint in Sturmwind",
+        "en_US": "United in Stormwind",
+        "es_ES": "Unidos en Ventormenta",
+        "es_MX": "Unidos en Ventormenta",
+        "fr_FR": "Unis à Hurlevent",
+        "it_IT": "Uniti a Roccavento",
+        "ja_JP": "風集うストームウィンド",
+        "ko_KR": "스톰윈드",
+        "pl_PL": "Zjednoczeni w Wichrogrodzie",
+        "pt_BR": "Juntos em Ventobravo",
+        "ru_RU": "Сплоченные Штормградом",
+        "th_TH": "United in Stormwind",
+        "zh_TW": "《暴風城》"
+      },
+      "slug": "united-in-stormwind",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 170,
+      "collectibleRevealedCount": 170,
+      "nonCollectibleCount": 317,
+      "nonCollectibleRevealedCount": 66
+    },
+    {
+      "id": 1525,
+      "name": {
+        "de_DE": "Geschmiedet im Brachland",
+        "en_US": "Forged in the Barrens",
+        "es_ES": "Forjados en los Baldíos",
+        "es_MX": "Forjados en Los Baldíos",
+        "fr_FR": "Forgés dans les Tarides",
+        "it_IT": "Forgiati nelle Savane",
+        "ja_JP": "荒ぶる大地の強者たち",
+        "ko_KR": "불모의 땅",
+        "pl_PL": "Zahartowani przez Pustkowia",
+        "pt_BR": "Forjado nos Sertões",
+        "ru_RU": "Закаленные Степями",
+        "th_TH": "Forged in the Barrens",
+        "zh_TW": "貧瘠之地"
+      },
+      "slug": "forged-in-the-barrens",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 170,
+      "collectibleRevealedCount": 170,
+      "nonCollectibleCount": 667,
+      "nonCollectibleRevealedCount": 82
+    },
+    {
+      "id": 1466,
+      "name": {
+        "de_DE": "Der Dunkelmond-Wahnsinn",
+        "en_US": "Madness at the Darkmoon Faire",
+        "es_ES": "Locura en la Feria de la Luna Negra",
+        "es_MX": "Locura en la Feria de la Luna Negra",
+        "fr_FR": "Folle journée à Sombrelune",
+        "it_IT": "Follia alla Fiera di Lunacupa",
+        "ja_JP": "ダークムーン・フェアへの招待状",
+        "ko_KR": "광기의 다크문 축제",
+        "pl_PL": "Obłędny Festyn Lunomroku",
+        "pt_BR": "Delírios em Negraluna",
+        "ru_RU": "Ярмарка безумия",
+        "th_TH": "Madness at the Darkmoon Faire",
+        "zh_CN": "Madness at the Darkmoon Faire",
+        "zh_TW": "暗月馬戲團：古神也瘋狂"
+      },
+      "slug": "madness-at-the-darkmoon-faire",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 170,
+      "collectibleRevealedCount": 170,
+      "nonCollectibleCount": 359,
+      "nonCollectibleRevealedCount": 109
+    },
+    {
+      "id": 1443,
+      "name": {
+        "de_DE": "Akademie Scholomance",
+        "en_US": "Scholomance Academy",
+        "es_ES": "Academia Scholomance",
+        "es_MX": "Academia Scholomance",
+        "fr_FR": "L’Académie Scholomance",
+        "it_IT": "L’Accademia di Scholomance",
+        "ja_JP": "魔法学院スクロマンス",
+        "ko_KR": "스칼로맨스 아카데미",
+        "pl_PL": "Scholomancjum",
+        "pt_BR": "Universidade de Scolomântia",
+        "ru_RU": "Некроситет",
+        "th_TH": "Scholomance Academy",
+        "zh_CN": "Scholomance Academy",
+        "zh_TW": "通靈學院"
+      },
+      "slug": "scholomance-academy",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 200,
+      "nonCollectibleRevealedCount": 62
+    },
+    {
+      "id": 1414,
+      "name": {
+        "de_DE": "Ruinen der Scherbenwelt",
+        "en_US": "Ashes of Outland",
+        "es_ES": "Cenizas de Terrallende",
+        "es_MX": "Cenizas de Terrallende",
+        "fr_FR": "Les Cendres de l’Outreterre",
+        "it_IT": "Ceneri delle Terre Esterne",
+        "ja_JP": "灰に舞う降魔の狩人",
+        "ko_KR": "황폐한 아웃랜드",
+        "pl_PL": "Popioły Rubieży",
+        "pt_BR": "Cinzas de Terralém",
+        "ru_RU": "Руины Запределья",
+        "th_TH": "Ashes of Outland",
+        "zh_CN": "Ashes of Outland",
+        "zh_TW": "外域之燼"
+      },
+      "slug": "ashes-of-outland",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 85,
+      "nonCollectibleRevealedCount": 56
+    },
+    {
+      "id": 1463,
+      "name": {
+        "de_DE": "Initiand der Dämonenjäger",
+        "en_US": "Demon Hunter Initiate",
+        "es_ES": "Iniciado cazador de demonios",
+        "es_MX": "Cazador de demonios iniciado",
+        "fr_FR": "Initié chasseur de démons",
+        "it_IT": "Apprendista Cacciatore di Demoni",
+        "ja_JP": "新参デーモンハンター",
+        "ko_KR": "수습 악마사냥꾼",
+        "pl_PL": "Początkujący łowca demonów",
+        "pt_BR": "Caçador de Demônios Iniciado",
+        "ru_RU": "Иллидари-посвященный",
+        "th_TH": "เปิดตัวดีมอนฮันเตอร์",
+        "zh_CN": "恶魔猎手新兵",
+        "zh_TW": "惡魔獵人新兵"
+      },
+      "slug": "demonhunter-initiate",
+      "hyped": false,
+      "type": "base",
+      "collectibleCount": 20,
+      "collectibleRevealedCount": 20,
+      "nonCollectibleCount": 6,
+      "nonCollectibleRevealedCount": 3
+    },
+    {
+      "id": 1403,
+      "name": {
+        "de_DE": "Galakrond’s Erwachen",
+        "en_US": "Galakrond’s Awakening",
+        "es_ES": "El Despertar de Galakrond",
+        "es_MX": "El Despertar de Galakrond",
+        "fr_FR": "Le Réveil de Galakrond",
+        "it_IT": "Il Risveglio di Galakrond",
+        "ja_JP": "ガラクロンドの目覚め",
+        "ko_KR": "갈라크론드의 부활",
+        "pl_PL": "Przebudzenie Galakronda",
+        "pt_BR": "O Despertar de Galakrond",
+        "ru_RU": "Пробуждение Галакронда",
+        "th_TH": "Galakrond’s Awakening",
+        "zh_CN": "迦拉克隆的觉醒",
+        "zh_TW": "葛拉克朗的覺醒"
+      },
+      "slug": "galakronds-awakening",
+      "hyped": false,
+      "type": "adventure",
+      "collectibleCount": 35,
+      "collectibleRevealedCount": 35,
+      "nonCollectibleCount": 12,
+      "nonCollectibleRevealedCount": 5
+    },
+    {
+      "id": 1347,
+      "name": {
+        "de_DE": "Erbe der Drachen",
+        "en_US": "Descent of Dragons",
+        "es_ES": "El Descenso de los Dragones",
+        "es_MX": "Descenso de los Dragones",
+        "fr_FR": "L’Envol des Dragons",
+        "it_IT": "La Discesa dei Draghi",
+        "ja_JP": "激闘！ドラゴン大決戦",
+        "ko_KR": "용의 강림",
+        "pl_PL": "Wejście smoków",
+        "pt_BR": "Despontar dos Dragões",
+        "ru_RU": "Натиск драконов",
+        "th_TH": "Descent of Dragons",
+        "zh_CN": "Descent of Dragons",
+        "zh_TW": "《降臨！遠古巨龍》"
+      },
+      "slug": "descent-of-dragons",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 140,
+      "collectibleRevealedCount": 140,
+      "nonCollectibleCount": 61,
+      "nonCollectibleRevealedCount": 54
+    },
+    {
+      "id": 1158,
+      "name": {
+        "de_DE": "Retter von Uldum",
+        "en_US": "Saviors of Uldum",
+        "es_ES": "Salvadores de Uldum",
+        "es_MX": "Defensores de Uldum",
+        "fr_FR": "Les Aventuriers d’Uldum",
+        "it_IT": "Salvatori di Uldum",
+        "ja_JP": "突撃！探検同盟",
+        "ko_KR": "울둠의 구원자",
+        "pl_PL": "Wybawcy Uldum",
+        "pt_BR": "Salvadores de Uldum",
+        "ru_RU": "Спасители Ульдума",
+        "th_TH": "Saviors of Uldum",
+        "zh_CN": "奥丹姆奇兵",
+        "zh_TW": "《奧丹姆守護者》"
+      },
+      "slug": "saviors-of-uldum",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 60,
+      "nonCollectibleRevealedCount": 43
+    },
+    {
+      "id": 1130,
+      "name": {
+        "de_DE": "Verschwörung der Schatten",
+        "en_US": "Rise of Shadows",
+        "es_ES": "El Auge de las Sombras",
+        "es_MX": "Ascenso de las Sombras",
+        "fr_FR": "Éveil des ombres",
+        "it_IT": "L’ascesa delle ombre",
+        "ja_JP": "爆誕！悪党同盟",
+        "ko_KR": "어둠의 반격",
+        "pl_PL": "Wyjście z cienia",
+        "pt_BR": "Ascensão das Sombras",
+        "ru_RU": "Возмездие теней",
+        "th_TH": "Rise of Shadows",
+        "zh_CN": "Rise of Shadows",
+        "zh_TW": "《反派大進擊》"
+      },
+      "slug": "rise-of-shadows",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 136,
+      "collectibleRevealedCount": 136,
+      "nonCollectibleCount": 68,
+      "nonCollectibleRevealedCount": 53
+    },
+    {
+      "id": 1129,
+      "name": {
+        "de_DE": "Rastakhans Rambazamba",
+        "en_US": "Rastakhan’s Rumble",
+        "es_ES": "La Arena de Rastakhan",
+        "es_MX": "El Reto de Rastakhan",
+        "fr_FR": "Les Jeux de Rastakhan",
+        "it_IT": "La sfida di Rastakhan",
+        "ja_JP": "天下一ヴドゥ祭",
+        "ko_KR": "라스타칸의 대난투",
+        "pl_PL": "Rozróba Rastakana",
+        "pt_BR": "Ringue do Rastakhan",
+        "ru_RU": "Растахановы игрища",
+        "th_TH": "Rastakhan’s Rumble",
+        "zh_CN": "拉斯塔哈的大乱斗",
+        "zh_TW": "《拉斯塔哈大混戰》"
+      },
+      "slug": "rastakhans-rumble",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 31,
+      "nonCollectibleRevealedCount": 27
+    },
+    {
+      "id": 1127,
+      "name": {
+        "de_DE": "Dr. Bumms Geheimlabor",
+        "en_US": "The Boomsday Project",
+        "es_ES": "El Proyecto Armagebum",
+        "es_MX": "El Proyecto K-Bum",
+        "fr_FR": "Projet Armageboum",
+        "it_IT": "Operazione Apocalisse",
+        "ja_JP": "博士のメカメカ大作戦",
+        "ko_KR": "박사 붐의 폭심만만 프로젝트",
+        "pl_PL": "Projekt Hukatomba",
+        "pt_BR": "O Projeto Cabum",
+        "ru_RU": "Проект Бумного дня",
+        "th_TH": "The Boomsday Project",
+        "zh_CN": "砰砰计划",
+        "zh_TW": "《爆爆計畫》"
+      },
+      "slug": "the-boomsday-project",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 136,
+      "collectibleRevealedCount": 136,
+      "nonCollectibleCount": 32,
+      "nonCollectibleRevealedCount": 25
+    },
+    {
+      "id": 1125,
+      "name": {
+        "de_DE": "Der Hexenwald",
+        "en_US": "The Witchwood",
+        "es_ES": "El Bosque Embrujado",
+        "es_MX": "El Bosque Embrujado",
+        "fr_FR": "Le Bois Maudit",
+        "it_IT": "Boscotetro",
+        "ja_JP": "妖の森ウィッチウッド",
+        "ko_KR": "마녀숲",
+        "pl_PL": "Wiedźmi Las",
+        "pt_BR": "O Bosque das Bruxas",
+        "ru_RU": "Ведьмин лес",
+        "th_TH": "The Witchwood",
+        "zh_CN": "女巫森林",
+        "zh_TW": "《黑巫森林》"
+      },
+      "slug": "the-witchwood",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 41,
+      "nonCollectibleRevealedCount": 35
+    },
+    {
+      "id": 1004,
+      "name": {
+        "de_DE": "Kobolde & Katakomben",
+        "en_US": "Kobolds and Catacombs",
+        "es_ES": "Kóbolds & Catacumbas",
+        "es_MX": "Kóbolds & Catacumbas",
+        "fr_FR": "Kobolds et Catacombes",
+        "it_IT": "Coboldi & Catacombe",
+        "ja_JP": "コボルトと秘宝の迷宮",
+        "ko_KR": "코볼트와 지하 미궁",
+        "pl_PL": "Koboldy i katakumby",
+        "pt_BR": "Kobolds & Catacumbas",
+        "ru_RU": "Кобольды и катакомбы",
+        "th_TH": "Kobolds and Catacombs",
+        "zh_CN": "Kobolds and Catacombs",
+        "zh_TW": "《狗頭人與地下城》"
+      },
+      "slug": "kobolds-and-catacombs",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 106,
+      "nonCollectibleRevealedCount": 96
+    },
+    {
+      "id": 1001,
+      "name": {
+        "de_DE": "Ritter des Frostthrons",
+        "en_US": "Knights of the Frozen Throne",
+        "es_ES": "Caballeros del Trono Helado",
+        "es_MX": "Caballeros del Trono Helado",
+        "fr_FR": "Chevaliers du Trône de glace",
+        "it_IT": "Cavalieri del Trono di Ghiaccio",
+        "ja_JP": "凍てつく玉座の騎士団",
+        "ko_KR": "얼어붙은 왕좌의 기사들",
+        "pl_PL": "Rycerze Mroźnego Tronu",
+        "pt_BR": "Cavaleiros do Trono de Gelo",
+        "ru_RU": "Рыцари Ледяного Трона",
+        "th_TH": "Knights of the Frozen Throne",
+        "zh_CN": "冰封王座的骑士",
+        "zh_TW": "《冰封王座》"
+      },
+      "slug": "knights-of-the-frozen-throne",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 128,
+      "nonCollectibleRevealedCount": 53
+    },
+    {
+      "id": 27,
+      "name": {
+        "de_DE": "Reise nach Un’Goro",
+        "en_US": "Journey to Un’Goro",
+        "es_ES": "Viaje a Un’Goro",
+        "es_MX": "Viaje a Un’Goro",
+        "fr_FR": "Voyage au centre d’Un’Goro",
+        "it_IT": "Viaggio a Un’Goro",
+        "ja_JP": "大魔境ウンゴロ",
+        "ko_KR": "운고로를 향한 여정",
+        "pl_PL": "Podróż do wnętrza Un'Goro",
+        "pt_BR": "Jornada a Un'Goro",
+        "ru_RU": "Экспедиция в Ун'Горо",
+        "th_TH": "Journey to Un’Goro",
+        "zh_CN": "勇闯安戈洛",
+        "zh_TW": "《安戈洛歷險記》"
+      },
+      "slug": "journey-to-ungoro",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 135,
+      "collectibleRevealedCount": 135,
+      "nonCollectibleCount": 58,
+      "nonCollectibleRevealedCount": 58
+    },
+    {
+      "id": 25,
+      "name": {
+        "de_DE": "Die Straßen von Gadgetzan",
+        "en_US": "Mean Streets of Gadgetzan",
+        "es_ES": "Mafias de Gadgetzan",
+        "es_MX": "Los Callejones de Gadgetzan",
+        "fr_FR": "Main basse sur Gadgetzan",
+        "it_IT": "I bassifondi di Meccania",
+        "ja_JP": "仁義なきガジェッツァン",
+        "ko_KR": "비열한 거리의 가젯잔",
+        "pl_PL": "Ciemne zaułki Gadżetonu",
+        "pt_BR": "As Gangues de Geringontzan",
+        "ru_RU": "Злачный город Прибамбасск",
+        "th_TH": "Mean Streets of Gadgetzan",
+        "zh_CN": "龙争虎斗加基森",
+        "zh_TW": "《黑街英雄之加基森風雲》"
+      },
+      "slug": "mean-streets-of-gadgetzan",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 132,
+      "collectibleRevealedCount": 132,
+      "nonCollectibleCount": 93,
+      "nonCollectibleRevealedCount": 84
+    },
+    {
+      "id": 23,
+      "name": {
+        "de_DE": "Eine Nacht in Karazhan",
+        "en_US": "One Night in Karazhan",
+        "es_ES": "Una noche en Karazhan",
+        "es_MX": "Una Noche en Karazhan",
+        "fr_FR": "Une nuit à Karazhan",
+        "it_IT": "Una notte a Karazhan",
+        "ja_JP": "ワン・ナイト・イン・カラザン",
+        "ko_KR": "한여름 밤의 카라잔",
+        "pl_PL": "Pewnej nocy w Karazhanie",
+        "pt_BR": "Uma Noite em Karazhan",
+        "ru_RU": "Вечеринка в Каражане",
+        "th_TH": "One Night in Karazhan",
+        "zh_CN": "卡拉赞之夜",
+        "zh_TW": "《夜夜卡拉贊》"
+      },
+      "slug": "one-night-in-karazhan",
+      "hyped": false,
+      "type": "adventure",
+      "collectibleCount": 45,
+      "collectibleRevealedCount": 45,
+      "nonCollectibleCount": 55,
+      "nonCollectibleRevealedCount": 53
+    },
+    {
+      "id": 21,
+      "name": {
+        "de_DE": "Das Flüstern der Alten Götter",
+        "en_US": "Whispers of the Old Gods",
+        "es_ES": "Susurros de los Dioses Antiguos",
+        "es_MX": "Susurros de los Dioses Antiguos",
+        "fr_FR": "Les murmures des Dieux très anciens",
+        "it_IT": "Sussurri degli Dei Antichi",
+        "ja_JP": "旧神のささやき",
+        "ko_KR": "고대 신의 속삭임",
+        "pl_PL": "Przedwieczni Bogowie",
+        "pt_BR": "Sussurros dos Deuses Antigos",
+        "ru_RU": "Пробуждение древних богов",
+        "th_TH": "Whispers of the Old Gods",
+        "zh_CN": "Whispers of the Old Gods",
+        "zh_TW": "《古神碎碎念》"
+      },
+      "slug": "whispers-of-the-old-gods",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 134,
+      "collectibleRevealedCount": 134,
+      "nonCollectibleCount": 40,
+      "nonCollectibleRevealedCount": 26
+    },
+    {
+      "id": 20,
+      "name": {
+        "de_DE": "Die Forscherliga",
+        "en_US": "League of Explorers",
+        "es_ES": "Liga de los Expedicionarios",
+        "es_MX": "Liga de Expedicionarios",
+        "fr_FR": "Ligue des explorateurs",
+        "it_IT": "Lega degli Esploratori",
+        "ja_JP": "リーグ・オブ・エクスプローラー",
+        "ko_KR": "탐험가 연맹",
+        "pl_PL": "Liga Odkrywców",
+        "pt_BR": "Liga dos Exploradores",
+        "ru_RU": "Лига исследователей",
+        "th_TH": "League of Explorers",
+        "zh_CN": "League of Explorers",
+        "zh_TW": "《探險者協會》"
+      },
+      "slug": "league-of-explorers",
+      "hyped": false,
+      "type": "adventure",
+      "collectibleCount": 45,
+      "collectibleRevealedCount": 45,
+      "nonCollectibleCount": 188,
+      "nonCollectibleRevealedCount": 16
+    },
+    {
+      "id": 15,
+      "name": {
+        "de_DE": "Das Große Turnier",
+        "en_US": "The Grand Tournament",
+        "es_ES": "El Gran Torneo",
+        "es_MX": "El Gran Torneo",
+        "fr_FR": "Le Grand Tournoi",
+        "it_IT": "Gran Torneo",
+        "ja_JP": "グランド・トーナメント",
+        "ko_KR": "대 마상시합",
+        "pl_PL": "Wielki Turniej",
+        "pt_BR": "O Grande Torneio",
+        "ru_RU": "Большой турнир",
+        "th_TH": "The Grand Tournament",
+        "zh_CN": "The Grand Tournament",
+        "zh_TW": "《銀白聯賽》"
+      },
+      "slug": "the-grand-tournament",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 132,
+      "collectibleRevealedCount": 132,
+      "nonCollectibleCount": 27,
+      "nonCollectibleRevealedCount": 18
+    },
+    {
+      "id": 14,
+      "name": {
+        "de_DE": "Der Schwarzfels",
+        "en_US": "Blackrock Mountain",
+        "es_ES": "Montaña Roca Negra",
+        "es_MX": "Montaña Roca Negra",
+        "fr_FR": "Mont Rochenoire",
+        "it_IT": "Massiccio Roccianera",
+        "ja_JP": "ブラックロック・マウンテン",
+        "ko_KR": "검은바위 산",
+        "pl_PL": "Czarna Góra",
+        "pt_BR": "Montanha Rocha Negra",
+        "ru_RU": "Черная гора",
+        "th_TH": "Blackrock Mountain",
+        "zh_CN": "Blackrock Mountain",
+        "zh_TW": "《勇闖黑石山》"
+      },
+      "slug": "blackrock-mountain",
+      "hyped": false,
+      "type": "adventure",
+      "collectibleCount": 31,
+      "collectibleRevealedCount": 31,
+      "nonCollectibleCount": 175,
+      "nonCollectibleRevealedCount": 10
+    },
+    {
+      "id": 13,
+      "name": {
+        "de_DE": "Goblins gegen Gnome",
+        "en_US": "Goblins vs Gnomes",
+        "es_ES": "Goblins vs. Gnomos",
+        "es_MX": "Goblins versus Gnomos",
+        "fr_FR": "Gobelins et Gnomes",
+        "it_IT": "Goblin vs Gnomi",
+        "ja_JP": "ゴブリンvsノーム",
+        "ko_KR": "고블린 대 노움",
+        "pl_PL": "Gobliny vs Gnomy",
+        "pt_BR": "Goblins vs Gnomos",
+        "ru_RU": "Гоблины и гномы",
+        "th_TH": "Goblins vs Gnomes",
+        "zh_CN": "Goblins vs Gnomes",
+        "zh_TW": "《哥哥打地地》"
+      },
+      "slug": "goblins-vs-gnomes",
+      "hyped": false,
+      "type": "expansion",
+      "collectibleCount": 123,
+      "collectibleRevealedCount": 123,
+      "nonCollectibleCount": 34,
+      "nonCollectibleRevealedCount": 21
+    },
+    {
+      "id": 12,
+      "name": {
+        "de_DE": "Der Fluch von Naxxramas",
+        "en_US": "Curse of Naxxramas",
+        "es_ES": "La Maldición de Naxxramas",
+        "es_MX": "Maldición de Naxxramas",
+        "fr_FR": "La malédiction de Naxxramas",
+        "it_IT": "La maledizione di Naxxramas",
+        "ja_JP": "ナクスラーマスの呪い",
+        "ko_KR": "낙스라마스의 저주",
+        "pl_PL": "Klątwa Naxxramas",
+        "pt_BR": "Maldição de Naxxramas",
+        "ru_RU": "Проклятие Наксрамаса",
+        "th_TH": "Curse of Naxxramas",
+        "zh_CN": "Curse of Naxxramas",
+        "zh_TW": "《不死詛咒：納克薩瑪斯》"
+      },
+      "slug": "naxxramas",
+      "hyped": false,
+      "type": "adventure",
+      "collectibleCount": 30,
+      "collectibleRevealedCount": 30,
+      "nonCollectibleCount": 118,
+      "nonCollectibleRevealedCount": 114
+    },
+    {
+      "id": 1635,
+      "name": {
+        "de_DE": "Archivset",
+        "en_US": "Legacy",
+        "es_ES": "Antiguo",
+        "es_MX": "Anteriores",
+        "fr_FR": "Héritage",
+        "it_IT": "Retaggio",
+        "ja_JP": "レガシー",
+        "ko_KR": "고전",
+        "pl_PL": "Karty historyczne",
+        "pt_BR": "Legado",
+        "ru_RU": "Прошлые наборы",
+        "th_TH": "ชุดเก่า",
+        "zh_TW": "傳承"
+      },
+      "slug": "legacy",
+      "aliasSetIds": [
+        3,
+        4
+      ],
+      "hyped": false,
+      "type": "",
+      "collectibleCount": 425,
+      "collectibleRevealedCount": 418,
+      "nonCollectibleCount": 170,
+      "nonCollectibleRevealedCount": 117
+    },
+    {
+      "id": 1637,
+      "name": {
+        "de_DE": "Kernset",
+        "en_US": "Core",
+        "es_ES": "Esencial",
+        "es_MX": "Esencial",
+        "fr_FR": "Fondamental",
+        "it_IT": "Principale",
+        "ja_JP": "コア",
+        "ko_KR": "핵심",
+        "pl_PL": "Karty bazowe",
+        "pt_BR": "Essencial",
+        "ru_RU": "Основные наборы",
+        "th_TH": "ชุดหลัก",
+        "zh_TW": "核心"
+      },
+      "slug": "core",
+      "hyped": false,
+      "type": "",
+      "collectibleCount": 283,
+      "collectibleRevealedCount": 283,
+      "nonCollectibleCount": 60,
+      "nonCollectibleRevealedCount": 12
+    }
+  ],
+  "types": [
+    {
+      "slug": "hero",
+      "id": 3,
+      "name": {
+        "de_DE": "Held",
+        "en_US": "Hero",
+        "es_ES": "Héroe",
+        "es_MX": "Héroe",
+        "fr_FR": "Héros",
+        "it_IT": "Eroe",
+        "ja_JP": "ヒーロー",
+        "ko_KR": "영웅",
+        "pl_PL": "Bohater",
+        "pt_BR": "Herói",
+        "ru_RU": "Герой",
+        "th_TH": "ฮีโร่",
+        "zh_CN": "英雄",
+        "zh_TW": "英雄"
+      },
+      "gameModes": [
+        1,
+        4,
+        5
+      ]
+    },
+    {
+      "slug": "minion",
+      "id": 4,
+      "name": {
+        "de_DE": "Diener",
+        "en_US": "Minion",
+        "es_ES": "Esbirro",
+        "es_MX": "Esbirro",
+        "fr_FR": "Serviteur",
+        "it_IT": "Servitore",
+        "ja_JP": "ミニオン",
+        "ko_KR": "하수인",
+        "pl_PL": "Stronnik",
+        "pt_BR": "Lacaio",
+        "ru_RU": "Существо",
+        "th_TH": "มินเนี่ยน",
+        "zh_CN": "随从",
+        "zh_TW": "手下"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "slug": "spell",
+      "id": 5,
+      "name": {
+        "de_DE": "Zauber",
+        "en_US": "Spell",
+        "es_ES": "Hechizo",
+        "es_MX": "Hechizo",
+        "fr_FR": "Sort",
+        "it_IT": "Magia",
+        "ja_JP": "呪文",
+        "ko_KR": "주문",
+        "pl_PL": "Zaklęcie",
+        "pt_BR": "Feitiço",
+        "ru_RU": "Заклинание",
+        "th_TH": "เวทมนตร์",
+        "zh_CN": "法术",
+        "zh_TW": "法術"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "slug": "weapon",
+      "id": 7,
+      "name": {
+        "de_DE": "Waffe",
+        "en_US": "Weapon",
+        "es_ES": "Arma",
+        "es_MX": "Arma",
+        "fr_FR": "Arme",
+        "it_IT": "Arma",
+        "ja_JP": "武器",
+        "ko_KR": "무기",
+        "pl_PL": "Broń",
+        "pt_BR": "Arma",
+        "ru_RU": "Оружие",
+        "th_TH": "อาวุธ",
+        "zh_CN": "武器",
+        "zh_TW": "武器"
+      },
+      "gameModes": [
+        1,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "slug": "hero power",
+      "id": 10,
+      "name": {
+        "de_DE": "Heldenfähigkeit",
+        "en_US": "HeroPower",
+        "es_ES": "Poder de héroe",
+        "es_MX": "Poder de héroe",
+        "fr_FR": "Pouvoir héroïque",
+        "it_IT": "Potere Eroe",
+        "ja_JP": "ヒーローパワー",
+        "ko_KR": "영웅 능력",
+        "pl_PL": "Moc specjalna",
+        "pt_BR": "Poder Heroico",
+        "ru_RU": "Сила героя",
+        "th_TH": "พลังฮีโร่",
+        "zh_CN": "英雄技能",
+        "zh_TW": "英雄能力"
+      },
+      "gameModes": [
+        4
+      ]
+    },
+    {
+      "slug": "location",
+      "id": 39,
+      "name": {
+        "de_DE": "Schauplatz",
+        "en_US": "Location",
+        "es_ES": "Ubicación",
+        "es_MX": "Lugar",
+        "fr_FR": "Lieu",
+        "it_IT": "Luogo",
+        "ja_JP": "場所",
+        "ko_KR": "장소",
+        "pl_PL": "Lokalizacja",
+        "pt_BR": "Lugar",
+        "ru_RU": "Область",
+        "th_TH": "สถานที่",
+        "zh_CN": "地标",
+        "zh_TW": "地點"
+      },
+      "gameModes": [
+        1,
+        4,
+        5
+      ]
+    },
+    {
+      "slug": "baconquestreward",
+      "id": 40,
+      "name": {
+        "de_DE": "Belohnung",
+        "en_US": "Reward",
+        "es_ES": "Recompensa",
+        "es_MX": "Recompensa",
+        "fr_FR": "Récompense",
+        "it_IT": "Ricompensa",
+        "ja_JP": "報酬",
+        "ko_KR": "보상",
+        "pl_PL": "Nagroda",
+        "pt_BR": "Recompensa",
+        "ru_RU": "Награда",
+        "th_TH": "รางวัล",
+        "zh_CN": "奖励",
+        "zh_TW": "獎勵"
+      },
+      "gameModes": [
+        2
+      ]
+    }
+  ],
+  "rarities": [
+    {
+      "slug": "common",
+      "id": 1,
+      "name": {
+        "de_DE": "Gewöhnlich",
+        "en_US": "Common",
+        "es_ES": "Común",
+        "es_MX": "Común",
+        "fr_FR": "Commune",
+        "it_IT": "Comune",
+        "ja_JP": "コモン",
+        "ko_KR": "일반",
+        "pl_PL": "Zwykła",
+        "pt_BR": "Comum",
+        "ru_RU": "Обычная",
+        "th_TH": "ทั่วไป",
+        "zh_CN": "普通",
+        "zh_TW": "普通"
+      }
+    },
+    {
+      "slug": "free",
+      "id": 2,
+      "name": {
+        "de_DE": "Gratis",
+        "en_US": "Free",
+        "es_ES": "Gratis",
+        "es_MX": "Gratis",
+        "fr_FR": "Gratuit",
+        "it_IT": "Gratuita",
+        "ja_JP": "無料",
+        "ko_KR": "무료",
+        "pl_PL": "Za darmo",
+        "pt_BR": "Grátis",
+        "ru_RU": "Бесплатная",
+        "th_TH": "ฟรี",
+        "zh_CN": "免费",
+        "zh_TW": "免費"
+      }
+    },
+    {
+      "slug": "rare",
+      "id": 3,
+      "name": {
+        "de_DE": "Selten",
+        "en_US": "Rare",
+        "es_ES": "Poco común",
+        "es_MX": "Rara",
+        "fr_FR": "Rare",
+        "it_IT": "Rara",
+        "ja_JP": "レア",
+        "ko_KR": "희귀",
+        "pl_PL": "Rzadka",
+        "pt_BR": "Raro",
+        "ru_RU": "Редкая",
+        "th_TH": "หายาก",
+        "zh_CN": "稀有",
+        "zh_TW": "精良"
+      }
+    },
+    {
+      "slug": "epic",
+      "id": 4,
+      "name": {
+        "de_DE": "Episch",
+        "en_US": "Epic",
+        "es_ES": "Épica",
+        "es_MX": "Épica",
+        "fr_FR": "Épique",
+        "it_IT": "Epica",
+        "ja_JP": "エピック",
+        "ko_KR": "특급",
+        "pl_PL": "Epicka",
+        "pt_BR": "Épico",
+        "ru_RU": "Эпическая",
+        "th_TH": "สุดยอด",
+        "zh_CN": "史诗",
+        "zh_TW": "史詩"
+      }
+    },
+    {
+      "slug": "legendary",
+      "id": 5,
+      "name": {
+        "de_DE": "Legendär",
+        "en_US": "Legendary",
+        "es_ES": "Legendaria",
+        "es_MX": "Legendaria",
+        "fr_FR": "Légendaire",
+        "it_IT": "Leggendaria",
+        "ja_JP": "レジェンド",
+        "ko_KR": "전설",
+        "pl_PL": "Legendarna",
+        "pt_BR": "Lendário",
+        "ru_RU": "Легендарная",
+        "th_TH": "ตำนาน",
+        "zh_CN": "传说",
+        "zh_TW": "傳說"
+      }
+    }
+  ],
+  "classes": [
+    {
+      "slug": "deathknight",
+      "id": 1,
+      "name": {
+        "de_DE": "Todesritter",
+        "en_US": "Death Knight",
+        "es_ES": "Caballero de la Muerte",
+        "es_MX": "Caballero de la Muerte",
+        "fr_FR": "Chevalier de la mort",
+        "it_IT": "Cavaliere della Morte",
+        "ja_JP": "デスナイト",
+        "ko_KR": "죽음의 기사",
+        "pl_PL": "Rycerz śmierci",
+        "pt_BR": "Cavaleiro da Morte",
+        "ru_RU": "Рыцарь смерти",
+        "th_TH": "เดธไนท์",
+        "zh_CN": "死亡骑士",
+        "zh_TW": "死亡騎士"
+      },
+      "cardId": 78065,
+      "heroPowerCardId": 78162,
+      "alternateHeroCardIds": [
+        78066
+      ]
+    },
+    {
+      "slug": "demonhunter",
+      "id": 14,
+      "name": {
+        "de_DE": "Dämonenjäger",
+        "en_US": "Demon Hunter",
+        "es_ES": "Cazador de demonios",
+        "es_MX": "Cazador de demonios",
+        "fr_FR": "Chasseur de démons",
+        "it_IT": "Cacciatore di Demoni",
+        "ja_JP": "デーモンハンター",
+        "ko_KR": "악마사냥꾼",
+        "pl_PL": "Łowca demonów",
+        "pt_BR": "Caçador de Demônios",
+        "ru_RU": "Охотник на демонов",
+        "th_TH": "ดีมอนฮันเตอร์",
+        "zh_CN": "恶魔猎手",
+        "zh_TW": "惡魔獵人"
+      },
+      "cardId": 56550,
+      "heroPowerCardId": 60224,
+      "alternateHeroCardIds": [
+        60238,
+        62491,
+        64697,
+        71077,
+        71078,
+        71079
+      ]
+    },
+    {
+      "slug": "druid",
+      "id": 2,
+      "name": {
+        "de_DE": "Druide",
+        "en_US": "Druid",
+        "es_ES": "Druida",
+        "es_MX": "Druida",
+        "fr_FR": "Druide",
+        "it_IT": "Druido",
+        "ja_JP": "ドルイド",
+        "ko_KR": "드루이드",
+        "pl_PL": "Druid",
+        "pt_BR": "Druida",
+        "ru_RU": "Друид",
+        "th_TH": "ดรูอิด",
+        "zh_CN": "德鲁伊",
+        "zh_TW": "德魯伊"
+      },
+      "cardId": 274,
+      "heroPowerCardId": 1123,
+      "alternateHeroCardIds": [
+        50484,
+        56358,
+        57761,
+        60375,
+        64698
+      ]
+    },
+    {
+      "slug": "hunter",
+      "id": 3,
+      "name": {
+        "de_DE": "Jäger",
+        "en_US": "Hunter",
+        "es_ES": "Cazador",
+        "es_MX": "Cazador",
+        "fr_FR": "Chasseur",
+        "it_IT": "Cacciatore",
+        "ja_JP": "ハンター",
+        "ko_KR": "사냥꾼",
+        "pl_PL": "Łowca",
+        "pt_BR": "Caçador",
+        "ru_RU": "Охотник",
+        "th_TH": "ฮันเตอร์",
+        "zh_CN": "猎人",
+        "zh_TW": "獵人"
+      },
+      "cardId": 31,
+      "heroPowerCardId": 229,
+      "alternateHeroCardIds": [
+        2826,
+        60335,
+        61597,
+        64699,
+        71080
+      ]
+    },
+    {
+      "slug": "mage",
+      "id": 4,
+      "name": {
+        "de_DE": "Magier",
+        "en_US": "Mage",
+        "es_ES": "Mago",
+        "es_MX": "Mago",
+        "fr_FR": "Mage",
+        "it_IT": "Mago",
+        "ja_JP": "メイジ",
+        "ko_KR": "마법사",
+        "pl_PL": "Mag",
+        "pt_BR": "Mago",
+        "ru_RU": "Маг",
+        "th_TH": "เมจ",
+        "zh_CN": "法师",
+        "zh_TW": "法師"
+      },
+      "cardId": 637,
+      "heroPowerCardId": 807,
+      "alternateHeroCardIds": [
+        2829,
+        39117,
+        57765,
+        61598,
+        62772,
+        64844,
+        64845,
+        64846,
+        64847
+      ]
+    },
+    {
+      "slug": "paladin",
+      "id": 5,
+      "name": {
+        "de_DE": "Paladin",
+        "en_US": "Paladin",
+        "es_ES": "Paladín",
+        "es_MX": "Paladín",
+        "fr_FR": "Paladin",
+        "it_IT": "Paladino",
+        "ja_JP": "パラディン",
+        "ko_KR": "성기사",
+        "pl_PL": "Paladyn",
+        "pt_BR": "Paladino",
+        "ru_RU": "Паладин",
+        "th_TH": "พาลาดิน",
+        "zh_CN": "圣骑士",
+        "zh_TW": "聖騎士"
+      },
+      "cardId": 671,
+      "heroPowerCardId": 472,
+      "alternateHeroCardIds": [
+        2827,
+        46116,
+        53187,
+        57757,
+        61596,
+        61886,
+        64732,
+        67519
+      ]
+    },
+    {
+      "slug": "priest",
+      "id": 6,
+      "name": {
+        "de_DE": "Priester",
+        "en_US": "Priest",
+        "es_ES": "Sacerdote",
+        "es_MX": "Sacerdote",
+        "fr_FR": "Prêtre",
+        "it_IT": "Sacerdote",
+        "ja_JP": "プリースト",
+        "ko_KR": "사제",
+        "pl_PL": "Kapłan",
+        "pt_BR": "Sacerdote",
+        "ru_RU": "Жрец",
+        "th_TH": "พรีสต์",
+        "zh_CN": "牧师",
+        "zh_TW": "牧師"
+      },
+      "cardId": 813,
+      "heroPowerCardId": 479,
+      "alternateHeroCardIds": [
+        41887,
+        54816,
+        57767,
+        64733,
+        67523,
+        67710,
+        71074,
+        71075,
+        71076
+      ]
+    },
+    {
+      "slug": "rogue",
+      "id": 7,
+      "name": {
+        "de_DE": "Schurke",
+        "en_US": "Rogue",
+        "es_ES": "Pícaro",
+        "es_MX": "Pícaro",
+        "fr_FR": "Voleur",
+        "it_IT": "Ladro",
+        "ja_JP": "ローグ",
+        "ko_KR": "도적",
+        "pl_PL": "Łotr",
+        "pt_BR": "Ladino",
+        "ru_RU": "Разбойник",
+        "th_TH": "โร้ก",
+        "zh_CN": "潜行者",
+        "zh_TW": "盜賊"
+      },
+      "cardId": 930,
+      "heroPowerCardId": 730,
+      "alternateHeroCardIds": [
+        40195,
+        57755,
+        64734,
+        67522,
+        67846
+      ]
+    },
+    {
+      "slug": "shaman",
+      "id": 8,
+      "name": {
+        "de_DE": "Schamane",
+        "en_US": "Shaman",
+        "es_ES": "Chamán",
+        "es_MX": "Chamán",
+        "fr_FR": "Chaman",
+        "it_IT": "Sciamano",
+        "ja_JP": "シャーマン",
+        "ko_KR": "주술사",
+        "pl_PL": "Szaman",
+        "pt_BR": "Xamã",
+        "ru_RU": "Шаман",
+        "th_TH": "ชาแมน",
+        "zh_CN": "萨满祭司",
+        "zh_TW": "薩滿"
+      },
+      "cardId": 1066,
+      "heroPowerCardId": 687,
+      "alternateHeroCardIds": [
+        40183,
+        53237,
+        55963,
+        57753,
+        60673,
+        64736,
+        64848,
+        64849,
+        64850,
+        71058
+      ]
+    },
+    {
+      "slug": "warlock",
+      "id": 9,
+      "name": {
+        "de_DE": "Hexenmeister",
+        "en_US": "Warlock",
+        "es_ES": "Brujo",
+        "es_MX": "Brujo",
+        "fr_FR": "Démoniste",
+        "it_IT": "Stregone",
+        "ja_JP": "ウォーロック",
+        "ko_KR": "흑마법사",
+        "pl_PL": "Czarnoksiężnik",
+        "pt_BR": "Bruxo",
+        "ru_RU": "Чернокнижник",
+        "th_TH": "วอร์ล็อค",
+        "zh_CN": "术士",
+        "zh_TW": "術士"
+      },
+      "cardId": 893,
+      "heroPowerCardId": 300,
+      "alternateHeroCardIds": [
+        47817,
+        51834,
+        57763,
+        64685,
+        64738
+      ]
+    },
+    {
+      "slug": "warrior",
+      "id": 10,
+      "name": {
+        "de_DE": "Krieger",
+        "en_US": "Warrior",
+        "es_ES": "Guerrero",
+        "es_MX": "Guerrero",
+        "fr_FR": "Guerrier",
+        "it_IT": "Guerriero",
+        "ja_JP": "ウォリアー",
+        "ko_KR": "전사",
+        "pl_PL": "Wojownik",
+        "pt_BR": "Guerreiro",
+        "ru_RU": "Воин",
+        "th_TH": "วอริเออร์",
+        "zh_CN": "战士",
+        "zh_TW": "戰士"
+      },
+      "cardId": 7,
+      "heroPowerCardId": 725,
+      "alternateHeroCardIds": [
+        2828,
+        57751,
+        58787,
+        61595,
+        61923,
+        64739,
+        67521,
+        71071,
+        71072,
+        71073
+      ]
+    },
+    {
+      "slug": "neutral",
+      "id": 12,
+      "name": {
+        "de_DE": "Neutral",
+        "en_US": "Neutral",
+        "es_ES": "Neutral",
+        "es_MX": "Neutral",
+        "fr_FR": "Neutre",
+        "it_IT": "Generiche",
+        "ja_JP": "中立",
+        "ko_KR": "중립",
+        "pl_PL": "Neutralne",
+        "pt_BR": "Neutro",
+        "ru_RU": "Общие",
+        "th_TH": "เป็นกลาง",
+        "zh_CN": "中立",
+        "zh_TW": "中立"
+      }
+    }
+  ],
+  "minionTypes": [
+    {
+      "slug": "bloodelf",
+      "id": 1,
+      "name": {
+        "de_DE": "Blutelf",
+        "en_US": "Blood Elf",
+        "es_ES": "Elfo de sangre",
+        "es_MX": "Elfo de sangre",
+        "fr_FR": "Elfe de sang",
+        "it_IT": "Elfo del Sangue",
+        "ja_JP": "ブラッドエルフ",
+        "ko_KR": "블러드 엘프",
+        "pl_PL": "Krwawy Elf",
+        "pt_BR": "Elfo Sangrento",
+        "ru_RU": "Эльф крови",
+        "th_TH": "บลัดเอลฟ์",
+        "zh_CN": "血精灵",
+        "zh_TW": "血精靈"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "draenei",
+      "id": 2,
+      "name": {
+        "de_DE": "Draenei",
+        "en_US": "Draenei",
+        "es_ES": "Draenei",
+        "es_MX": "Draenei",
+        "fr_FR": "Draeneï",
+        "it_IT": "Draenei",
+        "ja_JP": "ドラナイ",
+        "ko_KR": "드레나이",
+        "pl_PL": "Draenei",
+        "pt_BR": "Draenei",
+        "ru_RU": "Дреней",
+        "th_TH": "ดราไน",
+        "zh_CN": "德莱尼",
+        "zh_TW": "德萊尼"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "dwarf",
+      "id": 3,
+      "name": {
+        "de_DE": "Zwerg",
+        "en_US": "Dwarf",
+        "es_ES": "Enano",
+        "es_MX": "Enano",
+        "fr_FR": "Nain",
+        "it_IT": "Nano",
+        "ja_JP": "ドワーフ",
+        "ko_KR": "드워프",
+        "pl_PL": "Krasnolud",
+        "pt_BR": "Anão",
+        "ru_RU": "Дворф",
+        "th_TH": "คนแคระ",
+        "zh_CN": "矮人",
+        "zh_TW": "矮人"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "gnome",
+      "id": 4,
+      "name": {
+        "de_DE": "Gnom",
+        "en_US": "Gnome",
+        "es_ES": "Gnomo",
+        "es_MX": "Gnomo",
+        "fr_FR": "Gnome",
+        "it_IT": "Gnomo",
+        "ja_JP": "ノーム",
+        "ko_KR": "노움",
+        "pl_PL": "Gnom",
+        "pt_BR": "Gnomo",
+        "ru_RU": "Гном",
+        "th_TH": "โนม",
+        "zh_CN": "侏儒",
+        "zh_TW": "地精"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "human",
+      "id": 6,
+      "name": {
+        "de_DE": "Mensch",
+        "en_US": "Human",
+        "es_ES": "Humano",
+        "es_MX": "Humano",
+        "fr_FR": "Humain",
+        "it_IT": "Umano",
+        "ja_JP": "ヒューマン",
+        "ko_KR": "인간",
+        "pl_PL": "Człowiek",
+        "pt_BR": "Humano",
+        "ru_RU": "Человек",
+        "th_TH": "มนุษย์",
+        "zh_CN": "人类",
+        "zh_TW": "人類"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "nightelf",
+      "id": 7,
+      "name": {
+        "de_DE": "Nachtelf",
+        "en_US": "Night Elf",
+        "es_ES": "Elfo de la noche",
+        "es_MX": "Elfo de la noche",
+        "fr_FR": "Elfe de la nuit",
+        "it_IT": "Elfo della Notte",
+        "ja_JP": "ナイトエルフ",
+        "ko_KR": "나이트 엘프",
+        "pl_PL": "Nocny Elf",
+        "pt_BR": "Elfo Noturno",
+        "ru_RU": "Ночной эльф",
+        "th_TH": "ไนท์เอลฟ์",
+        "zh_CN": "暗夜精灵",
+        "zh_TW": "夜精靈"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "orc",
+      "id": 8,
+      "name": {
+        "de_DE": "Orc",
+        "en_US": "Orc",
+        "es_ES": "Orco",
+        "es_MX": "Orco",
+        "fr_FR": "Orc",
+        "it_IT": "Orco",
+        "ja_JP": "オーク",
+        "ko_KR": "오크",
+        "pl_PL": "Ork",
+        "pt_BR": "Orc",
+        "ru_RU": "Орк",
+        "th_TH": "ออร์ค",
+        "zh_CN": "兽人",
+        "zh_TW": "獸人"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "tauren",
+      "id": 9,
+      "name": {
+        "de_DE": "Tauren",
+        "en_US": "Tauren",
+        "es_ES": "Tauren",
+        "es_MX": "Tauren",
+        "fr_FR": "Tauren",
+        "it_IT": "Tauren",
+        "ja_JP": "トーレン",
+        "ko_KR": "타우렌",
+        "pl_PL": "Tauren",
+        "pt_BR": "Tauren",
+        "ru_RU": "Таурен",
+        "th_TH": "ทอเรน",
+        "zh_CN": "牛头人",
+        "zh_TW": "牛頭人"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "troll",
+      "id": 10,
+      "name": {
+        "de_DE": "Troll",
+        "en_US": "Troll",
+        "es_ES": "Trol",
+        "es_MX": "Trol",
+        "fr_FR": "Troll",
+        "it_IT": "Troll",
+        "ja_JP": "トロル",
+        "ko_KR": "트롤",
+        "pl_PL": "Troll",
+        "pt_BR": "Troll",
+        "ru_RU": "Тролль",
+        "th_TH": "โทรลล์",
+        "zh_CN": "巨魔",
+        "zh_TW": "食人妖"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "undead",
+      "id": 11,
+      "name": {
+        "de_DE": "Untot",
+        "en_US": "Undead",
+        "es_ES": "No-muerto",
+        "es_MX": "No-muerto",
+        "fr_FR": "Mort-vivant",
+        "it_IT": "Non Morto",
+        "ja_JP": "アンデッド",
+        "ko_KR": "언데드",
+        "pl_PL": "Nieumarły",
+        "pt_BR": "Morto-vivo",
+        "ru_RU": "Нежить",
+        "th_TH": "อันเดด",
+        "zh_CN": "亡灵",
+        "zh_TW": "不死族"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "slug": "murloc",
+      "id": 14,
+      "name": {
+        "de_DE": "Murloc",
+        "en_US": "Murloc",
+        "es_ES": "Múrloc",
+        "es_MX": "Múrloc",
+        "fr_FR": "Murloc",
+        "it_IT": "Murloc",
+        "ja_JP": "マーロック",
+        "ko_KR": "멀록",
+        "pl_PL": "Murlok",
+        "pt_BR": "Murloc",
+        "ru_RU": "Мурлок",
+        "th_TH": "เมอร์ล็อค",
+        "zh_CN": "鱼人",
+        "zh_TW": "魚人"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "slug": "demon",
+      "id": 15,
+      "name": {
+        "de_DE": "Dämon",
+        "en_US": "Demon",
+        "es_ES": "Demonio",
+        "es_MX": "Demonio",
+        "fr_FR": "Démon",
+        "it_IT": "Demone",
+        "ja_JP": "悪魔",
+        "ko_KR": "악마",
+        "pl_PL": "Demon",
+        "pt_BR": "Demônio",
+        "ru_RU": "Демон",
+        "th_TH": "ปีศาจ",
+        "zh_CN": "恶魔",
+        "zh_TW": "惡魔"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "slug": "mech",
+      "id": 17,
+      "name": {
+        "de_DE": "Mech",
+        "en_US": "Mech",
+        "es_ES": "Robot",
+        "es_MX": "Meca",
+        "fr_FR": "Méca",
+        "it_IT": "Robot",
+        "ja_JP": "メカ",
+        "ko_KR": "기계",
+        "pl_PL": "Mech",
+        "pt_BR": "Mecanoide",
+        "ru_RU": "Механизм",
+        "th_TH": "เครื่องจักร",
+        "zh_CN": "机械",
+        "zh_TW": "機械"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "slug": "elemental",
+      "id": 18,
+      "name": {
+        "de_DE": "Elementar",
+        "en_US": "Elemental",
+        "es_ES": "Elemental",
+        "es_MX": "Elemental",
+        "fr_FR": "Élémentaire",
+        "it_IT": "Elementale",
+        "ja_JP": "エレメンタル",
+        "ko_KR": "정령",
+        "pl_PL": "Żywiołak",
+        "pt_BR": "Elemental",
+        "ru_RU": "Элементаль",
+        "th_TH": "วิญญาณธาตุ",
+        "zh_CN": "元素",
+        "zh_TW": "元素"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        7
+      ]
+    },
+    {
+      "slug": "beast",
+      "id": 20,
+      "name": {
+        "de_DE": "Wildtier",
+        "en_US": "Beast",
+        "es_ES": "Bestia",
+        "es_MX": "Bestia",
+        "fr_FR": "Bête",
+        "it_IT": "Bestia",
+        "ja_JP": "獣",
+        "ko_KR": "야수",
+        "pl_PL": "Bestia",
+        "pt_BR": "Fera",
+        "ru_RU": "Зверь",
+        "th_TH": "สัตว์",
+        "zh_CN": "野兽",
+        "zh_TW": "野獸"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "slug": "totem",
+      "id": 21,
+      "name": {
+        "de_DE": "Totem",
+        "en_US": "Totem",
+        "es_ES": "Tótem",
+        "es_MX": "Tótem",
+        "fr_FR": "Totem",
+        "it_IT": "Totem",
+        "ja_JP": "トーテム",
+        "ko_KR": "토템",
+        "pl_PL": "Totem",
+        "pt_BR": "Totem",
+        "ru_RU": "Тотем",
+        "th_TH": "โทเท็ม",
+        "zh_CN": "图腾",
+        "zh_TW": "圖騰"
+      },
+      "gameModes": [
+        1,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "slug": "pirate",
+      "id": 23,
+      "name": {
+        "de_DE": "Pirat",
+        "en_US": "Pirate",
+        "es_ES": "Pirata",
+        "es_MX": "Pirata",
+        "fr_FR": "Pirate",
+        "it_IT": "Pirata",
+        "ja_JP": "海賊",
+        "ko_KR": "해적",
+        "pl_PL": "Pirat",
+        "pt_BR": "Pirata",
+        "ru_RU": "Пират",
+        "th_TH": "โจรสลัด",
+        "zh_CN": "海盗",
+        "zh_TW": "海盜"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "slug": "dragon",
+      "id": 24,
+      "name": {
+        "de_DE": "Drache",
+        "en_US": "Dragon",
+        "es_ES": "Dragón",
+        "es_MX": "Dragón",
+        "fr_FR": "Dragon",
+        "it_IT": "Drago",
+        "ja_JP": "ドラゴン",
+        "ko_KR": "용족",
+        "pl_PL": "Smok",
+        "pt_BR": "Dragão",
+        "ru_RU": "Дракон",
+        "th_TH": "มังกร",
+        "zh_CN": "龙",
+        "zh_TW": "龍類"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "slug": "all",
+      "id": 26,
+      "name": {
+        "de_DE": "Alle",
+        "en_US": "All",
+        "es_ES": "Todos",
+        "es_MX": "Todas",
+        "fr_FR": "Tout",
+        "it_IT": "Tutti",
+        "ja_JP": "全て",
+        "ko_KR": "모두",
+        "pl_PL": "Wszystkie",
+        "pt_BR": "Tudo",
+        "ru_RU": "Все",
+        "th_TH": "ทุกอย่าง",
+        "zh_CN": "全部",
+        "zh_TW": "全部"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "slug": "quilboar",
+      "id": 43,
+      "name": {
+        "de_DE": "Stacheleber",
+        "en_US": "Quilboar",
+        "es_ES": "Jabaespín",
+        "es_MX": "Jabaespín",
+        "fr_FR": "Huran",
+        "it_IT": "Verrospino",
+        "ja_JP": "キルボア",
+        "ko_KR": "가시멧돼지",
+        "pl_PL": "Kolcozwierz",
+        "pt_BR": "Javatusco",
+        "ru_RU": "Свинобраз",
+        "th_TH": "ควิลบอร์",
+        "zh_CN": "野猪人",
+        "zh_TW": "野豬人"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "slug": "halforc",
+      "id": 88,
+      "name": {
+        "de_DE": "Halborc",
+        "en_US": "Half-Orc",
+        "es_ES": "Semiorco",
+        "es_MX": "Semiorco",
+        "fr_FR": "Demi-Orc",
+        "it_IT": "Mezz'orco",
+        "ja_JP": "ハーフオーク",
+        "ko_KR": "반오크",
+        "pl_PL": "Półork",
+        "pt_BR": "Meio Orc",
+        "ru_RU": "Полуорк",
+        "th_TH": "ฮาล์ฟออร์ค",
+        "zh_CN": "半兽人",
+        "zh_TW": "半獸人"
+      }
+    },
+    {
+      "slug": "naga",
+      "id": 92,
+      "name": {
+        "de_DE": "Naga",
+        "en_US": "Naga",
+        "es_ES": "Naga",
+        "es_MX": "Naga",
+        "fr_FR": "Naga",
+        "it_IT": "Naga",
+        "ja_JP": "ナーガ",
+        "ko_KR": "나가",
+        "pl_PL": "Naga",
+        "pt_BR": "Naga",
+        "ru_RU": "Нага",
+        "th_TH": "นากา",
+        "zh_CN": "纳迦",
+        "zh_TW": "納迦"
+      },
+      "gameModes": [
+        1,
+        2,
+        4,
+        5,
+        7
+      ]
+    },
+    {
+      "slug": "oldgod",
+      "id": 93,
+      "name": {
+        "de_DE": "Alter Gott",
+        "en_US": "Old God",
+        "es_ES": "Dios antiguo",
+        "es_MX": "Dios antiguo",
+        "fr_FR": "Dieu très ancien",
+        "it_IT": "Dio Antico",
+        "ja_JP": "旧神",
+        "ko_KR": "고대 신",
+        "pl_PL": "Przedwieczny bóg",
+        "pt_BR": "Deus Antigo",
+        "ru_RU": "Древний бог",
+        "th_TH": "เทพโบราณ",
+        "zh_CN": "上古之神",
+        "zh_TW": "上古之神"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "pandaren",
+      "id": 94,
+      "name": {
+        "de_DE": "Pandaren",
+        "en_US": "Pandaren",
+        "es_ES": "Pandaren",
+        "es_MX": "Pandaren",
+        "fr_FR": "Pandarens",
+        "it_IT": "Pandaren",
+        "ja_JP": "パンダレン",
+        "ko_KR": "판다렌",
+        "pl_PL": "Pandaren",
+        "pt_BR": "Pandaren",
+        "ru_RU": "Пандарен",
+        "th_TH": "แพนดาเร็น",
+        "zh_CN": "熊猫人",
+        "zh_TW": "熊貓人"
+      },
+      "gameModes": [
+        7
+      ]
+    },
+    {
+      "slug": "gronn",
+      "id": 95,
+      "name": {
+        "de_DE": "Gronn",
+        "en_US": "Gronn",
+        "es_ES": "Gronn",
+        "es_MX": "Gronn",
+        "fr_FR": "Gronns",
+        "it_IT": "Gronn",
+        "ja_JP": "グロン",
+        "ko_KR": "그론",
+        "pl_PL": "Gronn",
+        "pt_BR": "Gronn",
+        "ru_RU": "Гронн",
+        "th_TH": "กรอนน์",
+        "zh_CN": "戈隆",
+        "zh_TW": "古羅"
+      },
+      "gameModes": [
+        7
+      ]
+    }
+  ],
+  "spellSchools": [
+    {
+      "slug": "arcane",
+      "id": 1,
+      "name": {
+        "de_DE": "Arkan",
+        "en_US": "Arcane",
+        "es_ES": "Arcano",
+        "es_MX": "Arcano",
+        "fr_FR": "Arcanes",
+        "it_IT": "Arcano",
+        "ja_JP": "魔力",
+        "ko_KR": "비전",
+        "pl_PL": "Moc tajemna",
+        "pt_BR": "Arcano",
+        "ru_RU": "Тайная магия",
+        "th_TH": "มนตรา",
+        "zh_CN": "奥术",
+        "zh_TW": "秘法"
+      }
+    },
+    {
+      "slug": "fire",
+      "id": 2,
+      "name": {
+        "de_DE": "Feuer",
+        "en_US": "Fire",
+        "es_ES": "Fuego",
+        "es_MX": "Fuego",
+        "fr_FR": "Feu",
+        "it_IT": "Fuoco",
+        "ja_JP": "火炎",
+        "ko_KR": "화염",
+        "pl_PL": "Ogień",
+        "pt_BR": "Fogo",
+        "ru_RU": "Огонь",
+        "th_TH": "ไฟ",
+        "zh_CN": "火焰",
+        "zh_TW": "火焰"
+      }
+    },
+    {
+      "slug": "frost",
+      "id": 3,
+      "name": {
+        "de_DE": "Frost",
+        "en_US": "Frost",
+        "es_ES": "Escarcha",
+        "es_MX": "Escarcha",
+        "fr_FR": "Givre",
+        "it_IT": "Gelo",
+        "ja_JP": "凍気",
+        "ko_KR": "냉기",
+        "pl_PL": "Lód",
+        "pt_BR": "Gelo",
+        "ru_RU": "Лед",
+        "th_TH": "น้ำแข็ง",
+        "zh_CN": "冰霜",
+        "zh_TW": "冰霜"
+      }
+    },
+    {
+      "slug": "nature",
+      "id": 4,
+      "name": {
+        "de_DE": "Natur",
+        "en_US": "Nature",
+        "es_ES": "Naturaleza",
+        "es_MX": "Naturaleza",
+        "fr_FR": "Nature",
+        "it_IT": "Natura",
+        "ja_JP": "自然",
+        "ko_KR": "자연",
+        "pl_PL": "Natura",
+        "pt_BR": "Natureza",
+        "ru_RU": "Природа",
+        "th_TH": "ธรรมชาติ",
+        "zh_CN": "自然",
+        "zh_TW": "自然"
+      }
+    },
+    {
+      "slug": "holy",
+      "id": 5,
+      "name": {
+        "de_DE": "Heilig",
+        "en_US": "Holy",
+        "es_ES": "Sagrado",
+        "es_MX": "Sagrado",
+        "fr_FR": "Sacré",
+        "it_IT": "Sacro",
+        "ja_JP": "神聖",
+        "ko_KR": "신성",
+        "pl_PL": "Świętość",
+        "pt_BR": "Sagrado",
+        "ru_RU": "Свет",
+        "th_TH": "ศักดิ์สิทธิ์",
+        "zh_CN": "神圣",
+        "zh_TW": "神聖"
+      }
+    },
+    {
+      "slug": "shadow",
+      "id": 6,
+      "name": {
+        "de_DE": "Schatten",
+        "en_US": "Shadow",
+        "es_ES": "Sombras",
+        "es_MX": "Sombras",
+        "fr_FR": "Ombre",
+        "it_IT": "Ombra",
+        "ja_JP": "影",
+        "ko_KR": "암흑",
+        "pl_PL": "Cień",
+        "pt_BR": "Sombra",
+        "ru_RU": "Тьма",
+        "th_TH": "ความมืด",
+        "zh_CN": "暗影",
+        "zh_TW": "暗影"
+      }
+    },
+    {
+      "slug": "fel",
+      "id": 7,
+      "name": {
+        "de_DE": "Dämonisch",
+        "en_US": "Fel",
+        "es_ES": "Vil",
+        "es_MX": "Vil",
+        "fr_FR": "Fiel",
+        "it_IT": "Vile",
+        "ja_JP": "フェル",
+        "ko_KR": "지옥",
+        "pl_PL": "Spaczenie",
+        "pt_BR": "Vil",
+        "ru_RU": "Скверна",
+        "th_TH": "เฟล",
+        "zh_CN": "邪能",
+        "zh_TW": "魔化"
+      }
+    }
+  ]
+}

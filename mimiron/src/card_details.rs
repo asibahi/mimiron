@@ -9,13 +9,149 @@ use std::{
     str::FromStr,
 };
 
-static SETS: Lazy<Vec<Set>> = Lazy::new(|| {
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Metadata {
+    sets: Vec<Set>,
+    types: Vec<Details>,
+    rarities: Vec<Details>,
+    classes: Vec<Details>,
+    minion_types: Vec<Details>,
+    spell_schools: Vec<Details>,
+}
+
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Clone)]
+pub enum Locale {
+    deDE,
+    enUS,
+    esES,
+    esMX,
+    frFR,
+    itIT,
+    jaJP,
+    koKR,
+    plPL,
+    ptBR,
+    ruRU,
+    thTH,
+    zhCN,
+    zhTW,
+}
+impl Display for Locale {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::deDE => "de_DE",
+            Self::enUS => "en_US",
+            Self::esES => "es_ES",
+            Self::esMX => "es_MX",
+            Self::frFR => "fr_FR",
+            Self::itIT => "it_IT",
+            Self::jaJP => "ja_JP",
+            Self::koKR => "ko_KR",
+            Self::plPL => "pl_PL",
+            Self::ptBR => "pt_BR",
+            Self::ruRU => "ru_RU",
+            Self::thTH => "th_TH",
+            Self::zhCN => "zh_CN",
+            Self::zhTW => "zh_TW",
+        };
+        write!(f, "{s}")
+    }
+}
+
+pub trait Localize {
+    // no real need for trait. just to help make the signature consistent.
+    fn in_locale(&self, locale: &Locale) -> String;
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize)]
+struct LocalizedName {
+    #[serde(rename = "de_DE")]
+    deDE: String,
+    #[serde(rename = "en_US")]
+    enUS: String,
+    #[serde(rename = "es_ES")]
+    esES: String,
+    #[serde(rename = "es_MX")]
+    esMX: String,
+    #[serde(rename = "fr_FR")]
+    frFR: String,
+    #[serde(rename = "it_IT")]
+    itIT: String,
+    #[serde(rename = "ja_JP")]
+    jaJP: String,
+    #[serde(rename = "ko_KR")]
+    koKR: String,
+    #[serde(rename = "pl_PL")]
+    plPL: String,
+    #[serde(rename = "pt_BR")]
+    ptBR: String,
+    #[serde(rename = "ru_RU")]
+    ruRU: String,
+    #[serde(rename = "th_TH")]
+    thTH: String,
+    #[serde(rename = "zh_CN")]
+    zhCN: Option<String>,
+    #[serde(rename = "zh_TW")]
+    zhTW: String,
+}
+impl Localize for LocalizedName {
+    fn in_locale(&self, locale: &Locale) -> String {
+        match locale {
+            Locale::deDE => self.deDE,
+            Locale::enUS => self.enUS,
+            Locale::esES => self.esES,
+            Locale::esMX => self.esMX,
+            Locale::frFR => self.frFR,
+            Locale::itIT => self.itIT,
+            Locale::jaJP => self.jaJP,
+            Locale::koKR => self.koKR,
+            Locale::plPL => self.plPL,
+            Locale::ptBR => self.ptBR,
+            Locale::ruRU => self.ruRU,
+            Locale::thTH => self.thTH,
+            Locale::zhCN => self.zhCN.unwrap_or(self.zhTW),
+            Locale::zhTW => self.zhTW,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Details {
+    slug: String,
+    id: u8,
+    name: LocalizedName,
+}
+impl Details {
+    pub fn contains(&self, search_term: &str) -> bool {
+        let ln = self.name;
+        let st = search_term.to_lowercase().as_str();
+        ln.deDE.to_lowercase().eq(st)
+            || ln.enUS.to_lowercase().eq(st)
+            || ln.esES.to_lowercase().eq(st)
+            || ln.esMX.to_lowercase().eq(st)
+            || ln.frFR.to_lowercase().eq(st)
+            || ln.itIT.to_lowercase().eq(st)
+            || ln.jaJP.eq(st)
+            || ln.koKR.eq(st)
+            || ln.plPL.to_lowercase().eq(st)
+            || ln.ptBR.to_lowercase().eq(st)
+            || ln.ruRU.to_lowercase().eq(st)
+            || ln.thTH.eq(st)
+            || ln.zhTW.eq(st)
+            || ln.zhCN.is_some_and(|s| s.eq(st))
+    }
+}
+
+static METADATA: Lazy<Metadata> = Lazy::new(|| {
     AGENT
         .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
-        .query("locale", &Locale::enUS.to_string())
         .query("access_token", &get_access_token())
         .call()
-        .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
+        .and_then(|res| Ok(res.into_json::<Metadata>()?))
         .unwrap_or_default()
 });
 
@@ -23,19 +159,19 @@ static SETS: Lazy<Vec<Set>> = Lazy::new(|| {
 #[serde(rename_all = "camelCase")]
 struct Set {
     id: usize,
-    name: String,
+    name: LocalizedName,
     alias_set_ids: Option<Vec<usize>>,
 }
 
-pub(crate) fn get_set_by_id(id: usize) -> String {
-    let set = SETS.iter().find(|s| {
+pub(crate) fn get_set_by_id(id: usize, locale: &Locale) -> String {
+    let set = METADATA.sets.iter().find(|s| {
         s.id == id
             || s.alias_set_ids
                 .as_ref()
                 .is_some_and(|aliases| aliases.contains(&id))
     });
 
-    set.map_or_else(|| format!("Set {id}"), |s| s.name.clone())
+    set.map_or_else(|| format!("Set {id}"), |s| s.name.in_locale(locale).clone())
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
@@ -57,28 +193,38 @@ pub enum Class {
     Neutral,
     Unknown,
 }
-impl Display for Class {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::DeathKnight => "Death Knight",
-            Self::DemonHunter => "Demon Hunter",
-            Self::Druid => "Druid",
-            // Self::Evoker => "Evoker",
-            Self::Hunter => "Hunter",
-            Self::Mage => "Mage",
-            // Self::Monk => "Monk",
-            Self::Paladin => "Paladin",
-            Self::Priest => "Priest",
-            Self::Rogue => "Rogue",
-            Self::Shaman => "Shaman",
-            Self::Warlock => "Warlock",
-            Self::Warrior => "Warrior",
-            Self::Neutral => "Neutral",
-            Self::Unknown => "UNKNOWN",
-        };
-        write!(f, "{s}")
+impl Localize for Class {
+    fn in_locale(&self, locale: &Locale) -> String {
+        METADATA
+        .classes
+        .iter()
+        .find(|det| *self == Self::from(det.id))
+        .map(|det| det.name.in_locale(locale))
+        .unwrap_or("Noncollectible".into())
     }
 }
+// impl Display for Class {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         let s = match self {
+//             Self::DeathKnight => "Death Knight",
+//             Self::DemonHunter => "Demon Hunter",
+//             Self::Druid => "Druid",
+//             // Self::Evoker => "Evoker",
+//             Self::Hunter => "Hunter",
+//             Self::Mage => "Mage",
+//             // Self::Monk => "Monk",
+//             Self::Paladin => "Paladin",
+//             Self::Priest => "Priest",
+//             Self::Rogue => "Rogue",
+//             Self::Shaman => "Shaman",
+//             Self::Warlock => "Warlock",
+//             Self::Warrior => "Warrior",
+//             Self::Neutral => "Neutral",
+//             Self::Unknown => "UNKNOWN",
+//         };
+//         write!(f, "{s}")
+//     }
+// }
 impl From<u8> for Class {
     fn from(value: u8) -> Self {
         match value {
@@ -131,7 +277,7 @@ struct ClassData {
     id: u8,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Rarity {
     Legendary,
     Epic,
@@ -140,20 +286,30 @@ pub enum Rarity {
     Free,
     Noncollectible,
 }
-impl Display for Rarity {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let r = match self {
-            Self::Common => "common".white(),
-            Self::Free => "free".white(),
-            Self::Rare => "rare".blue(),
-            Self::Epic => "epic".purple(),
-            Self::Legendary => "LEGENDARY".bright_yellow().bold(),
-            Self::Noncollectible => "Noncollectible".clear(),
-        }
-        .italic();
-        write!(f, "{r}")
+impl Localize for Rarity {
+    fn in_locale(&self, locale: &Locale) -> String {
+        METADATA
+            .rarities
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map(|det| det.name.in_locale(locale))
+            .unwrap_or("Noncollectible".into())
     }
 }
+// impl Display for Rarity {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         let r = match self {
+//             Self::Common => "common".white(),
+//             Self::Free => "free".white(),
+//             Self::Rare => "rare".blue(),
+//             Self::Epic => "epic".purple(),
+//             Self::Legendary => "LEGENDARY".bright_yellow().bold(),
+//             Self::Noncollectible => "Noncollectible".clear(),
+//         }
+//         .italic();
+//         write!(f, "{r}")
+//     }
+// }
 impl From<u8> for Rarity {
     fn from(value: u8) -> Self {
         match value {
@@ -180,7 +336,7 @@ impl Rarity {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum SpellSchool {
     Arcane,
     Fire,
@@ -189,24 +345,33 @@ pub enum SpellSchool {
     Holy,
     Shadow,
     Fel,
-    Unknown,
 }
-impl Display for SpellSchool {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::Arcane => "Arcane",
-            Self::Fire => "Fire",
-            Self::Frost => "Frost",
-            Self::Nature => "Nature",
-            Self::Holy => "Holy",
-            Self::Shadow => "Shadow",
-            Self::Fel => "Fel",
-            Self::Unknown => "UNKNOWN",
-        };
-
-        write!(f, "{s}")
+impl Localize for SpellSchool {
+    fn in_locale(&self, locale: &Locale) -> String {
+        METADATA
+            .spell_schools
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map(|det| det.name.in_locale(locale))
+            .unwrap_or("UNKNOWN".into())
     }
 }
+// impl Display for SpellSchool {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         let s = match self {
+//             Self::Arcane => "Arcane",
+//             Self::Fire => "Fire",
+//             Self::Frost => "Frost",
+//             Self::Nature => "Nature",
+//             Self::Holy => "Holy",
+//             Self::Shadow => "Shadow",
+//             Self::Fel => "Fel",
+//             Self::Unknown => "UNKNOWN",
+//         };
+
+//         write!(f, "{s}")
+//     }
+// }
 impl From<u8> for SpellSchool {
     fn from(value: u8) -> Self {
         match value {
@@ -216,8 +381,7 @@ impl From<u8> for SpellSchool {
             4 => Self::Nature,
             5 => Self::Holy,
             6 => Self::Shadow,
-            7 => Self::Fel,
-            _ => Self::Unknown,
+            _ => Self::Fel, // 7
         }
     }
 }
@@ -236,222 +400,37 @@ pub enum MinionType {
     All,
     Quilboar,
     Naga,
-    Unknown,
 }
-impl MinionType {
-    pub fn in_locale(&self, locale: &Locale) -> String {
-        let s = match self {
-            Self::Undead => match locale {
-                Locale::deDE => "Untot",
-                Locale::enUS => "Undead",
-                Locale::esES | Locale::esMX => "No-muerto",
-                Locale::frFR => "Mort-vivant",
-                Locale::itIT => "Non Morto",
-                Locale::jaJP => "アンデッド",
-                Locale::koKR => "언데드",
-                Locale::plPL => "Nieumarły",
-                Locale::ptBR => "Morto-vivo",
-                Locale::ruRU => "Нежить",
-                Locale::thTH => "อันเดด",
-                Locale::zhCN => "亡灵",
-                Locale::zhTW => "不死族",
-            },
-            Self::Murloc => match locale {
-                Locale::deDE => "Murloc",
-                Locale::enUS => "Murloc",
-                Locale::esES | Locale::esMX => "Múrloc",
-                Locale::frFR => "Murloc",
-                Locale::itIT => "Murloc",
-                Locale::jaJP => "マーロック",
-                Locale::koKR => "멀록",
-                Locale::plPL => "Murlok",
-                Locale::ptBR => "Murloc",
-                Locale::ruRU => "Мурлок",
-                Locale::thTH => "เมอร์ล็อค",
-                Locale::zhCN => "鱼人",
-                Locale::zhTW => "魚人",
-            },
-            Self::Demon => match locale {
-                Locale::deDE => "Dämon",
-                Locale::enUS => "Demon",
-                Locale::esES | Locale::esMX => "Demonio",
-                Locale::frFR => "Démon",
-                Locale::itIT => "Demone",
-                Locale::jaJP => "悪魔",
-                Locale::koKR => "악마",
-                Locale::plPL => "Demon",
-                Locale::ptBR => "Demônio",
-                Locale::ruRU => "Демон",
-                Locale::thTH => "ปีศาจ",
-                Locale::zhCN => "恶魔",
-                Locale::zhTW => "惡魔",
-            },
-            Self::Mech => match locale {
-                Locale::deDE => "Mech",
-                Locale::enUS => "Mech",
-                Locale::esES => "Robot",
-                Locale::esMX => "Meca",
-                Locale::frFR => "Méca",
-                Locale::itIT => "Robot",
-                Locale::jaJP => "メカ",
-                Locale::koKR => "기계",
-                Locale::plPL => "Mech",
-                Locale::ptBR => "Mecanoide",
-                Locale::ruRU => "Механизм",
-                Locale::thTH => "เครื่องจักร",
-                Locale::zhCN => "机械",
-                Locale::zhTW => "機械",
-            },
-            Self::Elemental => match locale {
-                Locale::deDE => "Elementar",
-                Locale::enUS => "Elemental",
-                Locale::esES | Locale::esMX => "Elemental",
-                Locale::frFR => "Élémentaire",
-                Locale::itIT => "Elementale",
-                Locale::jaJP => "エレメンタル",
-                Locale::koKR => "정령",
-                Locale::plPL => "Żywiołak",
-                Locale::ptBR => "Elemental",
-                Locale::ruRU => "Элементаль",
-                Locale::thTH => "วิญญาณธาตุ",
-                Locale::zhCN => "元素",
-                Locale::zhTW => "元素",
-            },
-            Self::Beast => match locale {
-                Locale::deDE => "Wildtier",
-                Locale::enUS => "Beast",
-                Locale::esES | Locale::esMX => "Bestia",
-                Locale::frFR => "Bête",
-                Locale::itIT => "Bestia",
-                Locale::jaJP => "獣",
-                Locale::koKR => "야수",
-                Locale::plPL => "Bestia",
-                Locale::ptBR => "Fera",
-                Locale::ruRU => "Зверь",
-                Locale::thTH => "สัตว์",
-                Locale::zhCN => "野兽",
-                Locale::zhTW => "野獸",
-            },
-            Self::Totem => match locale {
-                Locale::deDE => "Totem",
-                Locale::enUS => "Totem",
-                Locale::esES | Locale::esMX => "Tótem",
-                Locale::frFR => "Totem",
-                Locale::itIT => "Totem",
-                Locale::jaJP => "トーテム",
-                Locale::koKR => "토템",
-                Locale::plPL => "Totem",
-                Locale::ptBR => "Totem",
-                Locale::ruRU => "Тотем",
-                Locale::thTH => "โทเท็ม",
-                Locale::zhCN => "图腾",
-                Locale::zhTW => "圖騰",
-            },
-            Self::Pirate => match locale {
-                Locale::deDE => "Pirat",
-                Locale::enUS => "Pirate",
-                Locale::esES | Locale::esMX => "Pirata",
-                Locale::frFR => "Pirate",
-                Locale::itIT => "Pirata",
-                Locale::jaJP => "海賊",
-                Locale::koKR => "해적",
-                Locale::plPL => "Pirat",
-                Locale::ptBR => "Pirata",
-                Locale::ruRU => "Пират",
-                Locale::thTH => "โจรสลัด",
-                Locale::zhCN => "海盗",
-                Locale::zhTW => "海盜",
-            },
-            Self::Dragon => match locale {
-                Locale::deDE => "Drache",
-                Locale::enUS => "Dragon",
-                Locale::esES | Locale::esMX => "Dragón",
-                Locale::frFR => "Dragon",
-                Locale::itIT => "Drago",
-                Locale::jaJP => "ドラゴン",
-                Locale::koKR => "용족",
-                Locale::plPL => "Smok",
-                Locale::ptBR => "Dragão",
-                Locale::ruRU => "Дракон",
-                Locale::thTH => "มังกร",
-                Locale::zhCN => "龙",
-                Locale::zhTW => "龍類",
-            },
-            Self::All => match locale {
-                Locale::deDE => "Alle",
-                Locale::enUS => "All",
-                Locale::esES => "Todos",
-                Locale::esMX => "Todas",
-                Locale::frFR => "Tout",
-                Locale::itIT => "Tutti",
-                Locale::jaJP => "全て",
-                Locale::koKR => "모두",
-                Locale::plPL => "Wszystkie",
-                Locale::ptBR => "Tudo",
-                Locale::ruRU => "Все",
-                Locale::thTH => "ทุกอย่าง",
-                Locale::zhCN => "全部",
-                Locale::zhTW => "全部",
-            },
-            Self::Quilboar => match locale {
-                Locale::deDE => "Stacheleber",
-                Locale::enUS => "Quilboar",
-                Locale::esES => "Jabaespín",
-                Locale::esMX => "Jabaespín",
-                Locale::frFR => "Huran",
-                Locale::itIT => "Verrospino",
-                Locale::jaJP => "キルボア",
-                Locale::koKR => "가시멧돼지",
-                Locale::plPL => "Kolcozwierz",
-                Locale::ptBR => "Javatusco",
-                Locale::ruRU => "Свинобраз",
-                Locale::thTH => "ควิลบอร์",
-                Locale::zhCN => "野猪人",
-                Locale::zhTW => "野豬人",
-            },
-            Self::Naga => match locale {
-                Locale::deDE
-                | Locale::enUS
-                | Locale::esES
-                | Locale::esMX
-                | Locale::frFR
-                | Locale::itIT
-                | Locale::plPL
-                | Locale::ptBR => "Naga",
-                Locale::jaJP => "ナーガ",
-                Locale::koKR => "나가",
-                Locale::ruRU => "Нага",
-                Locale::thTH => "นากา",
-                Locale::zhCN => "纳迦",
-                Locale::zhTW => "納迦",
-            },
-            Self::Unknown => "UKNOWN",
-        };
-
-        s.into()
+impl Localize for MinionType {
+    fn in_locale(&self, locale: &Locale) -> String {
+        METADATA
+            .minion_types
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map(|det| det.name.in_locale(locale))
+            .unwrap_or("UNKNOWN".into())
     }
 }
-impl Display for MinionType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let t = match self {
-            Self::Undead => "Undead",
-            Self::Murloc => "Murloc",
-            Self::Demon => "Demon",
-            Self::Mech => "Mech",
-            Self::Elemental => "Elemental",
-            Self::Beast => "Beast",
-            Self::Totem => "Totem",
-            Self::Pirate => "Pirate",
-            Self::Dragon => "Dragon",
-            Self::All => "Amalgam",
-            Self::Quilboar => "Quilboar",
-            Self::Naga => "Naga",
-            Self::Unknown => "UNKNOWN",
-        };
-
-        write!(f, "{t}")
-    }
-}
+// impl Display for MinionType {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         let t = match self {
+//             Self::Undead => "Undead",
+//             Self::Murloc => "Murloc",
+//             Self::Demon => "Demon",
+//             Self::Mech => "Mech",
+//             Self::Elemental => "Elemental",
+//             Self::Beast => "Beast",
+//             Self::Totem => "Totem",
+//             Self::Pirate => "Pirate",
+//             Self::Dragon => "Dragon",
+//             Self::All => "Amalgam",
+//             Self::Quilboar => "Quilboar",
+//             Self::Naga => "Naga",
+//             Self::Unknown => "UNKNOWN",
+//         };
+//         write!(f, "{t}")
+//     }
+// }
 impl From<u8> for MinionType {
     fn from(value: u8) -> Self {
         match value {
@@ -466,8 +445,7 @@ impl From<u8> for MinionType {
             24 => Self::Dragon,
             26 => Self::All,
             43 => Self::Quilboar,
-            92 => Self::Naga,
-            _ => Self::Unknown,
+            _ => Self::Naga, // 92 but who cares
         }
     }
 }
@@ -475,22 +453,14 @@ impl FromStr for MinionType {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let t = match s.to_lowercase().as_ref() {
-            "undead" => Self::Undead,
-            "murloc" => Self::Murloc,
-            "demon" => Self::Demon,
-            "mech" => Self::Mech,
-            "elemental" => Self::Elemental,
-            "beast" => Self::Beast,
-            "totem" => Self::Totem,
-            "pirate" => Self::Pirate,
-            "dragon" => Self::Dragon,
-            "amalgam" => Self::All,
-            "quilboar" => Self::Quilboar,
-            "naga" => Self::Naga,
-            _ => return Err(anyhow::anyhow!("Not a valid minion type (yet?)")),
-        };
-        Ok(t)
+        let s = s.to_lowercase().as_str();
+
+        METADATA
+            .minion_types
+            .iter()
+            .find(|det| det.contains(s))
+            .map(|det| MinionType::from(det.id))
+            .ok_or_else(|| anyhow::anyhow!("Not a valid minion type (yet?)"))
     }
 }
 
@@ -561,46 +531,6 @@ impl Display for CardType {
             Self::HeroPower => write!(f, "Hero Power{colon}"),
             Self::Unknown => write!(f, "UNKNOWN{colon}"),
         }
-    }
-}
-
-#[allow(non_camel_case_types, dead_code)]
-#[derive(Clone)]
-pub enum Locale {
-    deDE,
-    enUS,
-    esES,
-    esMX,
-    frFR,
-    itIT,
-    jaJP,
-    koKR,
-    plPL,
-    ptBR,
-    ruRU,
-    thTH,
-    zhCN,
-    zhTW,
-}
-impl Display for Locale {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::deDE => "de_DE",
-            Self::enUS => "en_US",
-            Self::esES => "es_ES",
-            Self::esMX => "es_MX",
-            Self::frFR => "fr_FR",
-            Self::itIT => "it_IT",
-            Self::jaJP => "ja_JP",
-            Self::koKR => "ko_KR",
-            Self::plPL => "pl_PL",
-            Self::ptBR => "pt_BR",
-            Self::ruRU => "ru_RU",
-            Self::thTH => "th_TH",
-            Self::zhCN => "zh_CN",
-            Self::zhTW => "zh_TW",
-        };
-        write!(f, "{s}")
     }
 }
 

@@ -1,6 +1,9 @@
 use anyhow::Result;
 use clap::{Args, ValueEnum};
-use mimiron::deck;
+use mimiron::{
+    card_details::{Locale, Localize},
+    deck::{self, LookupOptions},
+};
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -61,13 +64,15 @@ enum ImageFormat {
     Adapt,
 }
 
-pub fn run(args: DeckArgs) -> Result<()> {
-    let mut deck = deck::lookup(&args.code)?;
+pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
+    let opts = LookupOptions::lookup(args.code).with_locale(locale);
 
-    // Add Band resolution.
-    if let Some(band) = args.band {
-        deck::add_band(&mut deck, band)?;
-    }
+    let mut deck = if let Some(band) = args.band {
+        // Add Band resolution.
+        deck::add_band(&opts, band)?
+    } else {
+        deck::lookup(&opts)?
+    };
 
     // Deck format/mode override
     if let Some(format) = args.mode {
@@ -76,11 +81,11 @@ pub fn run(args: DeckArgs) -> Result<()> {
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {
-        let deck2 = deck::lookup(&code)?;
+        let deck2 = deck::lookup(&LookupOptions::lookup(code).with_locale(locale))?;
         let deck_diff = deck.compare_with(&deck2);
-        println!("{deck_diff}");
+        println!("{}", deck_diff.in_locale(locale));
     } else {
-        println!("{deck}");
+        println!("{}", deck.in_locale(locale));
     }
 
     if args.image {
@@ -96,11 +101,11 @@ pub fn run(args: DeckArgs) -> Result<()> {
             deck::ImageOptions::Regular { columns, with_text }
         };
 
-        let img = deck::get_image(&deck, opts)?;
+        let img = deck::get_image(&deck, locale, opts)?;
 
         let file_name = format!(
             "{} {} {}.png",
-            deck.class,
+            deck.class.in_locale(locale),
             deck.format
                 .chars()
                 .filter(|c| c.is_alphanumeric())

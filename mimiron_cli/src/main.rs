@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use mimiron::card_details::Locale;
 
 mod bg;
 mod card;
@@ -8,6 +9,9 @@ mod deck;
 #[derive(Parser)]
 #[command(author, version)]
 struct Cli {
+    #[arg(short, long, global = true, default_value("enUS"), value_parser(str::parse::<Locale>))]
+    locale: Locale,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -37,11 +41,12 @@ enum Commands {
 
 pub fn run() -> Result<()> {
     let args = Cli::parse();
+    let locale = args.locale;
 
     match args.command {
-        Commands::Card(args) => card::run(args)?,
-        Commands::Deck(args) => deck::run(args)?,
-        Commands::BG(args) => bg::run(args)?,
+        Commands::Card(args) => card::run(args, locale)?,
+        Commands::Deck(args) => deck::run(args, locale)?,
+        Commands::BG(args) => bg::run(args, locale)?,
         Commands::Token => println!("{}", mimiron::get_access_token()),
     }
 

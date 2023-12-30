@@ -1,6 +1,9 @@
 use anyhow::Result;
 use clap::Args;
-use mimiron::card;
+use mimiron::{
+    card,
+    card_details::{Locale, Localize},
+};
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
@@ -25,15 +28,16 @@ pub struct CardArgs {
     image: bool,
 }
 
-pub fn run(args: CardArgs) -> Result<()> {
+pub fn run(args: CardArgs, locale: Locale) -> Result<()> {
     let opts = card::SearchOptions::search_for(args.name)
+        .with_locale(locale)
         .with_text(args.text)
         .include_reprints(args.reprints)
         .include_noncollectibles(args.all);
     let cards = card::lookup(&opts)?;
 
     for card in cards {
-        println!("{card:#}");
+        println!("{:#}", card.in_locale(locale));
         if args.image {
             println!("\tImage: {}", card.image);
         }

@@ -1,4 +1,5 @@
 use crate::{get_access_token, AGENT};
+use anyhow::anyhow;
 use colored::Colorize;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -57,6 +58,51 @@ impl Display for Locale {
             Self::zhTW => "zh_TW",
         };
         write!(f, "{s}")
+    }
+}
+impl FromStr for Locale {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_lowercase();
+
+        if s.starts_with("de") {
+            Ok(Self::deDE)
+        } else if s.starts_with("en") {
+            Ok(Self::enUS)
+        } else if s == "esmx"
+            || s == "esla"
+            || s == "es_mx"
+            || s == "es_la"
+            || s.starts_with("mx")
+            || s.starts_with("la")
+        {
+            Ok(Self::esMX)
+        } else if s.starts_with("es") {
+            Ok(Self::esES)
+        } else if s.starts_with("fr") {
+            Ok(Self::frFR)
+        } else if s.starts_with("it") {
+            Ok(Self::itIT)
+        } else if s.starts_with("ja") || s.starts_with("jp") {
+            Ok(Self::jaJP)
+        } else if s.starts_with("ko") || s.starts_with("kr") {
+            Ok(Self::koKR)
+        } else if s.starts_with("pl") {
+            Ok(Self::plPL)
+        } else if s.starts_with("pt") || s.starts_with("br") {
+            Ok(Self::ptBR)
+        } else if s.starts_with("ru") {
+            Ok(Self::ruRU)
+        } else if s.starts_with("th") {
+            Ok(Self::thTH)
+        } else if s == "zhcn" || s == "zh_cn" {
+            Ok(Self::zhCN)
+        } else if s.starts_with("zh") {
+            Ok(Self::zhTW)
+        } else {
+            Err(anyhow!("Could not parse locale."))
+        }
     }
 }
 
@@ -196,8 +242,7 @@ impl Localize for Class {
             .classes
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map(|det| det.name.in_locale(locale))
-            .unwrap_or("Noncollectible".into())
+            .map_or("Noncollectible".into(), |det| det.name.in_locale(locale))
     }
 }
 impl From<u8> for Class {
@@ -320,8 +365,7 @@ impl Localize for SpellSchool {
             .spell_schools
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map(|det| det.name.in_locale(locale))
-            .unwrap_or("UNKNOWN".into())
+            .map_or("UNKNOWN".into(), |det| det.name.in_locale(locale))
     }
 }
 impl From<u8> for SpellSchool {
@@ -359,8 +403,7 @@ impl Localize for MinionType {
             .minion_types
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map(|det| det.name.in_locale(locale))
-            .unwrap_or("UNKNOWN".into())
+            .map_or("UNKNOWN".into(), |det| det.name.in_locale(locale))
     }
 }
 impl From<u8> for MinionType {

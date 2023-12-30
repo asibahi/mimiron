@@ -123,8 +123,7 @@ impl Localize for BGCardType {
                     // only use for these strings in the code base (so far?)
                     Locale::deDE => ("Schlachtfeld", "Quest"),
                     Locale::enUS => ("Battlegrounds", "Quest"),
-                    Locale::esES => ("Battlegrounds", "Misión"),
-                    Locale::esMX => ("Battlegrounds", "Misión"),
+                    Locale::esES | Locale::esMX => ("Battlegrounds", "Misión"),
                     Locale::frFR => ("Champs de bataille", "Quête"),
                     Locale::itIT => ("Battaglia", "Missione"),
                     Locale::jaJP => ("バトルグラウンド", "クエスト"),
@@ -282,6 +281,7 @@ pub struct SearchOptions {
     tier: Option<u8>,
     minion_type: Option<MinionType>,
     with_text: bool,
+    locale: Locale,
 }
 
 impl SearchOptions {
@@ -292,6 +292,7 @@ impl SearchOptions {
             tier: None,
             minion_type: None,
             with_text: false,
+            locale: Locale::enUS,
         }
     }
     #[must_use]
@@ -316,13 +317,17 @@ impl SearchOptions {
     pub fn with_text(self, with_text: bool) -> Self {
         Self { with_text, ..self }
     }
+    #[must_use]
+    pub fn with_locale(self, locale: Locale) -> Self {
+        Self { locale, ..self }
+    }
 }
 
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", &get_access_token())
-        .query("locale", &Locale::enUS.to_string())
+        .query("locale", &opts.locale.to_string())
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &opts.search_term {
@@ -332,7 +337,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     if let Some(t) = &opts.minion_type {
         res = res.query(
             "minionType",
-            &t.in_locale(Locale::enUS).to_string().to_lowercase(), // Is it always enUS?
+            &t.in_locale(Locale::enUS).to_string(), // Is it always enUS?
         );
     }
 
@@ -394,7 +399,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 let Some(id) = child_ids.iter().min() else {
                     break 'heropower;
                 };
-                let Ok(res) = get_card_by_id(*id) else {
+                let Ok(res) = get_card_by_id(*id, locale) else {
                     break 'heropower;
                 };
                 let text = textwrap::fill(
@@ -414,7 +419,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 let Some(buddy_id) = buddy_id else {
                     break 'buddy;
                 };
-                let Ok(res) = get_card_by_id(*buddy_id) else {
+                let Ok(res) = get_card_by_id(*buddy_id, locale) else {
                     break 'buddy;
                 };
 
@@ -435,7 +440,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
             upgrade_id: Some(id),
             ..
         } => 'golden: {
-            let Ok(res) = get_card_by_id(*id) else {
+            let Ok(res) = get_card_by_id(*id, locale) else {
                 break 'golden;
             };
 
@@ -472,12 +477,12 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
     cards
 }
 
-fn get_card_by_id(id: usize) -> Result<Card> {
+fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let res = AGENT
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
-        .query("locale", &Locale::enUS.to_string())
+        .query("locale", &locale.to_string())
         .query("gameMode", "battlegrounds")
         .query("access_token", &get_access_token())
         .call()?

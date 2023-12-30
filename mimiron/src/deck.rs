@@ -137,11 +137,30 @@ impl Localize for DeckDifference {
     }
 }
 
-pub fn lookup(code: &str) -> Result<Deck> {
-    let (title, code) = extract_title_and_code(code);
+pub struct LookupOptions {
+    code: String,
+    locale: Locale,
+}
+
+impl LookupOptions {
+    #[must_use]
+    pub fn lookup(code: String) -> Self {
+        Self {
+            code,
+            locale: Locale::enUS,
+        }
+    }
+    #[must_use]
+    pub fn with_locale(self, locale: Locale) -> Self {
+        Self { locale, ..self }
+    }
+}
+
+pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
+    let (title, code) = extract_title_and_code(&opts.code);
     let mut deck = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &Locale::enUS.to_string())
+        .query("locale", &opts.locale.to_string())
         .query("code", code)
         .query("access_token", &get_access_token())
         .call()
@@ -166,7 +185,7 @@ pub fn lookup(code: &str) -> Result<Deck> {
 
         let response = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", &Locale::enUS.to_string())
+            .query("locale", &opts.locale.to_string())
             .query("access_token", &get_access_token())
             .query("ids", &card_ids)
             .call();
@@ -183,12 +202,14 @@ pub fn lookup(code: &str) -> Result<Deck> {
     Ok(deck)
 }
 
-pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
+pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     // Function WILL need to be updated if new sideboard cards are printed.
 
     // Constants that might change should ETC be added to core.
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
+
+    let deck = lookup(opts)?;
 
     if deck.cards.iter().all(|c| c.id != ETC_ID) {
         return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
@@ -203,7 +224,7 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
     let band_ids = band
         .into_iter()
         .map(|name| {
-            card::lookup(&card::SearchOptions::search_for(name))?
+            card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| format!("{id}:{ETC_ID}", id = c.id))
                 .next()
@@ -212,16 +233,14 @@ pub fn add_band(deck: &mut Deck, band: Vec<String>) -> Result<()> {
         .collect::<Result<Vec<String>>>()?
         .join(",");
 
-    *deck = AGENT
+    Ok(AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &Locale::enUS.to_string())
+        .query("locale", &opts.locale.to_string())
         .query("access_token", &get_access_token())
         .query("ids", &card_ids)
         .query("sideboardCards", &band_ids)
         .call()?
-        .into_json::<Deck>()?;
-
-    Ok(())
+        .into_json::<Deck>()?)
 }
 
 fn extract_title_and_code(code: &str) -> (Option<String>, &str) {

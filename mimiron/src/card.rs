@@ -123,7 +123,7 @@ impl Localize for Card {
 
                 write!(
                     f,
-                    "{name}{:padding$} {rarity} {class} {runes}{cost} mana {card_info}.",
+                    "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.",
                     ""
                 )?;
 
@@ -212,6 +212,7 @@ pub struct SearchOptions {
     with_text: bool,
     reprints: bool,
     noncollectibles: bool,
+    locale: Locale,
 }
 
 impl SearchOptions {
@@ -222,6 +223,7 @@ impl SearchOptions {
             with_text: false,
             reprints: false,
             noncollectibles: false,
+            locale: Locale::enUS,
         }
     }
     #[must_use]
@@ -239,6 +241,10 @@ impl SearchOptions {
             ..self
         }
     }
+    #[must_use]
+    pub fn with_locale(self, locale: Locale) -> Self {
+        Self { locale, ..self }
+    }
 }
 
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
@@ -246,7 +252,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", &Locale::enUS.to_string())
+        .query("locale", &opts.locale.to_string())
         .query("textFilter", search_term)
         .query("access_token", &get_access_token());
 

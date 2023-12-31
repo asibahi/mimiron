@@ -249,7 +249,9 @@ pub(crate) async fn paginated_card_print<T>(
 }
 
 pub(crate) fn get_server_locale(ctx: &Context<'_>) -> Locale {
-    ctx.locale()
-        .and_then(|l| str::parse::<Locale>(l).ok())
-        .unwrap_or_default()
+    match (ctx.guild(), ctx.locale()) {
+        (Some(g), _) => g.preferred_locale.parse().unwrap_or_default(),
+        (_, Some(l)) => l.parse().unwrap_or_default(),
+        _ => Locale::enUS, // surely unreachable?
+    }
 }

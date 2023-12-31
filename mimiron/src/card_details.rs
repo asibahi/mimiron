@@ -22,9 +22,10 @@ pub(crate) struct Metadata {
 }
 
 #[allow(non_camel_case_types, dead_code)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum Locale {
     deDE,
+    #[default]
     enUS,
     esES,
     esMX,

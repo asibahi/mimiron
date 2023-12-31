@@ -1,8 +1,11 @@
 use crate::{
-    helpers::{class_to_emoji, markdown, paginated_card_print, rarity_to_emoji},
+    helpers::{class_to_emoji, get_server_locale, markdown, paginated_card_print, rarity_to_emoji},
     Context, Error,
 };
-use mimiron::card;
+use mimiron::{
+    card,
+    card_details::{Locale, Localize},
+};
 use poise::serenity_prelude as serenity;
 
 /// Search for a constructed card by name. Be precise!
@@ -13,10 +16,12 @@ pub async fn card(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let opts = card::SearchOptions::search_for(search_term);
+    let locale = get_server_locale(&ctx);
+
+    let opts = card::SearchOptions::search_for(search_term).with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
 /// Search for a constructed card by name, including reprints. Be precise!
@@ -27,10 +32,14 @@ pub async fn cardreprints(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let opts = card::SearchOptions::search_for(search_term).include_reprints(true);
+    let locale = get_server_locale(&ctx);
+
+    let opts = card::SearchOptions::search_for(search_term)
+        .include_reprints(true)
+        .with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
 /// Search for a constructed card by text.
@@ -41,10 +50,14 @@ pub async fn cardtext(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let opts = card::SearchOptions::search_for(search_term).with_text(true);
+    let locale = get_server_locale(&ctx);
+
+    let opts = card::SearchOptions::search_for(search_term)
+        .with_text(true)
+        .with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
 /// Search includes all cards, including noncollectibles. Expect some nonsense.
@@ -55,13 +68,17 @@ pub async fn allcards(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let opts = card::SearchOptions::search_for(search_term).include_noncollectibles(true);
+    let locale = get_server_locale(&ctx);
+
+    let opts = card::SearchOptions::search_for(search_term)
+        .include_noncollectibles(true)
+        .with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
-fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
+fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
     let class = card
         .class
         .into_iter()
@@ -73,7 +90,12 @@ fn inner_card_embed(card: card::Card) -> serenity::CreateEmbed {
     let mut fields = vec![
         (
             " ",
-            format!("{} {} mana {}", class, card.cost, card.card_type),
+            format!(
+                "{} ({}) {}",
+                class,
+                card.cost,
+                card.card_type.in_locale(locale)
+            ),
             true,
         ),
         (" ", format!("{} {}", rarity, card.card_set.clone()), true),

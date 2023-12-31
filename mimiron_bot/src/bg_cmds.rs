@@ -1,9 +1,12 @@
 use crate::{
-    helpers::{markdown, paginated_card_print},
+    helpers::{get_server_locale, markdown, paginated_card_print},
     Context, Error,
 };
 use itertools::Itertools;
-use mimiron::bg;
+use mimiron::{
+    bg,
+    card_details::{Locale, Localize},
+};
 use poise::serenity_prelude as serenity;
 
 /// alias for /bg
@@ -27,10 +30,12 @@ pub async fn bg(
 }
 
 pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error> {
+    let locale = get_server_locale(&ctx);
+
     let opts = bg::SearchOptions::empty().search_for(Some(search_term));
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
 /// Search for a battlegrounds card by text.
@@ -41,12 +46,14 @@ pub async fn bgtext(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
+    let locale = get_server_locale(&ctx);
+
     let opts = bg::SearchOptions::empty()
         .search_for(Some(search_term))
         .with_text(true);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
 /// Search for a battlegrounds card by tier and optionally minion type.
@@ -58,15 +65,17 @@ pub async fn bgtier(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
+    let locale = get_server_locale(&ctx);
+
     let opts = bg::SearchOptions::empty()
         .with_tier(Some(tier))
         .with_type(minion_type.map(|s| s.parse()).transpose()?);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, inner_card_embed).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
 
-fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
+fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
     let description = match &card.card_type {
         bg::BGCardType::Hero { armor, .. } => format!("Hero with {armor} armor"),
         bg::BGCardType::Minion { text, .. }
@@ -88,11 +97,11 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
             vec![(
                 " ",
                 format!(
-                    "Tier-{tier} {attack}/{health} {}",
+                    "T-{tier} {attack}/{health} {}",
                     if minion_types.is_empty() {
                         "minion".into()
                     } else {
-                        minion_types.iter().join("/")
+                        minion_types.iter().map(|t| t.in_locale(locale)).join("/")
                     }
                 ),
                 true,
@@ -108,7 +117,7 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
     };
 
     fields.extend(
-        bg::get_and_print_associated_cards(&card)
+        bg::get_and_print_associated_cards(&card, locale)
             .into_iter()
             .filter_map(|assoc_card| match assoc_card.card_type {
                 bg::BGCardType::Minion {
@@ -126,22 +135,18 @@ fn inner_card_embed(card: bg::Card) -> serenity::CreateEmbed {
                     };
 
                     let content = format!(
-                        "Tier-{tier} {attack}/{health} {}: {}",
-                        if minion_types.is_empty() {
-                            "minion".into()
-                        } else {
-                            minion_types.iter().join("/")
-                        },
+                        "T-{tier} {attack}/{health} {}: {}",
+                        // forget about the word "minion" for now. 
+                        // Need to get markdown'ed card_info out of the library to add it.
+                        minion_types.iter().map(|t| t.in_locale(locale)).join("/"), 
                         markdown(&text)
                     );
 
                     Some((title, content, false))
                 }
-                bg::BGCardType::HeroPower { cost, text } => Some((
-                    "Hero Power",
-                    format!("{cost}-Cost: {}", markdown(&text)),
-                    false,
-                )),
+                bg::BGCardType::HeroPower { cost, text } => {
+                    Some((" ", format!("({cost}): {}", markdown(&text)), false))
+                }
                 _ => None,
             }),
     );

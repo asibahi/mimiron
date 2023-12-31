@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{Context, Data, Error};
 use itertools::Itertools;
-use mimiron::card_details::{Class, Rarity};
+use mimiron::card_details::{Class, Locale, Rarity};
 use once_cell::unsync::Lazy;
 use poise::serenity_prelude as serenity;
 
@@ -77,7 +77,7 @@ pub fn class_to_emoji(class: Class) -> &'static str {
         Class::Shaman => "<:sh:1182031998802464808>",
         Class::Warlock => "<:wk:1182032014757601340>",
         Class::Warrior => "<:wr:1182032006171861152>",
-        Class::Neutral | Class::Unknown => "",
+        Class::Neutral => "",
     }
 }
 
@@ -246,4 +246,10 @@ pub(crate) async fn paginated_card_print<T>(
     msg.edit(ctx, last_reply).await?;
 
     Ok(())
+}
+
+pub(crate) fn get_server_locale(ctx: &Context<'_>) -> Locale {
+    ctx.locale()
+        .and_then(|l| str::parse::<Locale>(l).ok())
+        .unwrap_or_default()
 }

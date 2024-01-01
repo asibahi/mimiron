@@ -661,25 +661,23 @@ fn draw_text<'a>(
     let image_width = canvas.width() as i32;
     let image_height = canvas.height() as i32;
 
-    let v_metrics = font.v_metrics(scale);
+    let mut last_glyph = None;
+    let mut caret = 0.0;
 
-    let layout = LayoutIter {
-        font,
-        chars: text.chars(),
-        caret: 0.0,
-        scale,
-        start: rusttype::point(0.0, v_metrics.ascent),
-        last_glyph: None,
-    };
+    for c in text.chars() {
+        let g = font.glyph(c).scaled(scale);
 
-    for g in layout {
+        if let Some(last) = last_glyph {
+            caret += font.pair_kerning(scale, last, g.id());
+        }
+        let g = g.positioned(rusttype::point(caret, font.v_metrics(scale).ascent));
+        caret += g.unpositioned().h_metrics().advance_width;
+        last_glyph = Some(g.id());
+
         if let Some(bb) = g.pixel_bounding_box() {
             g.draw(|gx, gy, gv| {
-                let gx = gx as i32 + bb.min.x;
-                let gy = gy as i32 + bb.min.y;
-
-                let image_x = gx + x;
-                let image_y = gy + y;
+                let image_x = gx as i32 + bb.min.x + x;
+                let image_y = gy as i32 + bb.min.y + y;
 
                 if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
                     let pixel = canvas.get_pixel(image_x as u32, image_y as u32).to_owned();
@@ -689,31 +687,5 @@ fn draw_text<'a>(
                 }
             });
         }
-    }
-}
-
-struct LayoutIter<'a, 'font, 's> {
-    font: &'a Font<'font>,
-    chars: core::str::Chars<'s>,
-    caret: f32,
-    scale: Scale,
-    start: rusttype::Point<f32>,
-    last_glyph: Option<rusttype::GlyphId>,
-}
-
-impl<'a, 'font, 's> Iterator for LayoutIter<'a, 'font, 's> {
-    type Item = rusttype::PositionedGlyph<'font>;
-
-    fn next(&mut self) -> Option<rusttype::PositionedGlyph<'font>> {
-        self.chars.next().map(|c| {
-            let g = self.font.glyph(c).scaled(self.scale);
-            if let Some(last) = self.last_glyph {
-                self.caret += self.font.pair_kerning(self.scale, last, g.id());
-            }
-            let g = g.positioned(rusttype::point(self.start.x + self.caret, self.start.y));
-            self.caret += g.unpositioned().h_metrics().advance_width;
-            self.last_glyph = Some(g.id());
-            g
-        })
     }
 }

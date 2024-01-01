@@ -45,6 +45,31 @@ const TEXT_BOLD_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Medium.ttf")
 const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf");
 const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
 
+const FALLBACK_PLAIN_FONTS: [&[u8]; 5] = [
+    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Regular.ttf"),
+];
+
+const FALLBACK_BOLD_FONTS: [&[u8]; 5] = [
+    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Medium.ttf"),
+];
+
+const FALLBACK_LIGHT_FONTS: [&[u8]; 5] = [
+    // italic not available for these fonts.
+    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Light.ttf"),
+];
+
 #[derive(Clone, Copy)]
 pub enum ImageOptions {
     /// Each group in its own column. (HS Top Decks)
@@ -377,6 +402,7 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
 
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
     let scale = Scale::uniform(40.0);
 
     // card name
@@ -387,6 +413,7 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         15,
         scale,
         &font,
+        &fallback_fonts,
         name, //.to_uppercase(),
     );
 
@@ -400,6 +427,7 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         15,
         scale,
         &font,
+        &fallback_fonts,
         &cost,
     );
 
@@ -417,6 +445,7 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         15,
         scale,
         &font,
+        &fallback_fonts,
         &count,
     );
 
@@ -465,6 +494,7 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
 
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
     let scale = Scale::uniform(50.0);
 
     let (_, th) = drawing::text_size(scale, &font, "E");
@@ -476,6 +506,7 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
+        &fallback_fonts,
         heading, //.to_uppercase(),
     );
 
@@ -503,6 +534,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
 
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
     let scale = Scale::uniform(50.0);
 
     let (_, th) = drawing::text_size(scale, &font, "E");
@@ -515,6 +547,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
         scale,
         &font,
+        &fallback_fonts,
         &title,
     );
 
@@ -572,9 +605,16 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
 
 fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     let plain_font = Font::try_from_bytes(TEXT_PLAIN_FONT).unwrap();
+    let fallback_plains = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+
     let bold_font = Font::try_from_bytes(TEXT_BOLD_FONT).unwrap();
+    let fallback_bolds = FALLBACK_BOLD_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+
     let italic_font = Font::try_from_bytes(TEXT_ITALIC_FONT).unwrap();
+    let fallback_lights = FALLBACK_LIGHT_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+
     let bold_italic_font = Font::try_from_bytes(TEXT_BOLD_ITALIC_FONT).unwrap();
+    // for fallback, use plains. Bold of Light! Noto Italics not available for some reason.
 
     // main canvas.
     let mut img = ImageBuffer::new(SLUG_WIDTH, TEXT_BOX_HEIGHT);
@@ -602,14 +642,14 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     // img.copy_from(&gradient, CROP_WIDTH, 0).ok();
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
-    let text_scale = Scale::uniform(20.0);
+    let scale = Scale::uniform(20.0);
     let space_advance = plain_font
         .glyph(' ')
-        .scaled(text_scale)
+        .scaled(scale)
         .h_metrics()
         .advance_width as i32;
 
-    let line_height = drawing::text_size(text_scale, &plain_font, "O").1 * 14 / 10;
+    let line_height = drawing::text_size(scale, &plain_font, "O").1 * 14 / 10;
 
     let mut cursor = (15, 10);
 
@@ -621,7 +661,18 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             TextStyle::BoldItalic => &bold_italic_font,
         };
 
-        let box_advance = drawing::text_size(text_scale, font, &bx.text()).0;
+        let fallback_fonts = match bx.style() {
+            TextStyle::Plain | TextStyle::BoldItalic => &fallback_plains,
+            TextStyle::Bold => &fallback_bolds,
+            TextStyle::Italic => &fallback_lights,
+        };
+
+        // a hacky solution that needs refinement. more aggressive inlining?
+        let box_advance = std::iter::once(font)
+            .chain(fallback_fonts)
+            .map(|f| drawing::text_size(scale, f, &bx.text()).0)
+            .max()
+            .unwrap_or_default();
 
         if SLUG_WIDTH as i32 - 20 <= cursor.0 + box_advance {
             cursor = (15, cursor.1 + line_height);
@@ -632,8 +683,9 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             (255, 255, 255),
             cursor.0,
             cursor.1,
-            text_scale,
+            scale,
             font,
+            fallback_fonts,
             &bx.text(),
         );
 
@@ -656,23 +708,43 @@ fn draw_text<'a>(
     y: i32,
     scale: Scale,
     font: &'a Font<'a>,
+    fallback_fonts: &'a [Font<'a>],
     text: &'a str,
 ) {
     let image_width = canvas.width() as i32;
     let image_height = canvas.height() as i32;
 
-    let mut last_glyph = None;
+    // let mut last_glyph = None; // kerning tool
+
     let mut caret = 0.0;
+    let v_metric = font.v_metrics(scale).ascent;
 
-    for c in text.chars() {
-        let g = font.glyph(c).scaled(scale);
+    'layout: for c in text.chars() {
+        let mut g = font.glyph(c).scaled(scale);
 
-        if let Some(last) = last_glyph {
-            caret += font.pair_kerning(scale, last, g.id());
+        'fallback: {
+            if g.id().0 == 0 {
+                // glyph not in the font files
+                for fallback_font in fallback_fonts {
+                    let inner_g = fallback_font.glyph(c).scaled(scale);
+                    if inner_g.id().0 > 0 {
+                        g = inner_g;
+                        break 'fallback;
+                    }
+                }
+                continue 'layout;
+            }
         }
-        let g = g.positioned(rusttype::point(caret, font.v_metrics(scale).ascent));
+
+        // if let Some(last) = last_glyph {
+        // caret += font.pair_kerning(scale, last, g.id()); // kerning tool
+        // }
+
+        let g = g.positioned(rusttype::point(caret, v_metric));
+
         caret += g.unpositioned().h_metrics().advance_width;
-        last_glyph = Some(g.id());
+
+        // last_glyph = Some(g.id()); // kerning tol
 
         if let Some(bb) = g.pixel_bounding_box() {
             g.draw(|gx, gy, gv| {

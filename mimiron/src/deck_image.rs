@@ -1,7 +1,8 @@
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
-    clippy::cast_lossless
+    clippy::cast_lossless,
+    clippy::cast_sign_loss
 )]
 
 use crate::{
@@ -13,7 +14,11 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
-use imageproc::{drawing, rect::Rect};
+use imageproc::{
+    drawing::{self, Canvas as _},
+    pixelops::weighted_sum,
+    rect::Rect,
+};
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
@@ -643,7 +648,7 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     DynamicImage::ImageRgba8(img)
 }
 
-// isolate the function and leave potential to implement local font fallback behaviour
+// isolate the function to inline `imageproc::drawing::draw_text_mut` and impl font fallback.
 fn draw_text<'a>(
     canvas: &'a mut RgbaImage,
     color: (u8, u8, u8),
@@ -653,13 +658,62 @@ fn draw_text<'a>(
     font: &'a Font<'a>,
     text: &'a str,
 ) {
-    drawing::draw_text_mut(
-        canvas,
-        Rgba([color.0, color.1, color.2, 255]),
-        x,
-        y,
-        scale,
+    let image_width = canvas.width() as i32;
+    let image_height = canvas.height() as i32;
+
+    let v_metrics = font.v_metrics(scale);
+
+    let layout = LayoutIter {
         font,
-        text,
-    );
+        chars: text.chars(),
+        caret: 0.0,
+        scale,
+        start: rusttype::point(0.0, v_metrics.ascent),
+        last_glyph: None,
+    };
+
+    for g in layout {
+        if let Some(bb) = g.pixel_bounding_box() {
+            g.draw(|gx, gy, gv| {
+                let gx = gx as i32 + bb.min.x;
+                let gy = gy as i32 + bb.min.y;
+
+                let image_x = gx + x;
+                let image_y = gy + y;
+
+                if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
+                    let pixel = canvas.get_pixel(image_x as u32, image_y as u32).to_owned();
+                    let color = Rgba([color.0, color.1, color.2, 255]);
+                    let weighted_color = weighted_sum(pixel, color, 1.0 - gv, gv);
+                    canvas.draw_pixel(image_x as u32, image_y as u32, weighted_color);
+                }
+            });
+        }
+    }
+}
+
+struct LayoutIter<'a, 'font, 's> {
+    font: &'a Font<'font>,
+    chars: core::str::Chars<'s>,
+    caret: f32,
+    scale: Scale,
+    start: rusttype::Point<f32>,
+    last_glyph: Option<rusttype::GlyphId>,
+}
+
+impl<'a, 'font, 's> Iterator for LayoutIter<'a, 'font, 's> {
+    type Item = rusttype::PositionedGlyph<'font>;
+
+    fn next(&mut self) -> Option<rusttype::PositionedGlyph<'font>> {
+        self.chars.next().map(|c| {
+            let g = self.font.glyph(c).scaled(self.scale);
+            if let Some(last) = self.last_glyph {
+                self.caret += self.font.pair_kerning(self.scale, last, g.id());
+            }
+            let g = g.positioned(rusttype::point(self.start.x + self.caret, self.start.y));
+            self.caret += g.unpositioned().h_metrics().advance_width;
+            self.last_glyph = Some(g.id());
+            g
+        })
+    }
 }

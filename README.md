@@ -89,7 +89,7 @@ mimiron deck --image AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgS
 ![Deck image](README/deckimagesquare.png)
 
 
-There are other formats: `groups`, `single`, `wide`, and `text`.
+There are other formats: `groups`, `single`, and `wide`.
 
 ```sh
 mimiron deck --image --format groups AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
@@ -109,11 +109,6 @@ mimiron deck --image --format wide AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6
 
 ![Deck image](README/deckimagewide.png)
 
-```sh
-mimiron deck --image --format text AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
-```
-
-![Deck image](README/deckimagetext.png)
 
 Compare two decks with `--comp`:
 

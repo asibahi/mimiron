@@ -60,7 +60,6 @@ enum ImageFormat {
     Single,
     Square,
     Wide,
-    Text,
     Adapt,
 }
 
@@ -89,16 +88,12 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
     }
 
     if args.image {
-        let opts = 'opts: {
-            let (columns, with_text) = match args.format {
-                ImageFormat::Groups => break 'opts deck::ImageOptions::Groups,
-                ImageFormat::Adapt => break 'opts deck::ImageOptions::Adaptable,
-                ImageFormat::Single => (1, false),
-                ImageFormat::Square => (2, false),
-                ImageFormat::Wide => (3, false),
-                ImageFormat::Text => (3, true),
-            };
-            deck::ImageOptions::Regular { columns, with_text }
+        let opts = match args.format {
+            ImageFormat::Groups => deck::ImageOptions::Groups,
+            ImageFormat::Adapt => deck::ImageOptions::Adaptable,
+            ImageFormat::Single => deck::ImageOptions::Regular { columns: 1 },
+            ImageFormat::Square => deck::ImageOptions::Regular { columns: 2 },
+            ImageFormat::Wide => deck::ImageOptions::Regular { columns: 3 },
         };
 
         let img = deck::get_image(&deck, locale, opts)?;

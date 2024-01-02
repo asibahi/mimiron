@@ -167,14 +167,6 @@ impl TextPiece {
             ..self
         }
     }
-
-    pub fn text(&self) -> String {
-        self.text.clone()
-    }
-
-    pub fn style(&self) -> TextStyle {
-        self.style
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]

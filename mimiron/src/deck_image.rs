@@ -9,7 +9,6 @@ use crate::{
     card::Card,
     card_details::{Class, Locale, Localize, Rarity},
     deck::Deck,
-    helpers::{get_boxes_and_glue, TextStyle},
     AGENT,
 };
 use anyhow::{anyhow, Result};
@@ -33,41 +32,15 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const TEXT_BOX_HEIGHT: u32 = CROP_HEIGHT; // two lines height + 10 margin. subject to change.
-const SLUG_HEIGHT_WITH_TEXT: u32 = CROP_HEIGHT + TEXT_BOX_HEIGHT;
-const ROW_HEIGHT_WITH_TEXT: u32 = SLUG_HEIGHT_WITH_TEXT + MARGIN;
-
 const CARD_NAME_FONT: &[u8] =
     include_bytes!("../data/YanoneKaffeesatz/YanoneKaffeesatz-Medium.ttf");
 
-const TEXT_PLAIN_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Regular.ttf");
-const TEXT_BOLD_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Medium.ttf");
-const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf");
-const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
-
 const FALLBACK_PLAIN_FONTS: [&[u8]; 5] = [
-    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Regular.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Regular.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Regular.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Regular.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Regular.ttf"),
-];
-
-const FALLBACK_BOLD_FONTS: [&[u8]; 5] = [
-    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Medium.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Medium.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Medium.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Medium.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Medium.ttf"),
-];
-
-const FALLBACK_LIGHT_FONTS: [&[u8]; 5] = [
-    // italic not available for these fonts.
-    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Light.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Light.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Light.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Light.ttf"),
-    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Light.ttf"),
+    include_bytes!("../data/Noto/NotoSansJP-Regular.ttf"),
+    include_bytes!("../data/Noto/NotoSansKR-Regular.ttf"),
+    include_bytes!("../data/Noto/NotoSansSC-Regular.ttf"),
+    include_bytes!("../data/Noto/NotoSansTC-Regular.ttf"),
+    include_bytes!("../data/Noto/NotoSansThaiLooped-Regular.ttf"),
 ];
 
 #[derive(Clone, Copy)]
@@ -79,10 +52,6 @@ pub enum ImageOptions {
         /// 1 is most compact horizontally.
         /// 3 is most compact (yet readable) vertically.
         columns: u8,
-
-        /// whether card text is included. Best with 3 columns.
-        /// Currently broken for non-Latin alphabet locales.
-        with_text: bool,
     },
 
     /// Similar to Regular but is either 2 or 3 columns based on "size".
@@ -92,15 +61,13 @@ pub enum ImageOptions {
 pub fn get(deck: &Deck, locale: Locale, shape: ImageOptions) -> Result<DynamicImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck, locale),
-        ImageOptions::Regular { columns, with_text } => {
-            img_columns_format(deck, locale, columns as u32, with_text)
-        }
+        ImageOptions::Regular { columns } => img_columns_format(deck, locale, columns as u32),
         ImageOptions::Adaptable => img_adaptable_format(deck, locale),
     }
 }
 
 fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, locale, false);
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
 
     let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
@@ -170,19 +137,10 @@ fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_columns_format(
-    deck: &Deck,
-    locale: Locale,
-    col_count: u32,
-    with_text: bool,
-) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, locale, with_text);
+fn img_columns_format(deck: &Deck, locale: Locale, col_count: u32) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
 
-    let actual_row_height = if with_text {
-        ROW_HEIGHT_WITH_TEXT
-    } else {
-        ROW_HEIGHT
-    };
+    let actual_row_height = ROW_HEIGHT;
 
     let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
@@ -228,7 +186,7 @@ fn img_columns_format(
 
         for sb in sideboards {
             let (col, row) = (sb_pos_tracker / cards_in_col, sb_pos_tracker % cards_in_col);
-            let title_offset = if with_text { TEXT_BOX_HEIGHT } else { 0 };
+            let title_offset = 0;
 
             img.copy_from(
                 &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
@@ -258,7 +216,7 @@ fn img_columns_format(
 }
 
 fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, locale, false);
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
 
     let class_cards = ordered_cards
         .iter()
@@ -344,30 +302,17 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> DynamicImage {
+fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
 
     let r_color = &card.rarity.color();
-    let c_color = card.class.iter().next().unwrap_or(&Class::Neutral).color();
 
-    let slug_height = if with_text {
-        SLUG_HEIGHT_WITH_TEXT
-    } else {
-        CROP_HEIGHT
-    };
+    let slug_height = CROP_HEIGHT;
 
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
-
-    if with_text {
-        let text_box = build_text_box(
-            &(format!("{:#} {}", &card.card_type.in_locale(locale), card.text)),
-            c_color,
-        );
-        img.copy_from(&text_box, 0, CROP_HEIGHT).ok();
-    }
 
     if let Err(e) = draw_crop_image(&mut img, card) {
         eprint!("Failed to get image of {}: {e}            \r", card.name);
@@ -465,8 +410,6 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
 
 fn order_deck_and_get_slugs(
     deck: &Deck,
-    locale: Locale,
-    with_text: bool,
 ) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
@@ -484,7 +427,7 @@ fn order_deck_and_get_slugs(
         .into_par_iter()
         .chain(ordered_sbs_cards.into_par_iter())
         .map(|(card, count)| {
-            let slug = get_card_slug(card, locale, count, with_text);
+            let slug = get_card_slug(card, count);
             (card, slug)
         })
         .collect::<HashMap<_, _>>();
@@ -607,101 +550,6 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
     img.copy_from(&crop, CROP_WIDTH, 0)?;
 
     Ok(())
-}
-
-fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
-    let plain_font = Font::try_from_bytes(TEXT_PLAIN_FONT).unwrap();
-    let fallback_plains = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
-
-    let bold_font = Font::try_from_bytes(TEXT_BOLD_FONT).unwrap();
-    let fallback_bolds = FALLBACK_BOLD_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
-
-    let italic_font = Font::try_from_bytes(TEXT_ITALIC_FONT).unwrap();
-    let fallback_lights = FALLBACK_LIGHT_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
-
-    let bold_italic_font = Font::try_from_bytes(TEXT_BOLD_ITALIC_FONT).unwrap();
-    // for fallback, use plains. Bold of Light! Noto Italics not available for some reason.
-
-    // main canvas.
-    let mut img = ImageBuffer::new(SLUG_WIDTH, TEXT_BOX_HEIGHT);
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(SLUG_WIDTH, TEXT_BOX_HEIGHT),
-        Rgba([10, 10, 10, 255]),
-    );
-
-    // class color
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH + CROP_HEIGHT, TEXT_BOX_HEIGHT),
-        Rgba([color.0, color.1, color.2, 170]),
-    );
-
-    // gradient
-    let mut gradient = RgbaImage::new(CROP_WIDTH, TEXT_BOX_HEIGHT);
-    imageops::horizontal_gradient(
-        &mut gradient,
-        &Rgba([10, 10, 10, 255]),
-        &Rgba([10, 10, 10, 0]),
-    );
-
-    // img.copy_from(&gradient, CROP_WIDTH, 0).ok();
-    imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
-
-    let scale = Scale::uniform(20.0);
-    let space_advance = plain_font
-        .glyph(' ')
-        .scaled(scale)
-        .h_metrics()
-        .advance_width as i32;
-
-    let line_height = drawing::text_size(scale, &plain_font, "O").1 * 14 / 10;
-
-    let mut cursor = (15, 10);
-
-    for bx in get_boxes_and_glue(text) {
-        let font = match bx.style() {
-            TextStyle::Plain => &plain_font,
-            TextStyle::Bold => &bold_font,
-            TextStyle::Italic => &italic_font,
-            TextStyle::BoldItalic => &bold_italic_font,
-        };
-
-        let fallback_fonts = match bx.style() {
-            TextStyle::Plain | TextStyle::BoldItalic => &fallback_plains,
-            TextStyle::Bold => &fallback_bolds,
-            TextStyle::Italic => &fallback_lights,
-        };
-
-        // Breaks text wrapping completely for non-Latin scripts.
-        // will only bother fixing if I see it used.
-        let box_advance = drawing::text_size(scale, font, &bx.text()).0;
-
-        if SLUG_WIDTH as i32 - 20 <= cursor.0 + box_advance {
-            cursor = (15, cursor.1 + line_height);
-        }
-
-        draw_text(
-            &mut img,
-            (255, 255, 255),
-            cursor.0,
-            cursor.1,
-            scale,
-            scale, // switch later from Roboto to Noto for Latin
-            font,
-            fallback_fonts,
-            &bx.text(),
-        );
-
-        cursor.0 += box_advance // imageproc trims end spaces.
-            + if bx.text().chars().last().is_some_and(char::is_whitespace) {
-                space_advance
-            } else {
-                0
-            };
-    }
-
-    DynamicImage::ImageRgba8(img)
 }
 
 // isolate the function to inline `imageproc::drawing::draw_text_mut` and impl font fallback.

@@ -1,6 +1,9 @@
 use anyhow::Result;
 use clap::{ArgGroup, Args};
-use mimiron::{bg, card_details::MinionType};
+use mimiron::{
+    bg,
+    card_details::{Locale, Localize, MinionType},
+};
 
 #[derive(Args)]
 #[command(group = ArgGroup::new("search").required(true).multiple(true))]
@@ -26,8 +29,9 @@ pub struct BGArgs {
     image: bool,
 }
 
-pub fn run(args: BGArgs) -> Result<()> {
+pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
     let opts = bg::SearchOptions::empty()
+        .with_locale(locale)
         .search_for(args.name)
         .with_tier(args.tier)
         .with_type(args.minion_type)
@@ -35,8 +39,8 @@ pub fn run(args: BGArgs) -> Result<()> {
     let cards = bg::lookup(&opts)?;
 
     for card in cards {
-        println!("{card:#}");
-        _ = bg::get_and_print_associated_cards(&card);
+        println!("{:#}", card.in_locale(locale));
+        _ = bg::get_and_print_associated_cards(&card, locale);
     }
 
     Ok(())

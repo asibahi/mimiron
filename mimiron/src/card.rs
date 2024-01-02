@@ -1,5 +1,7 @@
 use crate::{
-    card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
+    card_details::{
+        get_set_by_id, CardType, Class, Locale, Localize, MinionType, Rarity, RuneCost, SpellSchool,
+    },
     get_access_token,
     helpers::prettify,
     AGENT,
@@ -59,7 +61,7 @@ struct CardData {
 #[serde(from = "CardData")]
 pub struct Card {
     pub id: usize,
-    pub card_set: String,
+    pub card_set: usize,
 
     pub name: String,
     pub class: HashSet<Class>,
@@ -98,50 +100,58 @@ impl Ord for Card {
         self.cost.cmp(&other.cost).then(self.name.cmp(&other.name))
     }
 }
-impl Display for Card {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let padding = 25_usize.saturating_sub(self.name.as_str().width());
+impl Localize for Card {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        struct Inner<'a>(&'a Card, Locale);
 
-        let name = self.name.bold();
-        let cost = self.cost;
+        impl Display for Inner<'_> {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                let padding = 25_usize.saturating_sub(self.0.name.as_str().width());
 
-        let runes = self
-            .rune_cost
-            .as_ref()
-            .map_or_else(String::new, |r| format!("{r} "));
+                let name = self.0.name.bold();
+                let cost = self.0.cost;
 
-        let set = &self.card_set;
-        let text = prettify(&self.text);
-        let text = textwrap::fill(
-            &text,
-            textwrap::Options::new(textwrap::termwidth() - 10)
-                .initial_indent("\t")
-                .subsequent_indent("\t"),
-        );
+                let runes = self
+                    .0
+                    .rune_cost
+                    .as_ref()
+                    .map_or_else(String::new, |r| format!("{r} "));
 
-        let rarity = &self.rarity;
+                let rarity = &self.0.rarity.in_locale(self.1);
+                let class = self.0.class.iter().map(|c| c.in_locale(self.1)).join("/");
+                let card_info = &self.0.card_type.in_locale(self.1);
 
-        let class = self.class.iter().join("/");
+                write!(
+                    f,
+                    "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.",
+                    ""
+                )?;
 
-        let card_info = &self.card_type;
+                if f.alternate() {
+                    let set = get_set_by_id(self.0.card_set, self.1);
 
-        write!(
-            f,
-            "{name}{:padding$} {rarity} {class} {runes}{cost} mana {card_info}.",
-            ""
-        )?;
+                    let text = prettify(&self.0.text);
+                    let text = textwrap::fill(
+                        &text,
+                        textwrap::Options::new(textwrap::termwidth() - 10)
+                            .initial_indent("\t")
+                            .subsequent_indent("\t"),
+                    );
 
-        if f.alternate() {
-            write!(f, " {set}\n{text}")?;
+                    write!(f, " {set}\n{text}")?;
+                }
+                Ok(())
+            }
         }
-        Ok(())
+
+        Inner(self, locale)
     }
 }
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         Self {
             id: c.id,
-            card_set: get_set_by_id(c.card_set_id),
+            card_set: c.card_set_id,
             name: c.name,
             class: if c.multi_class_ids.is_empty() {
                 HashSet::from([c.class_id.unwrap_or_default().into()])
@@ -202,6 +212,7 @@ pub struct SearchOptions {
     with_text: bool,
     reprints: bool,
     noncollectibles: bool,
+    locale: Locale,
 }
 
 impl SearchOptions {
@@ -212,6 +223,7 @@ impl SearchOptions {
             with_text: false,
             reprints: false,
             noncollectibles: false,
+            locale: Locale::enUS,
         }
     }
     #[must_use]
@@ -229,6 +241,10 @@ impl SearchOptions {
             ..self
         }
     }
+    #[must_use]
+    pub fn with_locale(self, locale: Locale) -> Self {
+        Self { locale, ..self }
+    }
 }
 
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
@@ -236,7 +252,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", "en-US")
+        .query("locale", &opts.locale.to_string())
         .query("textFilter", search_term)
         .query("access_token", &get_access_token());
 

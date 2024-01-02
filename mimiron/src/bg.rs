@@ -1,4 +1,9 @@
-use crate::{card_details::MinionType, get_access_token, helpers::prettify, AGENT};
+use crate::{
+    card_details::{Locale, Localize, MinionType},
+    get_access_token,
+    helpers::prettify,
+    AGENT,
+};
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use itertools::Itertools;
@@ -81,64 +86,102 @@ pub enum BGCardType {
         text: String,
     },
 }
-impl Display for BGCardType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn inner(text: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            let text = prettify(text);
+impl Localize for BGCardType {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        struct Inner<'a>(&'a BGCardType, Locale);
 
-            if f.alternate() {
-                let text = textwrap::fill(
-                    &text,
-                    textwrap::Options::new(textwrap::termwidth() - 10)
-                        .initial_indent("\t")
-                        .subsequent_indent("\t"),
-                );
-                write!(f, "\n{text}")
-            } else {
-                write!(f, ": {text}")
-            }
-        }
+        impl Display for Inner<'_> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fn inner(text: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    let text = prettify(text);
 
-        match self {
-            Self::Hero { armor, .. } => write!(f, "{armor} armor Hero."),
-            Self::Minion {
-                tier,
-                attack,
-                health,
-                text,
-                minion_types,
-                ..
-            } => {
-                write!(f, "Tier-{tier} {attack}/{health} ")?;
-                if minion_types.is_empty() {
-                    write!(f, "minion")?;
-                } else {
-                    let types = minion_types.iter().join("/");
-                    write!(f, "{types}")?;
+                    if f.alternate() {
+                        let text = textwrap::fill(
+                            &text,
+                            textwrap::Options::new(textwrap::termwidth() - 10)
+                                .initial_indent("\t")
+                                .subsequent_indent("\t"),
+                        );
+                        write!(f, "\n{text}")
+                    } else {
+                        write!(f, ": {text}")
+                    }
                 }
-                inner(text, f)
-            }
-            Self::Spell { tier, cost, text } => {
-                write!(f, "Tier-{tier}, {cost}-Cost spell")?;
-                inner(text, f)
-            }
-            Self::Quest { text } => {
-                write!(f, "Battlegrounds Quest")?;
-                inner(text, f)
-            }
-            Self::Reward { text } => {
-                write!(f, "Battlegrounds Reward")?;
-                inner(text, f)
-            }
-            Self::Anomaly { text } => {
-                write!(f, "Battlegrounds Anomaly")?;
-                inner(text, f)
-            }
-            Self::HeroPower { text, cost } => {
-                let text = prettify(text);
-                write!(f, "{cost}-cost Hero Power: {text}")
+
+                let get_type = |i: u8| {
+                    // all this just to say "Minion"
+                    crate::card_details::METADATA
+                        .types
+                        .iter()
+                        .find(|det| det.id == i)
+                        .unwrap()
+                        .name
+                        .in_locale(self.1)
+                };
+
+                let (battlegrounds, quest) = match self.1 {
+                    // only use for these strings in the code base (so far?)
+                    Locale::deDE => ("Schlachtfeld", "Quest"),
+                    Locale::enUS => ("Battlegrounds", "Quest"),
+                    Locale::esES | Locale::esMX => ("Battlegrounds", "Misión"),
+                    Locale::frFR => ("Champs de bataille", "Quête"),
+                    Locale::itIT => ("Battaglia", "Missione"),
+                    Locale::jaJP => ("バトルグラウンド", "クエスト"),
+                    Locale::koKR => ("전장", "퀘스트"),
+                    Locale::plPL => ("Ustawka", "Zadanie"),
+                    Locale::ptBR => ("Campos de Batalha", "Missão"),
+                    Locale::ruRU => ("Поля сражений", "Задача"),
+                    Locale::thTH => ("Battlegrounds", "เควสต์"),
+                    Locale::zhCN => ("Battlegrounds", "任务"),
+                    Locale::zhTW => ("Battlegrounds", "任務"),
+                };
+
+                match self.0 {
+                    BGCardType::Hero { armor, .. } => {
+                        let hero = get_type(3); // 3 for hero
+                        write!(f, "{hero} [{armor}]")
+                    }
+                    BGCardType::Minion {
+                        tier,
+                        attack,
+                        health,
+                        text,
+                        minion_types,
+                        ..
+                    } => {
+                        let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
+                        let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
+                        write!(f, "T-{tier} {attack}/{health} {blurp}")?;
+                        inner(text, f)
+                    }
+                    BGCardType::Spell { tier, cost, text } => {
+                        let spell = get_type(5); // 5 for Spell
+                        write!(f, "T-{tier}, ({cost}) {spell}")?;
+                        inner(text, f)
+                    }
+                    BGCardType::Quest { text } => {
+                        write!(f, "{battlegrounds} {quest}")?;
+                        inner(text, f)
+                    }
+                    BGCardType::Reward { text } => {
+                        let reward = get_type(40); // 40 for BGReward
+                        write!(f, "{battlegrounds} {reward}")?;
+                        inner(text, f)
+                    }
+                    BGCardType::Anomaly { text } => {
+                        write!(f, "{battlegrounds} Anomaly")?; // couldnt find localization
+                        inner(text, f)
+                    }
+                    BGCardType::HeroPower { cost, text } => {
+                        let heropower = get_type(10); // 10 for Hero Power.
+                        let text = prettify(text);
+                        write!(f, "({cost}) {heropower}: {text}")
+                    }
+                }
             }
         }
+
+        Inner(self, locale)
     }
 }
 
@@ -150,20 +193,28 @@ pub struct Card {
     pub image: String,
     pub card_type: BGCardType,
 }
-impl Display for Card {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let padding = 20_usize.saturating_sub(self.name.as_str().width());
-        let name = &self.name.bold();
+impl Localize for Card {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        struct Inner<'a>(&'a Card, Locale);
 
-        let card_info = &self.card_type;
+        impl Display for Inner<'_> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let padding = 20_usize.saturating_sub(self.0.name.as_str().width());
+                let name = &self.0.name.bold();
 
-        write!(f, "{name}{:padding$} ", "")?;
+                let card_info = &self.0.card_type.in_locale(self.1);
 
-        if f.alternate() {
-            write!(f, "{card_info:#}")
-        } else {
-            write!(f, "{card_info}")
+                write!(f, "{name}{:padding$} ", "")?;
+
+                if f.alternate() {
+                    write!(f, "{card_info:#}")
+                } else {
+                    write!(f, "{card_info}")
+                }
+            }
         }
+
+        Inner(self, locale)
     }
 }
 impl From<CardData> for Card {
@@ -230,6 +281,7 @@ pub struct SearchOptions {
     tier: Option<u8>,
     minion_type: Option<MinionType>,
     with_text: bool,
+    locale: Locale,
 }
 
 impl SearchOptions {
@@ -240,6 +292,7 @@ impl SearchOptions {
             tier: None,
             minion_type: None,
             with_text: false,
+            locale: Locale::enUS,
         }
     }
     #[must_use]
@@ -264,13 +317,17 @@ impl SearchOptions {
     pub fn with_text(self, with_text: bool) -> Self {
         Self { with_text, ..self }
     }
+    #[must_use]
+    pub fn with_locale(self, locale: Locale) -> Self {
+        Self { locale, ..self }
+    }
 }
 
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("access_token", &get_access_token())
-        .query("locale", "en-US")
+        .query("locale", &opts.locale.to_string())
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &opts.search_term {
@@ -278,7 +335,10 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     }
 
     if let Some(t) = &opts.minion_type {
-        res = res.query("minionType", &t.to_string().to_lowercase());
+        res = res.query(
+            "minionType",
+            &t.in_locale(Locale::enUS).to_string().to_lowercase(), // Is it always enUS?
+        );
     }
 
     if let Some(t) = opts.tier {
@@ -323,7 +383,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 }
 
 #[must_use]
-pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
+pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> {
     let mut cards = vec![];
 
     match &card.card_type {
@@ -339,11 +399,11 @@ pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
                 let Some(id) = child_ids.iter().min() else {
                     break 'heropower;
                 };
-                let Ok(res) = get_card_by_id(*id) else {
+                let Ok(res) = get_card_by_id(*id, locale) else {
                     break 'heropower;
                 };
                 let text = textwrap::fill(
-                    &res.to_string(),
+                    &res.in_locale(locale).to_string(),
                     textwrap::Options::new(textwrap::termwidth() - 10)
                         .initial_indent("\t")
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
@@ -359,12 +419,12 @@ pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
                 let Some(buddy_id) = buddy_id else {
                     break 'buddy;
                 };
-                let Ok(res) = get_card_by_id(*buddy_id) else {
+                let Ok(res) = get_card_by_id(*buddy_id, locale) else {
                     break 'buddy;
                 };
 
                 let text = textwrap::fill(
-                    &res.to_string(),
+                    &res.in_locale(locale).to_string(),
                     textwrap::Options::new(textwrap::termwidth() - 10)
                         .initial_indent("\t")
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
@@ -380,7 +440,7 @@ pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
             upgrade_id: Some(id),
             ..
         } => 'golden: {
-            let Ok(res) = get_card_by_id(*id) else {
+            let Ok(res) = get_card_by_id(*id, locale) else {
                 break 'golden;
             };
 
@@ -417,12 +477,12 @@ pub fn get_and_print_associated_cards(card: &Card) -> Vec<Card> {
     cards
 }
 
-fn get_card_by_id(id: usize) -> Result<Card> {
+fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let res = AGENT
         .get(&format!(
             "https://us.api.blizzard.com/hearthstone/cards/{id}"
         ))
-        .query("locale", "en-US")
+        .query("locale", &locale.to_string())
         .query("gameMode", "battlegrounds")
         .query("access_token", &get_access_token())
         .call()?

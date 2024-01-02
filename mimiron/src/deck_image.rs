@@ -1,19 +1,24 @@
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
-    clippy::cast_lossless
+    clippy::cast_lossless,
+    clippy::cast_sign_loss
 )]
 
 use crate::{
     card::Card,
-    card_details::{Class, Rarity},
+    card_details::{Class, Locale, Localize, Rarity},
     deck::Deck,
     helpers::{get_boxes_and_glue, TextStyle},
     AGENT,
 };
 use anyhow::{anyhow, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
-use imageproc::{drawing, rect::Rect};
+use imageproc::{
+    drawing::{self, Canvas as _},
+    pixelops::weighted_sum,
+    rect::Rect,
+};
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
@@ -40,6 +45,31 @@ const TEXT_BOLD_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Medium.ttf")
 const TEXT_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-Italic.ttf");
 const TEXT_BOLD_ITALIC_FONT: &[u8] = include_bytes!("../data/Roboto/Roboto-MediumItalic.ttf");
 
+const FALLBACK_PLAIN_FONTS: [&[u8]; 5] = [
+    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Regular.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Regular.ttf"),
+];
+
+const FALLBACK_BOLD_FONTS: [&[u8]; 5] = [
+    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Medium.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Medium.ttf"),
+];
+
+const FALLBACK_LIGHT_FONTS: [&[u8]; 5] = [
+    // italic not available for these fonts.
+    include_bytes!("../data/Noto/Noto_Sans_JP/NotoSansJP-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_KR/NotoSansKR-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_SC/NotoSansSC-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_TC/NotoSansTC-Light.ttf"),
+    include_bytes!("../data/Noto/Noto_Sans_Thai_Looped/NotoSansThaiLooped-Light.ttf"),
+];
+
 #[derive(Clone, Copy)]
 pub enum ImageOptions {
     /// Each group in its own column. (HS Top Decks)
@@ -51,25 +81,26 @@ pub enum ImageOptions {
         columns: u8,
 
         /// whether card text is included. Best with 3 columns.
+        /// Currently broken for non-Latin alphabet locales.
         with_text: bool,
     },
 
-    /// Similar to Regular but is either 2 or 3 columns based on "size"
+    /// Similar to Regular but is either 2 or 3 columns based on "size".
     Adaptable,
 }
 
-pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
+pub fn get(deck: &Deck, locale: Locale, shape: ImageOptions) -> Result<DynamicImage> {
     match shape {
-        ImageOptions::Groups => img_groups_format(deck),
+        ImageOptions::Groups => img_groups_format(deck, locale),
         ImageOptions::Regular { columns, with_text } => {
-            img_columns_format(deck, columns as u32, with_text)
+            img_columns_format(deck, locale, columns as u32, with_text)
         }
-        ImageOptions::Adaptable => img_adaptable_format(deck),
+        ImageOptions::Adaptable => img_adaptable_format(deck, locale),
     }
 }
 
-fn img_adaptable_format(deck: &Deck) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, false);
+fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, locale, false);
 
     let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
@@ -95,7 +126,7 @@ fn img_adaptable_format(deck: &Deck) -> Result<DynamicImage> {
         (img, cards_in_col)
     };
 
-    draw_deck_title(&mut img, deck)?;
+    draw_deck_title(&mut img, locale, deck)?;
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
@@ -139,8 +170,13 @@ fn img_adaptable_format(deck: &Deck) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, with_text);
+fn img_columns_format(
+    deck: &Deck,
+    locale: Locale,
+    col_count: u32,
+    with_text: bool,
+) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, locale, with_text);
 
     let actual_row_height = if with_text {
         ROW_HEIGHT_WITH_TEXT
@@ -170,7 +206,7 @@ fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<Dy
         (img, cards_in_col)
     };
 
-    draw_deck_title(&mut img, deck)?;
+    draw_deck_title(&mut img, locale, deck)?;
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
@@ -221,8 +257,8 @@ fn img_columns_format(deck: &Deck, col_count: u32, with_text: bool) -> Result<Dy
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, false);
+fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck, locale, false);
 
     let class_cards = ordered_cards
         .iter()
@@ -262,7 +298,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, deck)?;
+    draw_deck_title(&mut img, locale, deck)?;
 
     // Doesn't currently accomodate longer deck titles
     if !neutral_cards.is_empty() {
@@ -308,7 +344,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
+fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
@@ -326,7 +362,10 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
 
     if with_text {
-        let text_box = build_text_box(&(format!("{:#} {}", &card.card_type, card.text)), c_color);
+        let text_box = build_text_box(
+            &(format!("{:#} {}", &card.card_type.in_locale(locale), card.text)),
+            c_color,
+        );
         img.copy_from(&text_box, 0, CROP_HEIGHT).ok();
     }
 
@@ -348,22 +387,9 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
     );
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
-    // rarity square
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(SLUG_WIDTH as i32 - CROP_HEIGHT as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
-        Rgba([r_color.0, r_color.1, r_color.2, 255]),
-    );
-
-    // mana square
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
-        Rgba([60, 109, 173, 255]),
-    );
-
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
     let scale = Scale::uniform(40.0);
 
     // card name
@@ -373,8 +399,17 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
         CROP_HEIGHT as i32 + 10,
         15,
         scale,
+        Scale::uniform(50.0),
         &font,
-        name, //.to_uppercase(),
+        &fallback_fonts,
+        name,
+    );
+
+    // mana square
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(0, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rgba([60, 109, 173, 255]),
     );
 
     // card cost
@@ -386,8 +421,17 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
         (CROP_HEIGHT as i32 - tw) / 2,
         15,
         scale,
+        scale, // pointless field here.
         &font,
+        &fallback_fonts, // pointless field here.
         &cost,
+    );
+
+    // rarity square
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(SLUG_WIDTH as i32 - CROP_HEIGHT as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rgba([r_color.0, r_color.1, r_color.2, 255]),
     );
 
     // card count
@@ -403,7 +447,9 @@ fn get_card_slug(card: &Card, count: usize, with_text: bool) -> DynamicImage {
         SLUG_WIDTH as i32 - (CROP_HEIGHT as i32 + tw) / 2,
         15,
         scale,
+        scale, // pointless field here
         &font,
+        &fallback_fonts, // pointes field here.
         &count,
     );
 
@@ -419,6 +465,7 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
 
 fn order_deck_and_get_slugs(
     deck: &Deck,
+    locale: Locale,
     with_text: bool,
 ) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
@@ -437,7 +484,7 @@ fn order_deck_and_get_slugs(
         .into_par_iter()
         .chain(ordered_sbs_cards.into_par_iter())
         .map(|(card, count)| {
-            let slug = get_card_slug(card, count, with_text);
+            let slug = get_card_slug(card, locale, count, with_text);
             (card, slug)
         })
         .collect::<HashMap<_, _>>();
@@ -451,6 +498,7 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
 
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
     let scale = Scale::uniform(50.0);
 
     let (_, th) = drawing::text_size(scale, &font, "E");
@@ -461,7 +509,9 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
         15,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
+        Scale::uniform(60.0),
         &font,
+        &fallback_fonts,
         heading, //.to_uppercase(),
     );
 
@@ -478,14 +528,18 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
-    let title = deck
-        .title
-        .clone()
-        .unwrap_or_else(|| format!("{} - {}", deck.class, deck.format.to_uppercase()));
+fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<()> {
+    let title = deck.title.clone().unwrap_or_else(|| {
+        format!(
+            "{} - {}",
+            deck.class.in_locale(locale),
+            deck.format.to_uppercase()
+        )
+    });
 
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
+    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
     let scale = Scale::uniform(50.0);
 
     let (_, th) = drawing::text_size(scale, &font, "E");
@@ -497,7 +551,9 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
         MARGIN as i32 + CROP_HEIGHT as i32 + 10,
         MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
         scale,
+        Scale::uniform(60.0),
         &font,
+        &fallback_fonts,
         &title,
     );
 
@@ -518,7 +574,7 @@ fn get_class_icon(class: &Class) -> Result<DynamicImage> {
         .get(
             &(format!(
                 "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-                class.to_string().to_lowercase()
+                class.in_locale(Locale::enUS).to_string().to_lowercase()
             )),
         )
         .call()?
@@ -555,9 +611,16 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
 
 fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     let plain_font = Font::try_from_bytes(TEXT_PLAIN_FONT).unwrap();
+    let fallback_plains = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+
     let bold_font = Font::try_from_bytes(TEXT_BOLD_FONT).unwrap();
+    let fallback_bolds = FALLBACK_BOLD_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+
     let italic_font = Font::try_from_bytes(TEXT_ITALIC_FONT).unwrap();
+    let fallback_lights = FALLBACK_LIGHT_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+
     let bold_italic_font = Font::try_from_bytes(TEXT_BOLD_ITALIC_FONT).unwrap();
+    // for fallback, use plains. Bold of Light! Noto Italics not available for some reason.
 
     // main canvas.
     let mut img = ImageBuffer::new(SLUG_WIDTH, TEXT_BOX_HEIGHT);
@@ -585,14 +648,14 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     // img.copy_from(&gradient, CROP_WIDTH, 0).ok();
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
-    let text_scale = Scale::uniform(20.0);
+    let scale = Scale::uniform(20.0);
     let space_advance = plain_font
         .glyph(' ')
-        .scaled(text_scale)
+        .scaled(scale)
         .h_metrics()
         .advance_width as i32;
 
-    let line_height = drawing::text_size(text_scale, &plain_font, "O").1 * 14 / 10;
+    let line_height = drawing::text_size(scale, &plain_font, "O").1 * 14 / 10;
 
     let mut cursor = (15, 10);
 
@@ -604,7 +667,15 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             TextStyle::BoldItalic => &bold_italic_font,
         };
 
-        let box_advance = drawing::text_size(text_scale, font, &bx.text()).0;
+        let fallback_fonts = match bx.style() {
+            TextStyle::Plain | TextStyle::BoldItalic => &fallback_plains,
+            TextStyle::Bold => &fallback_bolds,
+            TextStyle::Italic => &fallback_lights,
+        };
+
+        // Breaks text wrapping completely for non-Latin scripts.
+        // will only bother fixing if I see it used.
+        let box_advance = drawing::text_size(scale, font, &bx.text()).0;
 
         if SLUG_WIDTH as i32 - 20 <= cursor.0 + box_advance {
             cursor = (15, cursor.1 + line_height);
@@ -615,8 +686,10 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             (255, 255, 255),
             cursor.0,
             cursor.1,
-            text_scale,
+            scale,
+            scale, // switch later from Roboto to Noto for Latin
             font,
+            fallback_fonts,
             &bx.text(),
         );
 
@@ -631,23 +704,65 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
     DynamicImage::ImageRgba8(img)
 }
 
-// isolate the function and leave potential to implement local font fallback behaviour
+// isolate the function to inline `imageproc::drawing::draw_text_mut` and impl font fallback.
 fn draw_text<'a>(
     canvas: &'a mut RgbaImage,
     color: (u8, u8, u8),
     x: i32,
     y: i32,
     scale: Scale,
+    fallback_scale: Scale, // Noto fonts smaller than Yanone.
     font: &'a Font<'a>,
+    fallback_fonts: &'a [Font<'a>],
     text: &'a str,
 ) {
-    drawing::draw_text_mut(
-        canvas,
-        Rgba([color.0, color.1, color.2, 255]),
-        x,
-        y,
-        scale,
-        font,
-        text,
-    );
+    let image_width = canvas.width() as i32;
+    let image_height = canvas.height() as i32;
+
+    // let mut last_glyph = None; // kerning tool
+
+    let mut caret = 0.0;
+    let v_metric = font.v_metrics(scale).ascent;
+
+    'layout: for c in text.chars() {
+        let mut g = font.glyph(c).scaled(scale);
+
+        'fallback: {
+            if g.id().0 == 0 {
+                // glyph not in the font files
+                for fallback_font in fallback_fonts {
+                    let inner_g = fallback_font.glyph(c).scaled(fallback_scale);
+                    if inner_g.id().0 > 0 {
+                        g = inner_g;
+                        break 'fallback;
+                    }
+                }
+                continue 'layout;
+            }
+        }
+
+        // if let Some(last) = last_glyph {
+        // caret += font.pair_kerning(scale, last, g.id()); // kerning tool
+        // }
+
+        let g = g.positioned(rusttype::point(caret, v_metric));
+
+        caret += g.unpositioned().h_metrics().advance_width;
+
+        // last_glyph = Some(g.id()); // kerning tol
+
+        if let Some(bb) = g.pixel_bounding_box() {
+            g.draw(|gx, gy, gv| {
+                let image_x = gx as i32 + bb.min.x + x;
+                let image_y = gy as i32 + bb.min.y + y;
+
+                if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
+                    let pixel = canvas.get_pixel(image_x as u32, image_y as u32).to_owned();
+                    let color = Rgba([color.0, color.1, color.2, 255]);
+                    let weighted_color = weighted_sum(pixel, color, 1.0 - gv, gv);
+                    canvas.draw_pixel(image_x as u32, image_y as u32, weighted_color);
+                }
+            });
+        }
+    }
 }

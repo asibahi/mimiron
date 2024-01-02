@@ -1,4 +1,5 @@
 use crate::{get_access_token, AGENT};
+use anyhow::anyhow;
 use colored::Colorize;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -9,33 +10,213 @@ use std::{
     str::FromStr,
 };
 
-static SETS: Lazy<Vec<Set>> = Lazy::new(|| {
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Metadata {
+    pub sets: Vec<Set>,
+    pub types: Vec<Details>,
+    pub rarities: Vec<Details>,
+    pub classes: Vec<Details>,
+    pub minion_types: Vec<Details>,
+    pub spell_schools: Vec<Details>,
+}
+
+#[allow(non_camel_case_types, dead_code)]
+#[derive(Clone, Copy, Default)]
+pub enum Locale {
+    deDE,
+    #[default]
+    enUS,
+    esES,
+    esMX,
+    frFR,
+    itIT,
+    jaJP,
+    koKR,
+    plPL,
+    ptBR,
+    ruRU,
+    thTH,
+    zhCN,
+    zhTW,
+}
+impl Display for Locale {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::deDE => "de_DE",
+            Self::enUS => "en_US",
+            Self::esES => "es_ES",
+            Self::esMX => "es_MX",
+            Self::frFR => "fr_FR",
+            Self::itIT => "it_IT",
+            Self::jaJP => "ja_JP",
+            Self::koKR => "ko_KR",
+            Self::plPL => "pl_PL",
+            Self::ptBR => "pt_BR",
+            Self::ruRU => "ru_RU",
+            Self::thTH => "th_TH",
+            Self::zhCN => "zh_CN",
+            Self::zhTW => "zh_TW",
+        };
+        write!(f, "{s}")
+    }
+}
+impl FromStr for Locale {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_lowercase();
+
+        if s.starts_with("de") {
+            Ok(Self::deDE)
+        } else if s.starts_with("en") {
+            Ok(Self::enUS)
+        } else if s == "esmx"
+            || s == "esla"
+            || s == "es_mx"
+            || s == "es_la"
+            || s.starts_with("mx")
+            || s.starts_with("la")
+        {
+            Ok(Self::esMX)
+        } else if s.starts_with("es") {
+            Ok(Self::esES)
+        } else if s.starts_with("fr") {
+            Ok(Self::frFR)
+        } else if s.starts_with("it") {
+            Ok(Self::itIT)
+        } else if s.starts_with("ja") || s.starts_with("jp") {
+            Ok(Self::jaJP)
+        } else if s.starts_with("ko") || s.starts_with("kr") {
+            Ok(Self::koKR)
+        } else if s.starts_with("pl") {
+            Ok(Self::plPL)
+        } else if s.starts_with("pt") || s.starts_with("br") {
+            Ok(Self::ptBR)
+        } else if s.starts_with("ru") {
+            Ok(Self::ruRU)
+        } else if s.starts_with("th") {
+            Ok(Self::thTH)
+        } else if s == "zhcn" || s == "zh_cn" {
+            Ok(Self::zhCN)
+        } else if s.starts_with("zh") {
+            Ok(Self::zhTW)
+        } else {
+            Err(anyhow!("Could not parse locale."))
+        }
+    }
+}
+
+pub trait Localize {
+    fn in_locale(&self, locale: Locale) -> impl Display;
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Clone)]
+pub(crate) struct LocalizedName {
+    #[serde(rename = "de_DE")]
+    deDE: String,
+    #[serde(rename = "en_US")]
+    enUS: String,
+    #[serde(rename = "es_ES")]
+    esES: String,
+    #[serde(rename = "es_MX")]
+    esMX: String,
+    #[serde(rename = "fr_FR")]
+    frFR: String,
+    #[serde(rename = "it_IT")]
+    itIT: String,
+    #[serde(rename = "ja_JP")]
+    jaJP: String,
+    #[serde(rename = "ko_KR")]
+    koKR: String,
+    #[serde(rename = "pl_PL")]
+    plPL: String,
+    #[serde(rename = "pt_BR")]
+    ptBR: String,
+    #[serde(rename = "ru_RU")]
+    ruRU: String,
+    #[serde(rename = "th_TH")]
+    thTH: String,
+    #[serde(rename = "zh_CN")]
+    zhCN: Option<String>,
+    #[serde(rename = "zh_TW")]
+    zhTW: String,
+}
+impl Localize for LocalizedName {
+    fn in_locale(&self, locale: Locale) -> String {
+        match locale {
+            Locale::deDE => self.deDE.clone(),
+            Locale::enUS => self.enUS.clone(),
+            Locale::esES => self.esES.clone(),
+            Locale::esMX => self.esMX.clone(),
+            Locale::frFR => self.frFR.clone(),
+            Locale::itIT => self.itIT.clone(),
+            Locale::jaJP => self.jaJP.clone(),
+            Locale::koKR => self.koKR.clone(),
+            Locale::plPL => self.plPL.clone(),
+            Locale::ptBR => self.ptBR.clone(),
+            Locale::ruRU => self.ruRU.clone(),
+            Locale::thTH => self.thTH.clone(),
+            Locale::zhCN => self.zhCN.clone().unwrap_or(self.zhTW.clone()),
+            Locale::zhTW => self.zhTW.clone(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Details {
+    pub id: u8,
+    pub name: LocalizedName,
+}
+impl Details {
+    pub fn contains(&self, search_term: &str) -> bool {
+        let ln = self.name.clone();
+        let st = search_term.to_lowercase();
+        ln.deDE.to_lowercase().eq(&st)
+            || ln.enUS.to_lowercase().eq(&st)
+            || ln.esES.to_lowercase().eq(&st)
+            || ln.esMX.to_lowercase().eq(&st)
+            || ln.frFR.to_lowercase().eq(&st)
+            || ln.itIT.to_lowercase().eq(&st)
+            || ln.jaJP.eq(&st)
+            || ln.koKR.eq(&st)
+            || ln.plPL.to_lowercase().eq(&st)
+            || ln.ptBR.to_lowercase().eq(&st)
+            || ln.ruRU.to_lowercase().eq(&st)
+            || ln.thTH.eq(&st)
+            || ln.zhTW.eq(&st)
+            || ln.zhCN.is_some_and(|s| s.eq(&st))
+    }
+}
+
+pub(crate) static METADATA: Lazy<Metadata> = Lazy::new(|| {
     AGENT
-        .get("https://us.api.blizzard.com/hearthstone/metadata/sets")
-        .query("locale", "en-US")
+        .get("https://us.api.blizzard.com/hearthstone/metadata")
         .query("access_token", &get_access_token())
         .call()
-        .and_then(|res| Ok(res.into_json::<Vec<Set>>()?))
+        .and_then(|res| Ok(res.into_json::<Metadata>()?))
         .unwrap_or_default()
 });
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Set {
+pub(crate) struct Set {
     id: usize,
-    name: String,
+    name: LocalizedName,
     alias_set_ids: Option<Vec<usize>>,
 }
 
-pub(crate) fn get_set_by_id(id: usize) -> String {
-    let set = SETS.iter().find(|s| {
+pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
+    let set = METADATA.sets.iter().find(|s| {
         s.id == id
             || s.alias_set_ids
                 .as_ref()
                 .is_some_and(|aliases| aliases.contains(&id))
     });
 
-    set.map_or_else(|| format!("Set {id}"), |s| s.name.clone())
+    set.map_or_else(|| format!("Set {id}"), |s| s.name.in_locale(locale).clone())
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
@@ -55,28 +236,14 @@ pub enum Class {
     Warlock,
     Warrior,
     Neutral,
-    Unknown,
 }
-impl Display for Class {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::DeathKnight => "Death Knight",
-            Self::DemonHunter => "Demon Hunter",
-            Self::Druid => "Druid",
-            // Self::Evoker => "Evoker",
-            Self::Hunter => "Hunter",
-            Self::Mage => "Mage",
-            // Self::Monk => "Monk",
-            Self::Paladin => "Paladin",
-            Self::Priest => "Priest",
-            Self::Rogue => "Rogue",
-            Self::Shaman => "Shaman",
-            Self::Warlock => "Warlock",
-            Self::Warrior => "Warrior",
-            Self::Neutral => "Neutral",
-            Self::Unknown => "UNKNOWN",
-        };
-        write!(f, "{s}")
+impl Localize for Class {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        METADATA
+            .classes
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map_or("Noncollectible".into(), |det| det.name.in_locale(locale))
     }
 }
 impl From<u8> for Class {
@@ -95,8 +262,7 @@ impl From<u8> for Class {
             8 => Self::Shaman,
             9 => Self::Warlock,
             10 => Self::Warrior,
-            12 => Self::Neutral,
-            _ => Self::Unknown,
+            _ => Self::Neutral, // 12
         }
     }
 }
@@ -121,17 +287,16 @@ impl Class {
             Self::Shaman => (43, 125, 180),
             Self::Warlock => (162, 112, 153),
             Self::Warrior => (200, 21, 24),
-            Self::Neutral | Self::Unknown => (169, 169, 169),
+            Self::Neutral => (169, 169, 169),
         }
     }
 }
-
 #[derive(Deserialize)]
 struct ClassData {
     id: u8,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Rarity {
     Legendary,
     Epic,
@@ -140,18 +305,23 @@ pub enum Rarity {
     Free,
     Noncollectible,
 }
-impl Display for Rarity {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let r = match self {
-            Self::Common => "common".white(),
-            Self::Free => "free".white(),
-            Self::Rare => "rare".blue(),
-            Self::Epic => "epic".purple(),
-            Self::Legendary => "LEGENDARY".bright_yellow().bold(),
+impl Localize for Rarity {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        let text: String = METADATA
+            .rarities
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map(|det| det.name.in_locale(locale))
+            .unwrap_or_default();
+
+        match self {
+            Self::Common | Self::Free => text.to_lowercase().white(),
+            Self::Rare => text.to_lowercase().blue(),
+            Self::Epic => text.to_lowercase().purple(),
+            Self::Legendary => text.to_uppercase().bright_yellow().bold(),
             Self::Noncollectible => "Noncollectible".clear(),
         }
-        .italic();
-        write!(f, "{r}")
+        .italic()
     }
 }
 impl From<u8> for Rarity {
@@ -180,7 +350,7 @@ impl Rarity {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum SpellSchool {
     Arcane,
     Fire,
@@ -189,22 +359,14 @@ pub enum SpellSchool {
     Holy,
     Shadow,
     Fel,
-    Unknown,
 }
-impl Display for SpellSchool {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::Arcane => "Arcane",
-            Self::Fire => "Fire",
-            Self::Frost => "Frost",
-            Self::Nature => "Nature",
-            Self::Holy => "Holy",
-            Self::Shadow => "Shadow",
-            Self::Fel => "Fel",
-            Self::Unknown => "UNKNOWN",
-        };
-
-        write!(f, "{s}")
+impl Localize for SpellSchool {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        METADATA
+            .spell_schools
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map_or("UNKNOWN".into(), |det| det.name.in_locale(locale))
     }
 }
 impl From<u8> for SpellSchool {
@@ -216,8 +378,7 @@ impl From<u8> for SpellSchool {
             4 => Self::Nature,
             5 => Self::Holy,
             6 => Self::Shadow,
-            7 => Self::Fel,
-            _ => Self::Unknown,
+            _ => Self::Fel, // 7
         }
     }
 }
@@ -236,27 +397,14 @@ pub enum MinionType {
     All,
     Quilboar,
     Naga,
-    Unknown,
 }
-impl Display for MinionType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let t = match self {
-            Self::Undead => "Undead",
-            Self::Murloc => "Murloc",
-            Self::Demon => "Demon",
-            Self::Mech => "Mech",
-            Self::Elemental => "Elemental",
-            Self::Beast => "Beast",
-            Self::Totem => "Totem",
-            Self::Pirate => "Pirate",
-            Self::Dragon => "Dragon",
-            Self::All => "Amalgam",
-            Self::Quilboar => "Quilboar",
-            Self::Naga => "Naga",
-            Self::Unknown => "UNKNOWN",
-        };
-
-        write!(f, "{t}")
+impl Localize for MinionType {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        METADATA
+            .minion_types
+            .iter()
+            .find(|det| *self == Self::from(det.id))
+            .map_or("UNKNOWN".into(), |det| det.name.in_locale(locale))
     }
 }
 impl From<u8> for MinionType {
@@ -273,8 +421,7 @@ impl From<u8> for MinionType {
             24 => Self::Dragon,
             26 => Self::All,
             43 => Self::Quilboar,
-            92 => Self::Naga,
-            _ => Self::Unknown,
+            _ => Self::Naga, // 92 but who cares
         }
     }
 }
@@ -282,22 +429,12 @@ impl FromStr for MinionType {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let t = match s.to_lowercase().as_ref() {
-            "undead" => Self::Undead,
-            "murloc" => Self::Murloc,
-            "demon" => Self::Demon,
-            "mech" => Self::Mech,
-            "elemental" => Self::Elemental,
-            "beast" => Self::Beast,
-            "totem" => Self::Totem,
-            "pirate" => Self::Pirate,
-            "dragon" => Self::Dragon,
-            "amalgam" => Self::All,
-            "quilboar" => Self::Quilboar,
-            "naga" => Self::Naga,
-            _ => return Err(anyhow::anyhow!("Not a valid minion type (yet?)")),
-        };
-        Ok(t)
+        METADATA
+            .minion_types
+            .iter()
+            .find(|det| det.contains(s))
+            .map(|det| MinionType::from(det.id))
+            .ok_or_else(|| anyhow::anyhow!("Not a valid minion type (yet?)"))
     }
 }
 
@@ -340,34 +477,68 @@ pub enum CardType {
     HeroPower,
     Unknown,
 }
-impl Display for CardType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // f.alternate() is used for text boxes on images. Regular mode for console output.
-        let colon = if f.alternate() { ":" } else { "" };
-        match self {
-            Self::Hero { armor } => write!(f, "Hero card with {armor} armor{colon}"),
-            Self::Minion {
-                attack,
-                health,
-                minion_types,
-            } => {
-                let types = minion_types.iter().join("/");
-                write!(
-                    f,
-                    "{attack}/{health} {}{colon}",
-                    if types.is_empty() { "minion" } else { &types }
-                )
+impl Localize for CardType {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        // Wizardry. Implement an InnerType that implements Display with all its
+        // ergonomics, and return it!!
+        struct Inner<'a>(&'a CardType, Locale);
+
+        impl Display for Inner<'_> {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                // f.alternate() is used for text boxes on images. Regular mode for console output.
+                let colon = if f.alternate() { ":" } else { "" };
+
+                let get_type = |i: u8| {
+                    // all this just to say "Minion"
+                    METADATA
+                        .types
+                        .iter()
+                        .find(|det| det.id == i)
+                        .unwrap()
+                        .name
+                        .in_locale(self.1)
+                };
+
+                match self.0 {
+                    CardType::Hero { armor } => {
+                        let hero = get_type(3); // 3 for Hero
+                        write!(f, "{hero} [{armor}]{colon}")
+                    }
+                    CardType::Minion {
+                        attack,
+                        health,
+                        minion_types,
+                    } => {
+                        let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
+                        let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
+                        write!(f, "{attack}/{health} {blurp}{colon}")
+                    }
+                    CardType::Spell { school } => {
+                        let spell = get_type(5); // 5 for Spell
+                        match school {
+                            Some(s) => write!(f, "{} {spell}{colon}", s.in_locale(self.1)),
+                            None => write!(f, "{spell}{colon}"),
+                        }
+                    }
+                    CardType::Weapon { attack, durability } => {
+                        let weapon = get_type(7); // 7 for Weapon
+                        write!(f, "{attack}/{durability} {weapon}{colon}")
+                    }
+                    CardType::Location { durability } => {
+                        let location = get_type(39); // 39 for Location
+                        write!(f, "{location} /{durability}{colon}")
+                    }
+                    CardType::HeroPower => {
+                        // 10 for Hero Power. these numbers should be in the type itself tbh
+                        let heropower = get_type(10);
+                        write!(f, "{heropower}{colon}")
+                    }
+                    CardType::Unknown => write!(f, "UNKNOWN{colon}"),
+                }
             }
-            Self::Spell { school } => match school {
-                Some(s) => write!(f, "{s} spell{colon}"),
-                None if f.alternate() => write!(f, "Spell:"),
-                None => write!(f, "spell"),
-            },
-            Self::Weapon { attack, durability } => write!(f, "{attack}/{durability} weapon{colon}"),
-            Self::Location { durability } => write!(f, "{durability} durability location{colon}"),
-            Self::HeroPower => write!(f, "Hero Power{colon}"),
-            Self::Unknown => write!(f, "UNKNOWN{colon}"),
         }
+
+        Inner(self, locale)
     }
 }
 

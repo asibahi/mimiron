@@ -81,10 +81,11 @@ pub enum ImageOptions {
         columns: u8,
 
         /// whether card text is included. Best with 3 columns.
+        /// Currently broken for non-Latin alphabet locales.
         with_text: bool,
     },
 
-    /// Similar to Regular but is either 2 or 3 columns based on "size"
+    /// Similar to Regular but is either 2 or 3 columns based on "size".
     Adaptable,
 }
 
@@ -386,20 +387,6 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
     );
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
-    // rarity square
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(SLUG_WIDTH as i32 - CROP_HEIGHT as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
-        Rgba([r_color.0, r_color.1, r_color.2, 255]),
-    );
-
-    // mana square
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
-        Rgba([60, 109, 173, 255]),
-    );
-
     // font and size
     let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
     let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
@@ -412,9 +399,17 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         CROP_HEIGHT as i32 + 10,
         15,
         scale,
+        Scale{ x: 40.0, y: 50.0 },
         &font,
         &fallback_fonts,
         name, //.to_uppercase(),
+    );
+
+    // mana square
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(0, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rgba([60, 109, 173, 255]),
     );
 
     // card cost
@@ -426,9 +421,17 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         (CROP_HEIGHT as i32 - tw) / 2,
         15,
         scale,
+        scale, // pointless field here.
         &font,
-        &fallback_fonts,
+        &fallback_fonts, // pointless field here.
         &cost,
+    );
+
+    // rarity square
+    drawing::draw_filled_rect_mut(
+        &mut img,
+        Rect::at(SLUG_WIDTH as i32 - CROP_HEIGHT as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rgba([r_color.0, r_color.1, r_color.2, 255]),
     );
 
     // card count
@@ -444,8 +447,9 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         SLUG_WIDTH as i32 - (CROP_HEIGHT as i32 + tw) / 2,
         15,
         scale,
+        scale, // pointless field here
         &font,
-        &fallback_fonts,
+        &fallback_fonts, // pointes field here.
         &count,
     );
 
@@ -505,6 +509,7 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
         15,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
+        Scale::uniform(60.0),
         &font,
         &fallback_fonts,
         heading, //.to_uppercase(),
@@ -546,6 +551,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         MARGIN as i32 + CROP_HEIGHT as i32 + 10,
         MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
         scale,
+        Scale::uniform(60.0),
         &font,
         &fallback_fonts,
         &title,
@@ -667,12 +673,9 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             TextStyle::Italic => &fallback_lights,
         };
 
-        // a hacky solution that needs refinement. more aggressive inlining?
-        let box_advance = std::iter::once(font)
-            .chain(fallback_fonts)
-            .map(|f| drawing::text_size(scale, f, &bx.text()).0)
-            .max()
-            .unwrap_or_default();
+        // Breaks text wrapping completely for non-Latin scripts.
+        // will only bother fixing if I see it used.
+        let box_advance = drawing::text_size(scale, font, &bx.text()).0;
 
         if SLUG_WIDTH as i32 - 20 <= cursor.0 + box_advance {
             cursor = (15, cursor.1 + line_height);
@@ -684,6 +687,7 @@ fn build_text_box(text: &str, color: (u8, u8, u8)) -> DynamicImage {
             cursor.0,
             cursor.1,
             scale,
+            scale, // switch later from Roboto to Noto for Latin
             font,
             fallback_fonts,
             &bx.text(),
@@ -707,6 +711,7 @@ fn draw_text<'a>(
     x: i32,
     y: i32,
     scale: Scale,
+    fallback_scale: Scale, // Noto fonts smaller than Yanone.
     font: &'a Font<'a>,
     fallback_fonts: &'a [Font<'a>],
     text: &'a str,
@@ -726,7 +731,7 @@ fn draw_text<'a>(
             if g.id().0 == 0 {
                 // glyph not in the font files
                 for fallback_font in fallback_fonts {
-                    let inner_g = fallback_font.glyph(c).scaled(scale);
+                    let inner_g = fallback_font.glyph(c).scaled(fallback_scale);
                     if inner_g.id().0 > 0 {
                         g = inner_g;
                         break 'fallback;

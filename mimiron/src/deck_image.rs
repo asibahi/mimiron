@@ -402,7 +402,7 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         Scale::uniform(50.0),
         &font,
         &fallback_fonts,
-        name, ,
+        name,
     );
 
     // mana square

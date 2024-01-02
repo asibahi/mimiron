@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use crate::{Context, Data, Error};
 use itertools::Itertools;
-use mimiron::card_details::{Class, Locale, Rarity};
+use mimiron::{
+    card_details::{Class, Rarity},
+    localization::Locale,
+};
 use once_cell::unsync::Lazy;
 use poise::serenity_prelude as serenity;
 

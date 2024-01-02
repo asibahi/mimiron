@@ -1,5 +1,8 @@
-use crate::{get_access_token, AGENT};
-use anyhow::anyhow;
+use crate::{
+    get_access_token,
+    localization::{Locale, Localize},
+    AGENT,
+};
 use colored::Colorize;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -21,99 +24,9 @@ pub(crate) struct Metadata {
     pub spell_schools: Vec<Details>,
 }
 
-#[allow(non_camel_case_types, dead_code)]
-#[derive(Clone, Copy, Default)]
-pub enum Locale {
-    deDE,
-    #[default]
-    enUS,
-    esES,
-    esMX,
-    frFR,
-    itIT,
-    jaJP,
-    koKR,
-    plPL,
-    ptBR,
-    ruRU,
-    thTH,
-    zhCN,
-    zhTW,
-}
-impl Display for Locale {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Self::deDE => "de_DE",
-            Self::enUS => "en_US",
-            Self::esES => "es_ES",
-            Self::esMX => "es_MX",
-            Self::frFR => "fr_FR",
-            Self::itIT => "it_IT",
-            Self::jaJP => "ja_JP",
-            Self::koKR => "ko_KR",
-            Self::plPL => "pl_PL",
-            Self::ptBR => "pt_BR",
-            Self::ruRU => "ru_RU",
-            Self::thTH => "th_TH",
-            Self::zhCN => "zh_CN",
-            Self::zhTW => "zh_TW",
-        };
-        write!(f, "{s}")
-    }
-}
-impl FromStr for Locale {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.to_lowercase();
-
-        if s.starts_with("de") {
-            Ok(Self::deDE)
-        } else if s.starts_with("en") {
-            Ok(Self::enUS)
-        } else if s == "esmx"
-            || s == "esla"
-            || s == "es_mx"
-            || s == "es_la"
-            || s.starts_with("mx")
-            || s.starts_with("la")
-        {
-            Ok(Self::esMX)
-        } else if s.starts_with("es") {
-            Ok(Self::esES)
-        } else if s.starts_with("fr") {
-            Ok(Self::frFR)
-        } else if s.starts_with("it") {
-            Ok(Self::itIT)
-        } else if s.starts_with("ja") || s.starts_with("jp") {
-            Ok(Self::jaJP)
-        } else if s.starts_with("ko") || s.starts_with("kr") {
-            Ok(Self::koKR)
-        } else if s.starts_with("pl") {
-            Ok(Self::plPL)
-        } else if s.starts_with("pt") || s.starts_with("br") {
-            Ok(Self::ptBR)
-        } else if s.starts_with("ru") {
-            Ok(Self::ruRU)
-        } else if s.starts_with("th") {
-            Ok(Self::thTH)
-        } else if s == "zhcn" || s == "zh_cn" {
-            Ok(Self::zhCN)
-        } else if s.starts_with("zh") {
-            Ok(Self::zhTW)
-        } else {
-            Err(anyhow!("Could not parse locale."))
-        }
-    }
-}
-
-pub trait Localize {
-    fn in_locale(&self, locale: Locale) -> impl Display;
-}
-
 #[allow(non_snake_case)]
 #[derive(Deserialize, Clone)]
-pub(crate) struct LocalizedName {
+struct LocalizedName {
     #[serde(rename = "de_DE")]
     deDE: String,
     #[serde(rename = "en_US")]
@@ -158,7 +71,7 @@ impl Localize for LocalizedName {
             Locale::ptBR => self.ptBR.clone(),
             Locale::ruRU => self.ruRU.clone(),
             Locale::thTH => self.thTH.clone(),
-            Locale::zhCN => self.zhCN.clone().unwrap_or(self.zhTW.clone()),
+            Locale::zhCN => self.zhCN.clone().unwrap_or_else(|| self.zhTW.clone()),
             Locale::zhTW => self.zhTW.clone(),
         }
     }
@@ -168,7 +81,7 @@ impl Localize for LocalizedName {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Details {
     pub id: u8,
-    pub name: LocalizedName,
+    name: LocalizedName,
 }
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
@@ -189,6 +102,9 @@ impl Details {
             || ln.zhTW.eq(&st)
             || ln.zhCN.is_some_and(|s| s.eq(&st))
     }
+    pub fn name(&self, locale: Locale) -> String {
+        self.name.in_locale(locale)
+    }
 }
 
 pub(crate) static METADATA: Lazy<Metadata> = Lazy::new(|| {
@@ -207,6 +123,11 @@ pub(crate) struct Set {
     name: LocalizedName,
     alias_set_ids: Option<Vec<usize>>,
 }
+impl Localize for Set {
+    fn in_locale(&self, locale: Locale) -> String {
+        self.name.in_locale(locale)
+    }
+}
 
 pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
     let set = METADATA.sets.iter().find(|s| {
@@ -216,7 +137,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
                 .is_some_and(|aliases| aliases.contains(&id))
     });
 
-    set.map_or_else(|| format!("Set {id}"), |s| s.name.in_locale(locale).clone())
+    set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale).clone())
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
@@ -243,7 +164,7 @@ impl Localize for Class {
             .classes
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map_or("Noncollectible".into(), |det| det.name.in_locale(locale))
+            .map_or("Noncollectible".into(), |det| det.name(locale))
     }
 }
 impl From<u8> for Class {
@@ -311,7 +232,7 @@ impl Localize for Rarity {
             .rarities
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map(|det| det.name.in_locale(locale))
+            .map(|det| det.name(locale))
             .unwrap_or_default();
 
         match self {
@@ -366,7 +287,7 @@ impl Localize for SpellSchool {
             .spell_schools
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map_or("UNKNOWN".into(), |det| det.name.in_locale(locale))
+            .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
 impl From<u8> for SpellSchool {
@@ -404,7 +325,7 @@ impl Localize for MinionType {
             .minion_types
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map_or("UNKNOWN".into(), |det| det.name.in_locale(locale))
+            .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
 impl From<u8> for MinionType {
@@ -433,7 +354,7 @@ impl FromStr for MinionType {
             .minion_types
             .iter()
             .find(|det| det.contains(s))
-            .map(|det| MinionType::from(det.id))
+            .map(|det| Self::from(det.id))
             .ok_or_else(|| anyhow::anyhow!("Not a valid minion type (yet?)"))
     }
 }
@@ -495,8 +416,7 @@ impl Localize for CardType {
                         .iter()
                         .find(|det| det.id == i)
                         .unwrap()
-                        .name
-                        .in_locale(self.1)
+                        .name(self.1)
                 };
 
                 match self.0 {

@@ -2,8 +2,8 @@ use crate::{helpers::get_server_locale, Context, Error};
 use itertools::Itertools;
 use mimiron::{
     card,
-    card_details::{Locale, Localize},
     deck::{self, Deck, LookupOptions},
+    localization::{Locale, Localize},
 };
 use poise::serenity_prelude as serenity;
 use std::{collections::HashMap, io::Cursor};

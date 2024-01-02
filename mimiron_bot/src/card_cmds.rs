@@ -4,7 +4,7 @@ use crate::{
 };
 use mimiron::{
     card,
-    card_details::{Locale, Localize},
+    localization::{Locale, Localize},
 };
 use poise::serenity_prelude as serenity;
 

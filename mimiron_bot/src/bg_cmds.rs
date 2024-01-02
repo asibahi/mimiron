@@ -5,7 +5,7 @@ use crate::{
 use itertools::Itertools;
 use mimiron::{
     bg,
-    card_details::{Locale, Localize},
+    localization::{Locale, Localize},
 };
 use poise::serenity_prelude as serenity;
 
@@ -136,9 +136,9 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
 
                     let content = format!(
                         "T-{tier} {attack}/{health} {}: {}",
-                        // forget about the word "minion" for now. 
+                        // forget about the word "minion" for now.
                         // Need to get markdown'ed card_info out of the library to add it.
-                        minion_types.iter().map(|t| t.in_locale(locale)).join("/"), 
+                        minion_types.iter().map(|t| t.in_locale(locale)).join("/"),
                         markdown(&text)
                     );
 

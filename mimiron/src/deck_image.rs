@@ -7,8 +7,9 @@
 
 use crate::{
     card::Card,
-    card_details::{Class, Locale, Localize, Rarity},
+    card_details::{Class, Rarity},
     deck::Deck,
+    localization::{Locale, Localize},
     AGENT,
 };
 use anyhow::{anyhow, Result};
@@ -85,7 +86,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
         let length = (main_deck_length + sideboards_length) as u32;
 
         // slightly more sophisticated hack for Reno Renathal decks.
-        let col_count = col_count.unwrap_or((length / 15 + 1).max(2));
+        let col_count = col_count.unwrap_or_else(|| (length / 15 + 1).max(2));
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
         // main canvas

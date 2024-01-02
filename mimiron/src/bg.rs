@@ -1,7 +1,8 @@
 use crate::{
-    card_details::{Locale, Localize, MinionType},
+    card_details::MinionType,
     get_access_token,
     helpers::prettify,
+    localization::{Locale, Localize},
     AGENT,
 };
 use anyhow::{anyhow, Result};
@@ -115,8 +116,7 @@ impl Localize for BGCardType {
                         .iter()
                         .find(|det| det.id == i)
                         .unwrap()
-                        .name
-                        .in_locale(self.1)
+                        .name(self.1)
                 };
 
                 let (battlegrounds, quest) = match self.1 {

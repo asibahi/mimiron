@@ -1,7 +1,9 @@
 use crate::{
     card::{self, Card},
-    card_details::{Class, Locale, Localize},
-    get_access_token, AGENT,
+    card_details::Class,
+    get_access_token,
+    localization::{Locale, Localize},
+    AGENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;

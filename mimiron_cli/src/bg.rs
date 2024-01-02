@@ -2,7 +2,8 @@ use anyhow::Result;
 use clap::{ArgGroup, Args};
 use mimiron::{
     bg,
-    card_details::{Locale, Localize, MinionType},
+    card_details::MinionType,
+    localization::{Locale, Localize},
 };
 
 #[derive(Args)]

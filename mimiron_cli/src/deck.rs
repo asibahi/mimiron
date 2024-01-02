@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::{Args, ValueEnum};
 use mimiron::{
-    card_details::{Locale, Localize},
     deck::{self, LookupOptions},
+    localization::{Locale, Localize},
 };
 use std::path::PathBuf;
 

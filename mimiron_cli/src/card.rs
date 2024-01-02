@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Args;
 use mimiron::{
     card,
-    card_details::{Locale, Localize},
+    localization::{Locale, Localize},
 };
 
 #[allow(clippy::struct_excessive_bools)]

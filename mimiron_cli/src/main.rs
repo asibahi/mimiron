@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use mimiron::card_details::Locale;
+use mimiron::localization::Locale;
 
 mod bg;
 mod card;

@@ -1,9 +1,8 @@
 use crate::{
-    card_details::{
-        get_set_by_id, CardType, Class, Locale, Localize, MinionType, Rarity, RuneCost, SpellSchool,
-    },
+    card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     helpers::prettify,
+    localization::{Locale, Localize},
     AGENT,
 };
 use anyhow::{anyhow, Result};

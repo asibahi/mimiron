@@ -399,10 +399,10 @@ fn get_card_slug(card: &Card, locale: Locale, count: usize, with_text: bool) -> 
         CROP_HEIGHT as i32 + 10,
         15,
         scale,
-        Scale{ x: 40.0, y: 50.0 },
+        Scale::uniform(50.0),
         &font,
         &fallback_fonts,
-        name, //.to_uppercase(),
+        name, ,
     );
 
     // mana square

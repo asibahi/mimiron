@@ -18,6 +18,7 @@ use imageproc::{
     pixelops::weighted_sum,
     rect::Rect,
 };
+use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
@@ -32,15 +33,19 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const CARD_NAME_FONT: &[u8] =
-    include_bytes!("../data/YanoneKaffeesatz/YanoneKaffeesatz-Medium.ttf");
+// fonts unified for all usages now that the Text Box is removed.
+static CARD_NAME_FONT: Lazy<Font<'_>> = Lazy::new(|| {
+    Font::try_from_bytes(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
+});
 
-const FALLBACK_PLAIN_FONTS: [&[u8]; 5] = [
-    include_bytes!("../data/Noto/NotoSansJP-Regular.ttf"),
-    include_bytes!("../data/Noto/NotoSansKR-Regular.ttf"),
-    include_bytes!("../data/Noto/NotoSansSC-Regular.ttf"),
-    include_bytes!("../data/Noto/NotoSansTC-Regular.ttf"),
-    include_bytes!("../data/Noto/NotoSansThaiLooped-Regular.ttf"),
+static FALLBACK_FONTS: [Lazy<Font<'_>>; 5] = [
+    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansJP-Regular.ttf")).unwrap()),
+    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansKR-Regular.ttf")).unwrap()),
+    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansSC-Regular.ttf")).unwrap()),
+    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansTC-Regular.ttf")).unwrap()),
+    Lazy::new(|| {
+        Font::try_from_bytes(include_bytes!("../fonts/NotoSansThaiLooped-Regular.ttf")).unwrap()
+    }),
 ];
 
 #[derive(Clone, Copy)]
@@ -61,12 +66,12 @@ pub enum ImageOptions {
 pub fn get(deck: &Deck, locale: Locale, shape: ImageOptions) -> Result<DynamicImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck, locale),
-        ImageOptions::Regular { columns } => img_columns_format(deck, locale, columns as u32),
-        ImageOptions::Adaptable => img_adaptable_format(deck, locale),
+        ImageOptions::Adaptable => img_columns_format(deck, locale, None),
+        ImageOptions::Regular { columns } => img_columns_format(deck, locale, Some(columns as u32)),
     }
 }
 
-fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
+fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Result<DynamicImage> {
     let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
 
     let (mut img, cards_in_col) = {
@@ -80,7 +85,7 @@ fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
         let length = (main_deck_length + sideboards_length) as u32;
 
         // slightly more sophisticated hack for Reno Renathal decks.
-        let col_count = (length / 15 + 1).max(2);
+        let col_count = col_count.unwrap_or((length / 15 + 1).max(2));
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
         // main canvas
@@ -115,7 +120,7 @@ fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
                 sb_pos_tracker % cards_in_col + 1,
             );
             img.copy_from(
-                &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
+                &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
             )?;
@@ -128,84 +133,6 @@ fn img_adaptable_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
                 let i = sb_pos_tracker;
                 let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
-
-                sb_pos_tracker += 1;
-            }
-        }
-    }
-
-    Ok(DynamicImage::ImageRgba8(img))
-}
-
-fn img_columns_format(deck: &Deck, locale: Locale, col_count: u32) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
-
-    let actual_row_height = ROW_HEIGHT;
-
-    let (mut img, cards_in_col) = {
-        let main_deck_length = ordered_cards.len();
-
-        let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
-            sbs.iter()
-                .fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc)
-        });
-
-        let length = (main_deck_length + sideboards_length) as u32;
-
-        let cards_in_col = length / col_count + (length % col_count).min(1);
-
-        // main canvas
-        let img = draw_main_canvas(
-            COLUMN_WIDTH * col_count + MARGIN,
-            ROW_HEIGHT + cards_in_col * actual_row_height + MARGIN,
-            (255, 255, 255),
-        );
-
-        (img, cards_in_col)
-    };
-
-    draw_deck_title(&mut img, locale, deck)?;
-
-    // Main deck
-    for (i, (card, _)) in ordered_cards.iter().enumerate() {
-        let slug = &slug_map[card];
-
-        let i = i as u32;
-        let (col, row) = (i / cards_in_col, i % cards_in_col);
-
-        img.copy_from(
-            slug,
-            col * COLUMN_WIDTH + MARGIN,
-            ROW_HEIGHT + row * actual_row_height + MARGIN,
-        )?;
-    }
-
-    // sideboard cards
-    if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_pos_tracker = ordered_cards.len() as u32;
-
-        for sb in sideboards {
-            let (col, row) = (sb_pos_tracker / cards_in_col, sb_pos_tracker % cards_in_col);
-            let title_offset = 0;
-
-            img.copy_from(
-                &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
-                col * COLUMN_WIDTH + MARGIN,
-                ROW_HEIGHT + title_offset + row * actual_row_height + MARGIN,
-            )?;
-            sb_pos_tracker += 1;
-
-            for slug in order_cards(&sb.cards_in_sideboard)
-                .keys()
-                .map(|c| &slug_map[c])
-            {
-                let i = sb_pos_tracker;
-                let (col, row) = (i / cards_in_col, i % cards_in_col);
-                img.copy_from(
-                    slug,
-                    col * COLUMN_WIDTH + MARGIN,
-                    ROW_HEIGHT + row * actual_row_height + MARGIN,
-                )?;
 
                 sb_pos_tracker += 1;
             }
@@ -283,7 +210,7 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
             let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
 
             img.copy_from(
-                &get_heading_slug(&format!("Sideboard: {}", sb.sideboard_card.name)),
+                &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 column_start,
                 ROW_HEIGHT + MARGIN,
             )?;
@@ -332,9 +259,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     );
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
-    // font and size
-    let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
-    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+    // size
     let scale = Scale::uniform(40.0);
 
     // card name
@@ -344,9 +269,6 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         CROP_HEIGHT as i32 + 10,
         15,
         scale,
-        Scale::uniform(50.0),
-        &font,
-        &fallback_fonts,
         name,
     );
 
@@ -359,16 +281,13 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
 
     // card cost
     let cost = card.cost.to_string();
-    let (tw, _) = drawing::text_size(scale, &font, &cost);
+    let (tw, _) = drawing::text_size(scale, &CARD_NAME_FONT, &cost);
     draw_text(
         &mut img,
         (255, 255, 255),
         (CROP_HEIGHT as i32 - tw) / 2,
         15,
         scale,
-        scale, // pointless field here.
-        &font,
-        &fallback_fonts, // pointless field here.
         &cost,
     );
 
@@ -385,16 +304,13 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         (1, Rarity::Legendary) => String::new(),
         _ => count.to_string(),
     };
-    let (tw, _) = drawing::text_size(scale, &font, &count);
+    let (tw, _) = drawing::text_size(scale, &CARD_NAME_FONT, &count);
     draw_text(
         &mut img,
         (255, 255, 255),
         SLUG_WIDTH as i32 - (CROP_HEIGHT as i32 + tw) / 2,
         15,
         scale,
-        scale, // pointless field here
-        &font,
-        &fallback_fonts, // pointes field here.
         &count,
     );
 
@@ -408,9 +324,7 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs(
-    deck: &Deck,
-) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
+fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards
@@ -439,12 +353,10 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
-    // font and size
-    let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
-    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+    // size
     let scale = Scale::uniform(50.0);
 
-    let (_, th) = drawing::text_size(scale, &font, "E");
+    let (_, th) = drawing::text_size(scale, &CARD_NAME_FONT, "E");
 
     draw_text(
         &mut img,
@@ -452,9 +364,6 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
         15,
         (CROP_HEIGHT as i32 - th) / 2,
         scale,
-        Scale::uniform(60.0),
-        &font,
-        &fallback_fonts,
         heading, //.to_uppercase(),
     );
 
@@ -480,12 +389,10 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         )
     });
 
-    // font and size
-    let font = Font::try_from_bytes(CARD_NAME_FONT).unwrap();
-    let fallback_fonts = FALLBACK_PLAIN_FONTS.map(|s| Font::try_from_bytes(s).unwrap());
+    // size
     let scale = Scale::uniform(50.0);
 
-    let (_, th) = drawing::text_size(scale, &font, "E");
+    let (_, th) = drawing::text_size(scale, &CARD_NAME_FONT, "E");
 
     // title
     draw_text(
@@ -494,9 +401,6 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         MARGIN as i32 + CROP_HEIGHT as i32 + 10,
         MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
         scale,
-        Scale::uniform(60.0),
-        &font,
-        &fallback_fonts,
         &title,
     );
 
@@ -559,15 +463,17 @@ fn draw_text<'a>(
     x: i32,
     y: i32,
     scale: Scale,
-    fallback_scale: Scale, // Noto fonts smaller than Yanone.
-    font: &'a Font<'a>,
-    fallback_fonts: &'a [Font<'a>],
     text: &'a str,
 ) {
     let image_width = canvas.width() as i32;
     let image_height = canvas.height() as i32;
 
-    // let mut last_glyph = None; // kerning tool
+    // fonts unified for all usages now that the Text Box is removed.
+    let font = &CARD_NAME_FONT;
+    let fallback_fonts = &FALLBACK_FONTS;
+
+    // Noto fonts smaller than YanoneKaffeesatz.
+    let fallback_scale = Scale::uniform(scale.x * 1.1);
 
     let mut caret = 0.0;
     let v_metric = font.v_metrics(scale).ascent;
@@ -589,15 +495,9 @@ fn draw_text<'a>(
             }
         }
 
-        // if let Some(last) = last_glyph {
-        // caret += font.pair_kerning(scale, last, g.id()); // kerning tool
-        // }
-
         let g = g.positioned(rusttype::point(caret, v_metric));
 
         caret += g.unpositioned().h_metrics().advance_width;
-
-        // last_glyph = Some(g.id()); // kerning tol
 
         if let Some(bb) = g.pixel_bounding_box() {
             g.draw(|gx, gy, gv| {

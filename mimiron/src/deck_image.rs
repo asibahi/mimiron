@@ -35,15 +35,27 @@ const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
 // fonts unified for all usages now that the Text Box is removed.
-static CARD_NAME_FONT: Lazy<Font<'_>> = Lazy::new(|| {
-    Font::try_from_bytes(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
-});
-
-static FALLBACK_FONTS: [Lazy<Font<'_>>; 2] = [
-    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansCJK-Regular.ttc")).unwrap()),
-    Lazy::new(|| {
-        Font::try_from_bytes(include_bytes!("../fonts/NotoSansThaiLooped-Regular.ttf")).unwrap()
-    }),
+static FONTS: [(Lazy<Font<'_>>, f32); 3] = [
+    // Base font
+    (
+        Lazy::new(|| {
+            Font::try_from_bytes(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
+        }),
+        1.0, 
+    ),
+    // Fallbacks
+    (
+        Lazy::new(|| {
+            Font::try_from_bytes(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()
+        }),
+        1.2, // scaling for Noto CJK
+    ),
+    (
+        Lazy::new(|| {
+            Font::try_from_bytes(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()
+        }),
+        1.3, // scaling for Noto Thai
+    ),
 ];
 
 #[derive(Clone, Copy)]
@@ -279,7 +291,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
 
     // card cost
     let cost = card.cost.to_string();
-    let (tw, _) = drawing::text_size(scale, &CARD_NAME_FONT, &cost);
+    let (tw, _) = drawing::text_size(scale, &FONTS[0].0, &cost);
     draw_text(
         &mut img,
         (255, 255, 255),
@@ -302,7 +314,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         (1, Rarity::Legendary) => String::new(),
         _ => count.to_string(),
     };
-    let (tw, _) = drawing::text_size(scale, &CARD_NAME_FONT, &count);
+    let (tw, _) = drawing::text_size(scale, &FONTS[0].0, &count);
     draw_text(
         &mut img,
         (255, 255, 255),
@@ -354,7 +366,7 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
     // size
     let scale = Scale::uniform(50.0);
 
-    let (_, th) = drawing::text_size(scale, &CARD_NAME_FONT, "E");
+    let (_, th) = drawing::text_size(scale, &FONTS[0].0, "E");
 
     draw_text(
         &mut img,
@@ -390,7 +402,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
     // size
     let scale = Scale::uniform(50.0);
 
-    let (_, th) = drawing::text_size(scale, &CARD_NAME_FONT, "E");
+    let (_, th) = drawing::text_size(scale, &FONTS[0].0, "E");
 
     // title
     draw_text(
@@ -467,29 +479,19 @@ fn draw_text<'a>(
     let image_height = canvas.height() as i32;
 
     // fonts unified for all usages now that the Text Box is removed.
-    let font = &CARD_NAME_FONT;
-    let fallback_fonts = &FALLBACK_FONTS;
-
-    // Noto fonts smaller than YanoneKaffeesatz.
-    let fallback_scale = Scale::uniform(scale.x * 1.1);
+    let font = &FONTS[0].0;
 
     let mut caret = 0.0;
     let v_metric = font.v_metrics(scale).ascent;
 
     for c in text.chars() {
-        let mut g = font.glyph(c).scaled(scale);
-
-        if g.id().0 == 0 {
-            // glyph not in the font files
-            let Some(inner_g) = fallback_fonts
-                .iter()
-                .map(|f| f.glyph(c).scaled(fallback_scale))
-                .find(|g| g.id().0 > 0)
-            else {
-                continue;
-            };
-            g = inner_g;
-        }
+        let Some(g) = (&FONTS)
+            .iter()
+            .map(|(f_f, f_s)| f_f.glyph(c).scaled(Scale::uniform(scale.x * f_s)))
+            .find(|g| g.id().0 > 0)
+        else {
+            continue;
+        };
 
         let g = g.positioned(rusttype::point(caret, v_metric));
 

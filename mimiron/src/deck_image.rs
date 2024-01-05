@@ -39,11 +39,8 @@ static CARD_NAME_FONT: Lazy<Font<'_>> = Lazy::new(|| {
     Font::try_from_bytes(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
 });
 
-static FALLBACK_FONTS: [Lazy<Font<'_>>; 5] = [
-    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansJP-Regular.ttf")).unwrap()),
-    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansKR-Regular.ttf")).unwrap()),
-    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansSC-Regular.ttf")).unwrap()),
-    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansTC-Regular.ttf")).unwrap()),
+static FALLBACK_FONTS: [Lazy<Font<'_>>; 2] = [
+    Lazy::new(|| Font::try_from_bytes(include_bytes!("../fonts/NotoSansCJK-Regular.ttc")).unwrap()),
     Lazy::new(|| {
         Font::try_from_bytes(include_bytes!("../fonts/NotoSansThaiLooped-Regular.ttf")).unwrap()
     }),
@@ -479,21 +476,19 @@ fn draw_text<'a>(
     let mut caret = 0.0;
     let v_metric = font.v_metrics(scale).ascent;
 
-    'layout: for c in text.chars() {
+    for c in text.chars() {
         let mut g = font.glyph(c).scaled(scale);
 
-        'fallback: {
-            if g.id().0 == 0 {
-                // glyph not in the font files
-                for fallback_font in fallback_fonts {
-                    let inner_g = fallback_font.glyph(c).scaled(fallback_scale);
-                    if inner_g.id().0 > 0 {
-                        g = inner_g;
-                        break 'fallback;
-                    }
-                }
-                continue 'layout;
-            }
+        if g.id().0 == 0 {
+            // glyph not in the font files
+            let Some(inner_g) = fallback_fonts
+                .iter()
+                .map(|f| f.glyph(c).scaled(fallback_scale))
+                .find(|g| g.id().0 > 0)
+            else {
+                continue;
+            };
+            g = inner_g;
         }
 
         let g = g.positioned(rusttype::point(caret, v_metric));

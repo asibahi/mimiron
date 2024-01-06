@@ -25,7 +25,7 @@ pub struct DeckArgs {
     )]
     band: Option<Vec<String>>,
 
-    /// Override format/game mode provided by code (For Twist, Duels, Tavern Brawl, etc.)
+    /// Override format/game mode provided by code (For Twist, Tavern Brawl, etc.)
     #[arg(short, long)]
     mode: Option<String>,
 

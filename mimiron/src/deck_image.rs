@@ -41,7 +41,7 @@ static FONTS: [(Lazy<Font<'_>>, f32); 3] = [
         Lazy::new(|| {
             Font::try_from_bytes(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
         }),
-        1.0, 
+        1.0,
     ),
     // Fallbacks
     (
@@ -485,7 +485,7 @@ fn draw_text<'a>(
     let v_metric = font.v_metrics(scale).ascent;
 
     for c in text.chars() {
-        let Some(g) = (&FONTS)
+        let Some(g) = FONTS
             .iter()
             .map(|(f_f, f_s)| f_f.glyph(c).scaled(Scale::uniform(scale.x * f_s)))
             .find(|g| g.id().0 > 0)

@@ -70,14 +70,6 @@ mimiron deck --addband "Holy Maki Roll" "Melted Maker" "Anachronos" AAECAZ8FBsvE
 
 ![Deck image](README/addbanddecklookup.png)
 
-This also handles Duels mode dual-class deck *mostly* correctly. (Doesn't edit the class name dynamically.)
-
-```sh
-mimiron deck AAEBAa6aBQ/6Du/3ApXNA5PQA6bvA/D2A+CLBMeyBN65BJzHBJbUBJ+kBeKkBc+eBrChBgAAAA==
-```
-
-![Deck image](README/duelsdecklookup.png)
-
 Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`.
 
 Note: Most images are acquired from Blizzard's servers. Ommissions are filled from https://hearthstonejson.com 
@@ -138,11 +130,7 @@ mimiron bg --tier 1 --type beast
 
 ## Roadmap
 
-Nothing in particular, however some ideas are:
-
-- get deck code from list of cards. This could work like the `--addband` flag, but this makes a lot of requests for one command, more than I'd like.
-- Duels support. However, Duels info seems to be incomplete in the API.
-- If you would like Mercenaries support, let me know.
+Nothing in particular.
 
 ## License
 

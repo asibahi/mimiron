@@ -50,15 +50,7 @@ Look up a deck: (also availble when right-clicking any message with a Deck Code)
 
 ![Deck look up in Discord](README/decklookup.png)
 
-You can also paste directly from the Hearthstone client, and it picks up on the deck title, _and_ it (mostly) works for Duels.
-
-```sh
-/deck ### Duels Deck # Class: Shaman # Format: Wild # # 1x (1) Cold Storage # 1x (1) Corrupt the Waters # 1x (1) Fire Fly # 1x (1) Frost Shock # 1x (1) Glacial Shard # 1x (1) Windchill # 1x (2) Bolner Hammerbeak # 1x (2) Fire Plume Harbinger # 1x (2) Sleetbreaker # 1x (3) Brilliant Macaw # 1x (3) Snowball Fight! # 1x (4) Granite Forgeborn # 1x (5) Living Prairie # 1x (7) Kalimos, Primal Lord # 1x (7) Skarr, the Catastrophe # 1x (8) Elemental Chaos # AAEBAaaPBRDLB5PBAuvCAvPCAuGoA8D2A4b6A9OABKeRBJWSBNySBPyABemjBb6PBsCPBtOeBgAAAA== # # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
-```
-
-![Deck image](README/duelsdecklookup.png)
-
-Note re-Duels: Limitations on duels are mostly because of shortcomings in Blizzard's API. Some treasures are not available in the API at all, and links to the official deckbuilder will not work as expected.
+You can also paste directly from the Hearthstone client, and it picks up on the deck title.
 
 You can also compare two decks:
 

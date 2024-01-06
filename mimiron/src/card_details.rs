@@ -164,7 +164,7 @@ impl Localize for Class {
             .classes
             .iter()
             .find(|det| *self == Self::from(det.id))
-            .map_or("Noncollectible".into(), |det| det.name(locale))
+            .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
 impl From<u8> for Class {

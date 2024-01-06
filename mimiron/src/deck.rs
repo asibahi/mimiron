@@ -33,7 +33,6 @@ pub struct Deck {
     pub class: Class,
     pub cards: Vec<Card>,
     pub sideboard_cards: Option<Vec<Sideboard>>,
-    invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
     #[must_use]
@@ -175,31 +174,6 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
         .into_json::<Deck>()?;
 
     deck.title = title;
-
-    // ugly hack for double class decks. Doesn't work if card id's don't exist in API.
-    // e.g. Works for Duels double class decks.   Doesn't work with Core Brann when Brann is not in Core.
-    // Current impl is only one extra API call _but_ doesn't work on potential future triple class decks.
-    // Doesn't change the `class` field in the Deck.
-    if let Some(ref invalid_ids) = deck.invalid_card_ids {
-        eprint!("Code may contain invalid ID's. Double checking ...\r");
-
-        let card_ids = invalid_ids.iter().join(",");
-
-        let response = AGENT
-            .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", &opts.locale.to_string())
-            .query("access_token", &get_access_token())
-            .query("ids", &card_ids)
-            .call();
-
-        if let Ok(response) = response {
-            if let Ok(mut other_deck) = response.into_json::<Deck>() {
-                deck.cards.append(&mut other_deck.cards);
-            }
-        }
-
-        eprint!("                                                   \r");
-    }
 
     Ok(deck)
 }

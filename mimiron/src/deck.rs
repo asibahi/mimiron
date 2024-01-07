@@ -33,6 +33,7 @@ pub struct Deck {
     pub class: Class,
     pub cards: Vec<Card>,
     pub sideboard_cards: Option<Vec<Sideboard>>,
+    invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
     #[must_use]
@@ -174,6 +175,12 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
         .into_json::<Deck>()?;
 
     deck.title = title;
+
+    if let Some(ref invalid_ids) = deck.invalid_card_ids {
+        for id in invalid_ids {
+            deck.cards.push(card::Card::dummy(*id))
+        }
+    }
 
     Ok(deck)
 }

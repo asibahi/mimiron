@@ -77,6 +77,24 @@ pub struct Card {
     pub crop_image: Option<String>,
     pub flavor_text: String,
 }
+impl Card {
+    pub(crate) fn dummy(id: usize) -> Self {
+        Self {
+            id,
+            card_set: 1635,
+            name: format!("Invalid Card ID {id}"),
+            class: HashSet::from([Class::Neutral]),
+            cost: 99,
+            rune_cost: None,
+            card_type: CardType::Unknown,
+            rarity: Rarity::Noncollectible,
+            text: "".into(),
+            image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
+            crop_image: Some("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into()),
+            flavor_text: "".into(),
+        }
+    }
+}
 
 impl PartialEq for Card {
     fn eq(&self, other: &Self) -> bool {

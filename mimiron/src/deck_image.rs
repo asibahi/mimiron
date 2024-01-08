@@ -431,7 +431,11 @@ fn get_class_icon(class: &Class) -> Result<DynamicImage> {
         .get(
             &(format!(
                 "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-                class.in_locale(Locale::enUS).to_string().to_lowercase()
+                class
+                    .in_en_us()
+                    .to_string()
+                    .to_ascii_lowercase()
+                    .replace(' ', "")
             )),
         )
         .call()?

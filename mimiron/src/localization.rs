@@ -93,7 +93,7 @@ impl FromStr for Locale {
 pub trait Localize {
     fn in_locale(&self, locale: Locale) -> impl Display;
 
-    fn in_en_us (&self) -> impl Display {
+    fn in_en_us(&self) -> impl Display {
         self.in_locale(Locale::enUS)
     }
 }

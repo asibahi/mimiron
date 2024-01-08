@@ -337,7 +337,10 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     if let Some(t) = &opts.minion_type {
         res = res.query(
             "minionType",
-            &t.in_locale(Locale::enUS).to_string().to_lowercase(), // Is it always enUS?
+            &t.in_en_us() // Is it always enUS?
+                .to_string()
+                .to_lowercase()
+                .replace(' ', ""), // just in case
         );
     }
 

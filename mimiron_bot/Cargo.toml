@@ -14,11 +14,11 @@ workspace = true
 mimiron = { path = "../mimiron" }
 anyhow = "1"
 poise = "0.6.1-rc1"
-shuttle-serenity = { version = "0.35.2", default-features = false, features = [
+shuttle-serenity = { version = "0.36", default-features = false, features = [
     "serenity-0-12-rustls_backend",
 ] }
-shuttle-runtime = "0.35.2"
-shuttle-secrets = "0.35.2"
+shuttle-runtime = "0.36"
+shuttle-secrets = "0.36"
 tracing = "0.1.40"
 tokio = "1"
 itertools = "0.12.0"

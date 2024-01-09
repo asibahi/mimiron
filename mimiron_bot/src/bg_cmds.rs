@@ -52,6 +52,7 @@ pub async fn bgtext(
 
     let opts = bg::SearchOptions::empty()
         .search_for(Some(search_term))
+        .with_locale(locale)
         .with_text(true);
     let cards = bg::lookup(&opts)?;
 
@@ -71,6 +72,7 @@ pub async fn bgtier(
 
     let opts = bg::SearchOptions::empty()
         .with_tier(Some(tier))
+        .with_locale(locale)
         .with_type(minion_type.map(|s| s.parse()).transpose()?);
     let cards = bg::lookup(&opts)?;
 

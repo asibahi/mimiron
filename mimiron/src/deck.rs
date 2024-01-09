@@ -178,7 +178,7 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
 
     if let Some(ref invalid_ids) = deck.invalid_card_ids {
         for id in invalid_ids {
-            deck.cards.push(card::Card::dummy(*id))
+            deck.cards.push(card::Card::dummy(*id));
         }
     }
 

@@ -88,10 +88,10 @@ impl Card {
             rune_cost: None,
             card_type: CardType::Unknown,
             rarity: Rarity::Noncollectible,
-            text: "".into(),
+            text: String::new(),
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
             crop_image: Some("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into()),
-            flavor_text: "".into(),
+            flavor_text: String::new(),
         }
     }
 }

@@ -95,7 +95,7 @@ impl Card {
         }
     }
     pub fn card_set(&self, locale: Locale) -> String {
-        get_set_by_id(self.id, locale)
+        get_set_by_id(self.card_set, locale)
     }
 }
 

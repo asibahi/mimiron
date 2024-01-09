@@ -132,11 +132,7 @@ pub async fn deckcomp(
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result<(), Error> {
-    let attachment_name = format!(
-        "{}s_{}_deck.png",
-        ctx.author().name,
-        deck.class.in_locale(locale)
-    );
+    let attachment_name = "mimiron_deck.png";
 
     let attachment = {
         let img = deck::get_image(&deck, locale, deck::ImageOptions::Adaptable)?;
@@ -144,7 +140,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
         let mut image_data = Cursor::new(Vec::<u8>::new());
         img.write_to(&mut image_data, image::ImageOutputFormat::Png)?;
 
-        serenity::CreateAttachment::bytes(image_data.into_inner(), &attachment_name)
+        serenity::CreateAttachment::bytes(image_data.into_inner(), attachment_name)
     };
 
     let embed = serenity::CreateEmbed::new()

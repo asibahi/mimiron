@@ -81,7 +81,7 @@ pub async fn allcards(
 fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
     let class = card
         .class
-        .into_iter()
+        .iter()
         .map(class_to_emoji)
         .collect::<String>();
 
@@ -98,7 +98,7 @@ fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
             ),
             true,
         ),
-        (" ", format!("{} {}", rarity, card.card_set.clone()), true),
+        (" ", format!("{} {}", rarity, card.card_set(locale)), true),
     ];
 
     if !card.flavor_text.is_empty() {

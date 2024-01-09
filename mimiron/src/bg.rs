@@ -104,8 +104,11 @@ impl Localize for BGCardType {
                                 .subsequent_indent("\t"),
                         );
                         write!(f, "\n{text}")
-                    } else {
+                    } else if f.sign_plus() {
+                        // dumbass hack to get unformatted text fur get_associated_cards
                         write!(f, ": {text}")
+                    } else {
+                        write!(f, ".")
                     }
                 }
 
@@ -406,7 +409,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                     break 'heropower;
                 };
                 let text = textwrap::fill(
-                    &res.in_locale(locale).to_string(),
+                    &format!("{:+}", res.in_locale(locale)),
                     textwrap::Options::new(textwrap::termwidth() - 10)
                         .initial_indent("\t")
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
@@ -427,7 +430,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 };
 
                 let text = textwrap::fill(
-                    &res.in_locale(locale).to_string(),
+                    &format!("{:+}", res.in_locale(locale)),
                     textwrap::Options::new(textwrap::termwidth() - 10)
                         .initial_indent("\t")
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
@@ -457,7 +460,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 break 'golden;
             };
 
-            let upgraded = format!("\tGolden: {attack}/{health}").italic().yellow();
+            let upgraded = format!("\tG: {attack}/{health}").italic().yellow();
 
             println!("{upgraded}");
 

@@ -60,7 +60,7 @@ struct CardData {
 #[serde(from = "CardData")]
 pub struct Card {
     pub id: usize,
-    pub card_set: usize,
+    card_set: usize,
 
     pub name: String,
     pub class: HashSet<Class>,
@@ -93,6 +93,9 @@ impl Card {
             crop_image: Some("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into()),
             flavor_text: String::new(),
         }
+    }
+    pub fn card_set(&self, locale: Locale) -> String {
+        get_set_by_id(self.id, locale)
     }
 }
 

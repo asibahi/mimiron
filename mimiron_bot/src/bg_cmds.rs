@@ -79,7 +79,7 @@ pub async fn bgtier(
 
 fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
     let description = match &card.card_type {
-        bg::BGCardType::Hero { armor, .. } => format!("Hero with {armor} armor"),
+        t @ bg::BGCardType::Hero { .. } => format!("{}", t.in_locale(locale)),
         bg::BGCardType::Minion { text, .. }
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }
@@ -89,32 +89,13 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
     };
 
     let mut fields = match &card.card_type {
-        bg::BGCardType::Minion {
-            tier,
-            attack,
-            health,
-            minion_types,
-            ..
-        } => {
-            vec![(
-                " ",
-                format!(
-                    "T-{tier} {attack}/{health} {}",
-                    if minion_types.is_empty() {
-                        "minion".into()
-                    } else {
-                        minion_types.iter().map(|t| t.in_locale(locale)).join("/")
-                    }
-                ),
-                true,
-            )]
+        t @ bg::BGCardType::Minion { .. }
+        | t @ bg::BGCardType::Spell { .. }
+        | t @ bg::BGCardType::Quest { .. }
+        | t @ bg::BGCardType::Reward { .. }
+        | t @ bg::BGCardType::Anomaly { .. } => {
+            vec![(" ", format!("{}", t.in_locale(locale)), true)]
         }
-        bg::BGCardType::Spell { tier, cost, .. } => {
-            vec![(" ", format!("Tier-{tier}, {cost}-Cost Tavern Spell"), true)]
-        }
-        bg::BGCardType::Quest { .. } => vec![(" ", "Battlegrounds Quest".into(), true)],
-        bg::BGCardType::Reward { .. } => vec![(" ", "Battlegrounds Reward".into(), true)],
-        bg::BGCardType::Anomaly { .. } => vec![(" ", "Battlegrounds Anomaly".into(), true)],
         bg::BGCardType::Hero { .. } | bg::BGCardType::HeroPower { .. } => vec![],
     };
 

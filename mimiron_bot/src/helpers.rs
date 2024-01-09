@@ -66,7 +66,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn class_to_emoji(class: Class) -> &'static str {
+pub fn class_to_emoji(class: &Class) -> &'static str {
     // emojis are in Mimiron Bot server
     match class {
         Class::DeathKnight => "<:dk:1182031994822086786>",

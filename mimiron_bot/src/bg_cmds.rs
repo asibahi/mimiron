@@ -32,7 +32,7 @@ pub async fn bg(
 pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let opts = bg::SearchOptions::empty().search_for(Some(search_term));
+    let opts = bg::SearchOptions::empty().search_for(Some(search_term)).with_locale(locale);
     let cards = bg::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await

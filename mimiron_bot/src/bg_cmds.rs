@@ -2,7 +2,6 @@ use crate::{
     helpers::{get_server_locale, markdown, paginated_card_print},
     Context, Error,
 };
-use itertools::Itertools;
 use mimiron::{
     bg,
     localization::{Locale, Localize},
@@ -105,32 +104,19 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
         bg::get_and_print_associated_cards(&card, locale)
             .into_iter()
             .filter_map(|assoc_card| match assoc_card.card_type {
-                bg::BGCardType::Minion {
-                    tier,
-                    attack,
-                    health,
-                    text,
-                    minion_types,
-                    ..
-                } => {
+                ref minion @ bg::BGCardType::Minion { ref text, .. } => {
                     let title = match card.card_type {
                         bg::BGCardType::Minion { .. } => "Triple",
                         bg::BGCardType::Hero { .. } => "Buddy",
                         _ => "UNKNOWN",
                     };
 
-                    let content = format!(
-                        "T-{tier} {attack}/{health} {}: {}",
-                        // forget about the word "minion" for now.
-                        // Need to get markdown'ed card_info out of the library to add it.
-                        minion_types.iter().map(|t| t.in_locale(locale)).join("/"),
-                        markdown(&text)
-                    );
-
+                    let content = format!("{}: {}", minion.in_locale(locale), markdown(&text));
                     Some((title, content, false))
                 }
-                bg::BGCardType::HeroPower { cost, text } => {
-                    Some((" ", format!("({cost}): {}", markdown(&text)), false))
+                ref hp @ bg::BGCardType::HeroPower { ref text, .. } => {
+                    let content = format!("{}: {}", hp.in_locale(locale), markdown(&text));
+                    Some((" ", content, false))
                 }
                 _ => None,
             }),

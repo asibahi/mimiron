@@ -94,6 +94,7 @@ impl Card {
             flavor_text: String::new(),
         }
     }
+    #[must_use]
     pub fn card_set(&self, locale: Locale) -> String {
         get_set_by_id(self.card_set, locale)
     }
@@ -148,7 +149,7 @@ impl Localize for Card {
                 )?;
 
                 if f.alternate() {
-                    let set = get_set_by_id(self.0.card_set, self.1);
+                    let set = self.0.card_set(self.1);
 
                     let text = prettify(&self.0.text);
                     let text = textwrap::fill(

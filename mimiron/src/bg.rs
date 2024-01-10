@@ -103,13 +103,13 @@ impl Localize for BGCardType {
                                 .initial_indent("\t")
                                 .subsequent_indent("\t"),
                         );
-                        write!(f, "\n{text}")
+                        write!(f, "\n{text}")?;
                     } else if f.sign_plus() {
                         // dumbass hack to get unformatted text fur get_associated_cards
-                        write!(f, ": {text}")
-                    } else {
-                        write!(f, ".")
+                        write!(f, ": {text}")?;
                     }
+                    
+                    Ok(())
                 }
 
                 let get_type = |i: u8| {
@@ -177,8 +177,8 @@ impl Localize for BGCardType {
                     }
                     BGCardType::HeroPower { cost, text } => {
                         let heropower = get_type(10); // 10 for Hero Power.
-                        let text = prettify(text);
-                        write!(f, "({cost}) {heropower}: {text}")
+                        write!(f, "({cost}) {heropower}")?;
+                        inner(text, f)
                     }
                 }
             }
@@ -211,6 +211,8 @@ impl Localize for Card {
 
                 if f.alternate() {
                     write!(f, "{card_info:#}")
+                } else if f.sign_plus() {
+                    write!(f, "{card_info:+}")
                 } else {
                     write!(f, "{card_info}")
                 }

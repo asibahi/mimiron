@@ -477,6 +477,7 @@ static HEARTH_SIM_IDS: Lazy<Vec<HearthSimData>> = Lazy::new(|| {
 #[serde(rename_all = "camelCase")]
 struct HearthSimData {
     dbf_id: usize,
+    count_as_copy_of_dbf_id: Option<usize>,
     id: String,
     name: String,
 }
@@ -486,4 +487,12 @@ pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
         .iter()
         .find(|c| c.dbf_id == card.id || c.name == card.name)
         .map(|c| c.id.clone())
+}
+
+#[allow(unused)]
+pub(crate) fn validate_id(invalid_id: &usize) -> Option<usize> {
+    HEARTH_SIM_IDS
+        .iter()
+        .find(|c| c.dbf_id == *invalid_id)
+        .and_then(|c| c.count_as_copy_of_dbf_id)
 }

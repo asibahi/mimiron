@@ -13,7 +13,7 @@ workspace = true
 [dependencies]
 mimiron = { path = "../mimiron" }
 anyhow = "1"
-poise = "0.6.1-rc1"
+poise = "0.6.1"
 shuttle-serenity = { version = "0.36", default-features = false, features = [
     "serenity-0-12-rustls_backend",
 ] }

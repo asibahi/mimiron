@@ -490,9 +490,9 @@ pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
 }
 
 #[allow(unused)]
-pub(crate) fn validate_id(invalid_id: &usize) -> Option<usize> {
+pub(crate) fn validate_id(invalid_id: usize) -> Option<usize> {
     HEARTH_SIM_IDS
         .iter()
-        .find(|c| c.dbf_id == *invalid_id)
+        .find(|c| c.dbf_id == invalid_id)
         .and_then(|c| c.count_as_copy_of_dbf_id)
 }

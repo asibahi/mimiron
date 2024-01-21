@@ -3,13 +3,13 @@ use crate::{
     card_details::Class,
     get_access_token,
     localization::{Locale, Localize},
-    AGENT,
+    CLIENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use counter::Counter;
 use futures::{stream, StreamExt, TryStreamExt};
-use isahc::{AsyncReadResponseExt, RequestExt};
+use isahc::AsyncReadResponseExt;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -172,9 +172,8 @@ pub async fn lookup(opts: &LookupOptions) -> Result<Deck> {
         ],
     )?;
 
-    let mut deck = isahc::Request::get(link.as_str())
-        .body(())?
-        .send_async()
+    let mut deck = CLIENT
+        .get_async(link.as_str())
         .await?
         .json::<Deck>()
         .await?;
@@ -241,9 +240,8 @@ pub async fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
         ],
     )?;
 
-    let deck = isahc::Request::get(link.as_str())
-        .body(())?
-        .send_async()
+    let deck = CLIENT
+        .get_async(link.as_str())
         .await?
         .json::<Deck>()
         .await?;

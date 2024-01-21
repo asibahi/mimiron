@@ -1,6 +1,7 @@
-use crate::AGENT;
+use crate::CLIENT;
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
+use isahc::ReadResponseExt;
 use serde::Deserialize;
 use std::{
     ops::Add,
@@ -43,12 +44,19 @@ fn internal_get_access_token() -> Result<AccessToken> {
 
     let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 
-    let access_token = AGENT
-        .post("https://oauth.battle.net/token")
-        .set("Authorization", &format!("Basic {creds}"))
-        .query("grant_type", "client_credentials")
-        .call()?
-        .into_json::<AccessToken>()?;
+    let link = url::Url::parse_with_params(
+        "https://oauth.battle.net/token",
+        &[("grant_type", "client_credentials")],
+    )?;
+
+    let access_token = CLIENT
+        .send(
+            isahc::Request::post(link.as_str())
+                .header("Authorization", &format!("Basic {creds}"))
+                .body(())?,
+        )?
+        .json::<AccessToken>()?;
+
     Ok(access_token)
 }
 

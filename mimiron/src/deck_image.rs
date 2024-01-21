@@ -10,7 +10,7 @@ use crate::{
     card_details::{Class, Rarity},
     deck::Deck,
     localization::{Locale, Localize},
-    AGENT,
+    CLIENT,
 };
 use anyhow::{anyhow, Result};
 use futures::{stream::FuturesUnordered, AsyncReadExt, StreamExt};
@@ -20,7 +20,6 @@ use imageproc::{
     pixelops::weighted_sum,
     rect::Rect,
 };
-use isahc::RequestExt;
 use once_cell::sync::Lazy;
 use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
@@ -360,7 +359,6 @@ async fn order_deck_and_get_slugs(
         .chain(ordered_sbs_cards.clone())
         .map(|(card, count)| async move {
             let slug = get_card_slug(card, count).await;
-            println!("{}", card.name);
             (card, slug)
         })
         .collect::<FuturesUnordered<_>>();
@@ -454,9 +452,8 @@ async fn get_class_icon(class: &Class) -> Result<DynamicImage> {
         )),
     )?;
 
-    isahc::Request::get(link.as_str())
-        .body(())?
-        .send_async()
+    CLIENT
+        .get_async(link.as_str())
         .await?
         .into_body()
         .read_to_end(&mut buf)
@@ -478,9 +475,8 @@ async fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
 
     let mut buf = Vec::new();
 
-    isahc::Request::get(link)
-        .body(())?
-        .send_async()
+    CLIENT
+        .get_async(link)
         .await?
         .into_body()
         .read_to_end(&mut buf)

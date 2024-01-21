@@ -3,11 +3,11 @@ use crate::{
     get_access_token,
     helpers::prettify,
     localization::{Locale, Localize},
-    AGENT,
+    CLIENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
-use isahc::{AsyncReadResponseExt, RequestExt};
+use isahc::AsyncReadResponseExt;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -357,9 +357,8 @@ pub async fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> +
         link.query_pairs_mut().append_pair("tier", &t.to_string());
     }
 
-    let res = isahc::Request::get(link.as_str())
-        .body(())?
-        .send_async()
+    let res = CLIENT
+        .get_async(link.as_str())
         .await?
         .json::<CardSearchResponse>()
         .await?;
@@ -504,9 +503,8 @@ async fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
         ],
     )?;
 
-    let res = isahc::Request::get(link.as_str())
-        .body(())?
-        .send_async()
+    let res = CLIENT
+        .get_async(link.as_str())
         .await?
         .json::<Card>()
         .await?;

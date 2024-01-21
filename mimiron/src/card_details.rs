@@ -1,9 +1,10 @@
 use crate::{
     get_access_token,
     localization::{Locale, Localize},
-    AGENT,
+    CLIENT,
 };
 use colored::Colorize;
+use isahc::ReadResponseExt;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -108,11 +109,16 @@ impl Details {
 }
 
 pub(crate) static METADATA: Lazy<Metadata> = Lazy::new(|| {
-    AGENT
-        .get("https://us.api.blizzard.com/hearthstone/metadata")
-        .query("access_token", &get_access_token())
-        .call()
-        .and_then(|res| Ok(res.into_json::<Metadata>()?))
+    let link = url::Url::parse_with_params(
+        "https://us.api.blizzard.com/hearthstone/metadata",
+        &[("access_token", &get_access_token())],
+    )
+    .unwrap();
+
+    CLIENT
+        .get(link.as_str())
+        .unwrap_or_default()
+        .json::<Metadata>()
         .unwrap_or_default()
 });
 
@@ -466,10 +472,13 @@ impl Localize for CardType {
 // Uses https://hearthstonejson.com data for back up if needed.
 
 static HEARTH_SIM_IDS: Lazy<Vec<HearthSimData>> = Lazy::new(|| {
-    AGENT
-        .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.json")
-        .call()
-        .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
+    let link =
+        url::Url::parse("https://api.hearthstonejson.com/v1/191554/enUS/cards.json").unwrap();
+
+    CLIENT
+        .get(link.as_str())
+        .unwrap_or_default()
+        .json::<Vec<HearthSimData>>()
         .unwrap_or_default()
 });
 

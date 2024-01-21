@@ -13,7 +13,6 @@ workspace = true
 colored = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-ureq = { version = "2", features = ["json"] }
 anyhow = "1"
 base64 = "0.21"
 dotenvy = "0.15"

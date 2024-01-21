@@ -2,12 +2,12 @@ use crate::{
     card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     helpers::prettify,
-    localization::{Locale, Localize},
-    AGENT,
+    localization::{Locale, Localize}, AGENT
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use eitherable::Eitherable;
+use isahc::{AsyncReadResponseExt, RequestExt};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -268,20 +268,28 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
+pub async fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let search_term = &opts.search_term;
 
-    let mut res = AGENT
-        .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", &opts.locale.to_string())
-        .query("textFilter", search_term)
-        .query("access_token", &get_access_token());
+    let mut link = url::Url::parse_with_params(
+        "https://us.api.blizzard.com/hearthstone/cards",
+        &[
+            ("locale", &opts.locale.to_string()),
+            ("textFilter", search_term),
+            ("access_token", &get_access_token()),
+        ],
+    )?;
 
     if opts.noncollectibles {
-        res = res.query("collectible", "0,1");
+        link.query_pairs_mut().append_pair("collectible", "0,1");
     }
 
-    let res = res.call()?.into_json::<CardSearchResponse>()?;
+    let res = isahc::Request::get(link.as_str())
+        .body(())?
+        .send_async()
+        .await?
+        .json::<CardSearchResponse>()
+        .await?;
 
     if res.card_count == 0 {
         return Err(anyhow!(

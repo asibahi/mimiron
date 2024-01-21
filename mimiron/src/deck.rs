@@ -185,7 +185,7 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     Ok(deck)
 }
 
-pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
+pub async fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     // Function WILL need to be updated if new sideboard cards are printed.
 
     // Constants that might change should ETC be added to core.

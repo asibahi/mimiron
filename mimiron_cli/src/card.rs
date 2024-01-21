@@ -4,6 +4,7 @@ use mimiron::{
     card,
     localization::{Locale, Localize},
 };
+use pollster::FutureExt;
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
@@ -34,7 +35,7 @@ pub fn run(args: CardArgs, locale: Locale) -> Result<()> {
         .with_text(args.text)
         .include_reprints(args.reprints)
         .include_noncollectibles(args.all);
-    let cards = card::lookup(&opts)?;
+    let cards = card::lookup(&opts).block_on()?;
 
     for card in cards {
         println!("{:#}", card.in_locale(locale));

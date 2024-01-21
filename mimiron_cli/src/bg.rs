@@ -5,6 +5,7 @@ use mimiron::{
     card_details::MinionType,
     localization::{Locale, Localize},
 };
+use pollster::FutureExt;
 
 #[derive(Args)]
 #[command(group = ArgGroup::new("search").required(true).multiple(true))]
@@ -37,11 +38,11 @@ pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
         .with_tier(args.tier)
         .with_type(args.minion_type)
         .with_text(args.text);
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(&opts).block_on()?;
 
     for card in cards {
         println!("{:#}", card.in_locale(locale));
-        _ = bg::get_and_print_associated_cards(&card, locale);
+        _ = bg::get_and_print_associated_cards(&card, locale).block_on();
     }
 
     Ok(())

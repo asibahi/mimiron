@@ -4,6 +4,7 @@ use mimiron::{
     deck::{self, LookupOptions},
     localization::{Locale, Localize},
 };
+use pollster::FutureExt;
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -68,9 +69,9 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 
     let mut deck = if let Some(band) = args.band {
         // Add Band resolution.
-        deck::add_band(&opts, band)?
+        deck::add_band(&opts, band).block_on()?
     } else {
-        deck::lookup(&opts)?
+        deck::lookup(&opts).block_on()?
     };
 
     // Deck format/mode override
@@ -80,7 +81,7 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {
-        let deck2 = deck::lookup(&LookupOptions::lookup(code).with_locale(locale))?;
+        let deck2 = deck::lookup(&LookupOptions::lookup(code).with_locale(locale)).block_on()?;
         let deck_diff = deck.compare_with(&deck2);
         println!("{}", deck_diff.in_locale(locale));
     } else {
@@ -96,7 +97,7 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
             ImageFormat::Wide => deck::ImageOptions::Regular { columns: 3 },
         };
 
-        let img = deck::get_image(&deck, locale, opts)?;
+        let img = deck::get_image(&deck, locale, opts).block_on()?;
 
         let file_name = format!(
             "{} {} {}.png",

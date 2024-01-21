@@ -40,7 +40,7 @@ pub async fn deck_inner(
 
     let opts = LookupOptions::lookup(code).with_locale(locale);
 
-    let mut deck = deck::lookup(&opts)?;
+    let mut deck = deck::lookup(&opts).await?;
 
     if let Some(fmt) = format {
         deck.format = fmt;
@@ -64,7 +64,7 @@ pub async fn addband(
 
     let opts = LookupOptions::lookup(code).with_locale(locale);
 
-    let deck = deck::add_band(&opts, vec![member1, member2, member3])?;
+    let deck = deck::add_band(&opts, vec![member1, member2, member3]).await?;
 
     send_deck_reply(ctx, deck, locale).await
 }
@@ -81,8 +81,8 @@ pub async fn deckcomp(
     // Needs more specific localized strings
     let locale = get_server_locale(&ctx);
 
-    let deck1 = deck::lookup(&LookupOptions::lookup(code1).with_locale(locale))?;
-    let deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale))?;
+    let deck1 = deck::lookup(&LookupOptions::lookup(code1).with_locale(locale)).await?;
+    let deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale)).await?;
     let deckcomp = deck1.compare_with(&deck2);
 
     let sort_and_set = |map: HashMap<card::Card, usize>| {
@@ -135,7 +135,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
     let attachment_name = "mimiron_deck.png";
 
     let attachment = {
-        let img = deck::get_image(&deck, locale, deck::ImageOptions::Adaptable)?;
+        let img = deck::get_image(&deck, locale, deck::ImageOptions::Adaptable).await?;
 
         let mut image_data = Cursor::new(Vec::<u8>::new());
         img.write_to(&mut image_data, image::ImageOutputFormat::Png)?;

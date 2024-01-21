@@ -6,7 +6,7 @@ use mimiron::{
     bg,
     localization::{Locale, Localize},
 };
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity, futures::executor::block_on};
 
 /// alias for /bg
 #[poise::command(slash_command, hide_in_help)]
@@ -34,7 +34,7 @@ pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error
     let opts = bg::SearchOptions::empty()
         .search_for(Some(search_term))
         .with_locale(locale);
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(&opts).await?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
@@ -53,7 +53,7 @@ pub async fn bgtext(
         .search_for(Some(search_term))
         .with_locale(locale)
         .with_text(true);
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(&opts).await?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
@@ -73,7 +73,7 @@ pub async fn bgtier(
         .with_tier(Some(tier))
         .with_locale(locale)
         .with_type(minion_type.map(|s| s.parse()).transpose()?);
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(&opts).await?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
 }
@@ -101,7 +101,7 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
     };
 
     fields.extend(
-        bg::get_and_print_associated_cards(&card, locale)
+        block_on(bg::get_and_print_associated_cards(&card, locale))
             .into_iter()
             .filter_map(|assoc_card| match assoc_card.card_type {
                 ref minion @ bg::BGCardType::Minion { ref text, .. } => {

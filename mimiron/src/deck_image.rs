@@ -13,14 +13,15 @@ use crate::{
     AGENT,
 };
 use anyhow::{anyhow, Result};
+use futures::{AsyncReadExt, StreamExt, stream};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{
     drawing::{self, Canvas as _},
     pixelops::weighted_sum,
     rect::Rect,
 };
+use isahc::RequestExt;
 use once_cell::sync::Lazy;
-use rayon::prelude::*;
 use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
 
@@ -73,16 +74,22 @@ pub enum ImageOptions {
     Adaptable,
 }
 
-pub fn get(deck: &Deck, locale: Locale, shape: ImageOptions) -> Result<DynamicImage> {
+pub async fn get(deck: &Deck, locale: Locale, shape: ImageOptions) -> Result<DynamicImage> {
     match shape {
-        ImageOptions::Groups => img_groups_format(deck, locale),
-        ImageOptions::Adaptable => img_columns_format(deck, locale, None),
-        ImageOptions::Regular { columns } => img_columns_format(deck, locale, Some(columns as u32)),
+        ImageOptions::Groups => img_groups_format(deck, locale).await,
+        ImageOptions::Adaptable => img_columns_format(deck, locale, None).await,
+        ImageOptions::Regular { columns } => {
+            img_columns_format(deck, locale, Some(columns as u32)).await
+        }
     }
 }
 
-fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
+async fn img_columns_format(
+    deck: &Deck,
+    locale: Locale,
+    col_count: Option<u32>,
+) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck).await;
 
     let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
@@ -108,7 +115,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
         (img, cards_in_col)
     };
 
-    draw_deck_title(&mut img, locale, deck)?;
+    draw_deck_title(&mut img, locale, deck).await?;
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
@@ -152,8 +159,8 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
+async fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
+    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck).await;
 
     let class_cards = ordered_cards
         .iter()
@@ -193,7 +200,7 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, locale, deck)?;
+    draw_deck_title(&mut img, locale, deck).await?;
 
     // Doesn't currently accomodate longer deck titles
     if !neutral_cards.is_empty() {
@@ -239,7 +246,7 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
+async fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
@@ -251,7 +258,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
 
-    if let Err(e) = draw_crop_image(&mut img, card) {
+    if let Err(e) = draw_crop_image(&mut img, card).await {
         eprint!("Failed to get image of {}: {e}            \r", card.name);
         drawing::draw_filled_rect_mut(
             &mut img,
@@ -334,7 +341,9 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
+async fn order_deck_and_get_slugs(
+    deck: &Deck,
+) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards
@@ -345,16 +354,18 @@ fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<&Ca
         })
         .collect::<Vec<_>>();
 
-    // if a card is in two zones it'd have the same slug in both.
-    let slug_map = ordered_cards
-        .clone()
-        .into_par_iter()
-        .chain(ordered_sbs_cards.into_par_iter())
-        .map(|(card, count)| {
-            let slug = get_card_slug(card, count);
-            (card, slug)
-        })
-        .collect::<HashMap<_, _>>();
+    let slug_map = stream::iter(
+        ordered_cards
+            .clone()
+            .into_iter()
+            .chain(ordered_sbs_cards.into_iter()),
+    )
+    .then(|(card, count)| async move {
+        let slug = get_card_slug(card, count).await;
+        (card, slug)
+    })
+    .collect::<HashMap<_, _>>()
+    .await;
 
     (ordered_cards, slug_map)
 }
@@ -390,7 +401,7 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<()> {
+async fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<()> {
     let title = deck.title.clone().unwrap_or_else(|| {
         format!(
             "{} - {}",
@@ -414,7 +425,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         &title,
     );
 
-    if let Ok(class_img) = get_class_icon(&deck.class) {
+    if let Ok(class_img) = get_class_icon(&deck.class).await {
         img.copy_from(
             &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
             MARGIN,
@@ -425,27 +436,32 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
     Ok(())
 }
 
-fn get_class_icon(class: &Class) -> Result<DynamicImage> {
+async fn get_class_icon(class: &Class) -> Result<DynamicImage> {
     let mut buf = Vec::new();
-    AGENT
-        .get(
-            &(format!(
-                "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-                class
-                    .in_en_us()
-                    .to_string()
-                    .to_ascii_lowercase()
-                    .replace(' ', "")
-            )),
-        )
-        .call()?
-        .into_reader()
-        .read_to_end(&mut buf)?;
+
+    let link = url::Url::parse(
+        &(format!(
+            "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
+            class
+                .in_en_us()
+                .to_string()
+                .to_ascii_lowercase()
+                .replace(' ', "")
+        )),
+    )?;
+
+    isahc::Request::get(link.as_str())
+        .body(())?
+        .send_async()
+        .await?
+        .into_body()
+        .read_to_end(&mut buf)
+        .await?;
 
     Ok(image::load_from_memory(&buf)?)
 }
 
-fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
+async fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
     let link = card
         .crop_image
         .clone()
@@ -457,11 +473,14 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
         .ok_or_else(|| anyhow!("Card {} has no crop image", card.name))?;
 
     let mut buf = Vec::new();
-    AGENT
-        .get(&link)
-        .call()?
-        .into_reader()
-        .read_to_end(&mut buf)?;
+
+    isahc::Request::get(link)
+        .body(())?
+        .send_async()
+        .await?
+        .into_body()
+        .read_to_end(&mut buf)
+        .await?;
 
     let crop = image::load_from_memory(&buf)?;
 

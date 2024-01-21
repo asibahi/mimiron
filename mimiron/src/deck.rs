@@ -8,6 +8,8 @@ use crate::{
 use anyhow::{anyhow, Result};
 use colored::Colorize;
 use counter::Counter;
+use futures::{stream, StreamExt, TryStreamExt};
+use isahc::{AsyncReadResponseExt, RequestExt};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -158,21 +160,32 @@ impl LookupOptions {
     }
 }
 
-pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
+pub async fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let (title, code) = extract_title_and_code(&opts.code);
-    let mut deck = AGENT
-        .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &opts.locale.to_string())
-        .query("code", code)
-        .query("access_token", &get_access_token())
-        .call()
-        .map_err(|e| match e {
-            ureq::Error::Status(status, _) => {
-                anyhow!("Encountered Error: Status {status}. Code may be invalid.")
-            }
-            ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
-        })?
-        .into_json::<Deck>()?;
+
+    let link = url::Url::parse_with_params(
+        "https://us.api.blizzard.com/hearthstone/deck",
+        &[
+            ("locale", &opts.locale.to_string()),
+            ("code", &String::from(code)),
+            ("access_token", &get_access_token()),
+        ],
+    )?;
+
+    let mut deck = isahc::Request::get(link.as_str())
+        .body(())?
+        .send_async()
+        .await?
+        .json::<Deck>()
+        .await?;
+
+    // Might need custom error message for wrong status message?
+    //     .map_err(|e| match e {
+    //         ureq::Error::Status(status, _) => {
+    //             anyhow!("Encountered Error: Status {status}. Code may be invalid.")
+    //         }
+    //         ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
+    //     })?
 
     deck.title = title;
 
@@ -192,7 +205,7 @@ pub async fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    let deck = lookup(opts)?;
+    let deck = lookup(opts).await?;
 
     if deck.cards.iter().all(|c| c.id != ETC_ID) {
         return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
@@ -204,26 +217,38 @@ pub async fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
 
     let card_ids = deck.cards.iter().map(|c| c.id).join(",");
 
-    let band_ids = band
-        .into_iter()
-        .map(|name| {
-            card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))?
+    let band_ids: Vec<String> = stream::iter(band)
+        .then(|name| async {
+            card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))
+                .await?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| format!("{id}:{ETC_ID}", id = c.id))
                 .next()
                 .ok_or_else(|| anyhow!("Band found brown M&M's."))
         })
-        .collect::<Result<Vec<String>>>()?
-        .join(",");
+        .try_collect()
+        .await?;
 
-    Ok(AGENT
-        .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &opts.locale.to_string())
-        .query("access_token", &get_access_token())
-        .query("ids", &card_ids)
-        .query("sideboardCards", &band_ids)
-        .call()?
-        .into_json::<Deck>()?)
+    let band_ids = band_ids.join(",");
+
+    let link = url::Url::parse_with_params(
+        "https://us.api.blizzard.com/hearthstone/deck",
+        &[
+            ("locale", &opts.locale.to_string()),
+            ("access_token", &get_access_token()),
+            ("ids", &card_ids),
+            ("sideboardCards", &band_ids),
+        ],
+    )?;
+
+    let deck = isahc::Request::get(link.as_str())
+        .body(())?
+        .send_async()
+        .await?
+        .json::<Deck>()
+        .await?;
+
+    Ok(deck)
 }
 
 fn extract_title_and_code(code: &str) -> (Option<String>, &str) {

@@ -7,6 +7,7 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
+use isahc::{AsyncReadResponseExt, RequestExt};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -108,7 +109,7 @@ impl Localize for BGCardType {
                         // dumbass hack to get unformatted text fur get_associated_cards
                         write!(f, ": {text}")?;
                     }
-                    
+
                     Ok(())
                 }
 
@@ -328,19 +329,22 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
-    let mut res = AGENT
-        .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", &get_access_token())
-        .query("locale", &opts.locale.to_string())
-        .query("gameMode", "battlegrounds");
+pub async fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
+    let mut link = url::Url::parse_with_params(
+        "https://us.api.blizzard.com/hearthstone/cards",
+        &[
+            ("access_token", &get_access_token()),
+            ("locale", &opts.locale.to_string()),
+            ("gameMode", &"battlegrounds".to_string()),
+        ],
+    )?;
 
     if let Some(t) = &opts.search_term {
-        res = res.query("textFilter", t);
+        link.query_pairs_mut().append_pair("textFilter", t);
     }
 
     if let Some(t) = &opts.minion_type {
-        res = res.query(
+        link.query_pairs_mut().append_pair(
             "minionType",
             &t.in_en_us() // Is it always enUS?
                 .to_string()
@@ -350,10 +354,15 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     }
 
     if let Some(t) = opts.tier {
-        res = res.query("tier", &t.to_string());
+        link.query_pairs_mut().append_pair("tier", &t.to_string());
     }
 
-    let res = res.call()?.into_json::<CardSearchResponse>()?;
+    let res = isahc::Request::get(link.as_str())
+        .body(())?
+        .send_async()
+        .await?
+        .json::<CardSearchResponse>()
+        .await?;
 
     if res.card_count == 0 {
         return Err(anyhow!("No Battlegrounds card found. Check your spelling."));
@@ -391,7 +400,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 }
 
 #[must_use]
-pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> {
+pub async fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> {
     let mut cards = vec![];
 
     match &card.card_type {
@@ -407,7 +416,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 let Some(id) = child_ids.iter().min() else {
                     break 'heropower;
                 };
-                let Ok(res) = get_card_by_id(*id, locale) else {
+                let Ok(res) = get_card_by_id(*id, locale).await else {
                     break 'heropower;
                 };
                 let text = textwrap::fill(
@@ -427,7 +436,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 let Some(buddy_id) = buddy_id else {
                     break 'buddy;
                 };
-                let Ok(res) = get_card_by_id(*buddy_id, locale) else {
+                let Ok(res) = get_card_by_id(*buddy_id, locale).await else {
                     break 'buddy;
                 };
 
@@ -448,7 +457,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
             upgrade_id: Some(id),
             ..
         } => 'golden: {
-            let Ok(res) = get_card_by_id(*id, locale) else {
+            let Ok(res) = get_card_by_id(*id, locale).await else {
                 break 'golden;
             };
 
@@ -485,15 +494,22 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
     cards
 }
 
-fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
-    let res = AGENT
-        .get(&format!(
-            "https://us.api.blizzard.com/hearthstone/cards/{id}"
-        ))
-        .query("locale", &locale.to_string())
-        .query("gameMode", "battlegrounds")
-        .query("access_token", &get_access_token())
-        .call()?
-        .into_json::<Card>()?;
+async fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
+    let link = url::Url::parse_with_params(
+        &format!("https://us.api.blizzard.com/hearthstone/cards/{id}"),
+        &[
+            ("locale", &locale.to_string()),
+            ("gameMode", &String::from("battlegrounds")),
+            ("access_token", &get_access_token()),
+        ],
+    )?;
+
+    let res = isahc::Request::get(link.as_str())
+        .body(())?
+        .send_async()
+        .await?
+        .json::<Card>()
+        .await?;
+
     Ok(res)
 }

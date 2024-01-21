@@ -13,7 +13,7 @@ use crate::{
     AGENT,
 };
 use anyhow::{anyhow, Result};
-use futures::{AsyncReadExt, StreamExt, stream};
+use futures::{stream::FuturesUnordered, AsyncReadExt, StreamExt};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{
     drawing::{self, Canvas as _},
@@ -354,18 +354,22 @@ async fn order_deck_and_get_slugs(
         })
         .collect::<Vec<_>>();
 
-    let slug_map = stream::iter(
-        ordered_cards
-            .clone()
-            .into_iter()
-            .chain(ordered_sbs_cards.into_iter()),
-    )
-    .then(|(card, count)| async move {
-        let slug = get_card_slug(card, count).await;
-        (card, slug)
-    })
-    .collect::<HashMap<_, _>>()
-    .await;
+    let mut tasks = ordered_cards
+        .clone()
+        .into_iter()
+        .chain(ordered_sbs_cards.clone())
+        .map(|(card, count)| async move {
+            let slug = get_card_slug(card, count).await;
+            println!("{}", card.name);
+            (card, slug)
+        })
+        .collect::<FuturesUnordered<_>>();
+
+    let mut slug_map = HashMap::new();
+
+    while let Some((card, slug)) = tasks.next().await {
+        slug_map.insert(card, slug);
+    }
 
     (ordered_cards, slug_map)
 }

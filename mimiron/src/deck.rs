@@ -166,8 +166,8 @@ pub async fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let link = url::Url::parse_with_params(
         "https://us.api.blizzard.com/hearthstone/deck",
         &[
+            ("code", code),
             ("locale", &opts.locale.to_string()),
-            ("code", &String::from(code)),
             ("access_token", &get_access_token()),
         ],
     )?;

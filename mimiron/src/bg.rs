@@ -498,8 +498,8 @@ async fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let link = url::Url::parse_with_params(
         &format!("https://us.api.blizzard.com/hearthstone/cards/{id}"),
         &[
+            ("gameMode", "battlegrounds"),
             ("locale", &locale.to_string()),
-            ("gameMode", &String::from("battlegrounds")),
             ("access_token", &get_access_token()),
         ],
     )?;

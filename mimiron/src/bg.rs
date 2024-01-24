@@ -108,7 +108,7 @@ impl Localize for BGCardType {
                         // dumbass hack to get unformatted text fur get_associated_cards
                         write!(f, ": {text}")?;
                     }
-                    
+
                     Ok(())
                 }
 

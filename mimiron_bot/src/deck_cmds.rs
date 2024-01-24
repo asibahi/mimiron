@@ -143,7 +143,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
         serenity::CreateAttachment::bytes(image_data.into_inner(), attachment_name)
     };
 
-    let embed = serenity::CreateEmbed::new()
+    let mut embed = serenity::CreateEmbed::new()
         .title(
             deck.title
                 .unwrap_or(format!("{} Deck", deck.class.in_locale(locale))),
@@ -155,6 +155,12 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
         .description(&deck.deck_code)
         .color(deck.class.color())
         .attachment(attachment_name);
+
+    if ctx.created_at().timestamp_micros() % 10 == 0 {
+        embed = embed.footer(serenity::CreateEmbedFooter::new(
+            "See other useful commands with /help.",
+        ));
+    }
 
     let reply = poise::CreateReply::default()
         .attachment(attachment)

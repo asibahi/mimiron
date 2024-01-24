@@ -140,7 +140,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
     set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale).clone())
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(from = "ClassData")]
 pub enum Class {
     DeathKnight,
@@ -217,7 +217,7 @@ struct ClassData {
     id: u8,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Rarity {
     Legendary,
     Epic,
@@ -271,7 +271,7 @@ impl Rarity {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SpellSchool {
     Arcane,
     Fire,
@@ -304,7 +304,7 @@ impl From<u8> for SpellSchool {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MinionType {
     Undead,
     Murloc,
@@ -359,7 +359,7 @@ impl FromStr for MinionType {
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Clone, Copy, Deserialize)]
 pub struct RuneCost {
     blood: u8,
     frost: u8,

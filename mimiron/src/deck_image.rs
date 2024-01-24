@@ -414,7 +414,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         &title,
     );
 
-    if let Ok(class_img) = get_class_icon(&deck.class) {
+    if let Ok(class_img) = get_class_icon(deck.class) {
         img.copy_from(
             &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
             MARGIN,
@@ -425,7 +425,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
     Ok(())
 }
 
-fn get_class_icon(class: &Class) -> Result<DynamicImage> {
+fn get_class_icon(class: Class) -> Result<DynamicImage> {
     let mut buf = Vec::new();
     AGENT
         .get(

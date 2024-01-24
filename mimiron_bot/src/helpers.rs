@@ -106,7 +106,11 @@ pub(crate) async fn on_error(
                 .map(|g| g.name.clone())
                 .unwrap_or("Direct Messages".into());
             let invocation = ctx.invocation_string();
-            let error = error.to_string();
+            let mut error = error.to_string();
+            if rand::random::<u8>() % 5 == 0 && ctx.command().category != Some("Deck".into()) {
+                error += "\nOther ways to search can be found in /help.";
+            }
+
             tracing::warn!(
                 command,
                 guild,

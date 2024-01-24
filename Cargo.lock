@@ -1381,6 +1381,7 @@ dependencies = [
  "mimiron",
  "once_cell",
  "poise",
+ "rand 0.8.5",
  "shuttle-runtime",
  "shuttle-secrets",
  "shuttle-serenity",

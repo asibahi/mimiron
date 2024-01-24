@@ -156,7 +156,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
         .color(deck.class.color())
         .attachment(attachment_name);
 
-    if ctx.created_at().timestamp_micros() % 10 == 0 {
+    if rand::random::<u8>() % 10 == 0 {
         embed = embed.footer(serenity::CreateEmbedFooter::new(
             "See other useful commands with /help.",
         ));

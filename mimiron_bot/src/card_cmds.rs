@@ -34,9 +34,8 @@ pub async fn cardreprints(
 
     let locale = get_server_locale(&ctx);
 
-    let opts = card::SearchOptions::search_for(search_term)
-        .include_reprints(true)
-        .with_locale(locale);
+    let opts =
+        card::SearchOptions::search_for(search_term).include_reprints(true).with_locale(locale);
     let cards = card::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
@@ -52,9 +51,7 @@ pub async fn cardtext(
 
     let locale = get_server_locale(&ctx);
 
-    let opts = card::SearchOptions::search_for(search_term)
-        .with_text(true)
-        .with_locale(locale);
+    let opts = card::SearchOptions::search_for(search_term).with_text(true).with_locale(locale);
     let cards = card::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
@@ -84,16 +81,7 @@ fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
     let rarity = rarity_to_emoji(card.rarity);
 
     let mut fields = vec![
-        (
-            " ",
-            format!(
-                "{} ({}) {}",
-                class,
-                card.cost,
-                card.card_type.in_locale(locale)
-            ),
-            true,
-        ),
+        (" ", format!("{} ({}) {}", class, card.cost, card.card_type.in_locale(locale)), true),
         (" ", format!("{} {}", rarity, card.card_set(locale)), true),
     ];
 
@@ -103,10 +91,7 @@ fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
 
     serenity::CreateEmbed::default()
         .title(&card.name)
-        .url(format!(
-            "https://hearthstone.blizzard.com/en-us/cards/{}",
-            &card.id
-        ))
+        .url(format!("https://hearthstone.blizzard.com/en-us/cards/{}", &card.id))
         .description(markdown(&card.text))
         .color(card.rarity.color())
         .thumbnail(&card.image)

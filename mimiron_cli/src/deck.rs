@@ -16,13 +16,7 @@ pub struct DeckArgs {
     comp: Option<String>,
 
     /// Add Sideboard cards for E.T.C., Band Manager if the deck code lacks them. Make sure card names are exact.
-    #[arg(
-        short,
-        long("addband"),
-        value_name("BAND_MEMBER"),
-        num_args(3),
-        conflicts_with("comp")
-    )]
+    #[arg(short, long("addband"), value_name("BAND_MEMBER"), num_args(3), conflicts_with("comp"))]
     band: Option<Vec<String>>,
 
     /// Override format/game mode provided by code (For Twist, Tavern Brawl, etc.)
@@ -44,13 +38,7 @@ pub struct DeckArgs {
     /// Square: Regular but over 2 columns. Default.
     /// Wide:   Regular but over 3 columns. Most compact vertically.
     /// Text:   Includes card text.
-    #[arg(
-        short,
-        long,
-        default_value("square"),
-        requires("image"),
-        verbatim_doc_comment
-    )]
+    #[arg(short, long, default_value("square"), requires("image"), verbatim_doc_comment)]
     format: ImageFormat,
 }
 

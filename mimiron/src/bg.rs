@@ -144,14 +144,7 @@ impl Localize for BGCardType {
                         let hero = get_type(3); // 3 for hero
                         write!(f, "{hero} [{armor}]")
                     }
-                    BGCardType::Minion {
-                        tier,
-                        attack,
-                        health,
-                        text,
-                        minion_types,
-                        ..
-                    } => {
+                    BGCardType::Minion { tier, attack, health, text, minion_types, .. } => {
                         let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
                         let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
                         write!(f, "T-{tier} {attack}/{health} {blurp}")?;
@@ -225,18 +218,10 @@ impl Localize for Card {
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         let card_type = match &c.battlegrounds {
-            Some(BGData {
-                tier: Some(tier), ..
-            }) if c.card_type_id == 42 => BGCardType::Spell {
-                tier: *tier,
-                cost: c.mana_cost,
-                text: c.text,
-            },
-            Some(BGData {
-                tier: Some(tier),
-                upgrade_id,
-                ..
-            }) => BGCardType::Minion {
+            Some(BGData { tier: Some(tier), .. }) if c.card_type_id == 42 => {
+                BGCardType::Spell { tier: *tier, cost: c.mana_cost, text: c.text }
+            }
+            Some(BGData { tier: Some(tier), upgrade_id, .. }) => BGCardType::Minion {
                 tier: *tier,
                 attack: c.attack.unwrap_or_default(),
                 health: c.health.unwrap_or_default(),
@@ -259,10 +244,7 @@ impl From<CardData> for Card {
             Some(bg) if bg.reward => BGCardType::Reward { text: c.text },
 
             _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },
-            _ => BGCardType::HeroPower {
-                text: c.text,
-                cost: c.mana_cost,
-            },
+            _ => BGCardType::HeroPower { text: c.text, cost: c.mana_cost },
         };
 
         Self {
@@ -302,10 +284,7 @@ impl SearchOptions {
     }
     #[must_use]
     pub fn search_for(self, search_term: Option<String>) -> Self {
-        Self {
-            search_term,
-            ..self
-        }
+        Self { search_term, ..self }
     }
     #[must_use]
     pub fn with_tier(self, tier: Option<u8>) -> Self {
@@ -313,10 +292,7 @@ impl SearchOptions {
     }
     #[must_use]
     pub fn with_type(self, minion_type: Option<MinionType>) -> Self {
-        Self {
-            minion_type,
-            ..self
-        }
+        Self { minion_type, ..self }
     }
     #[must_use]
     pub fn with_text(self, with_text: bool) -> Self {
@@ -366,18 +342,15 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         // depending on the args.text variable
         .filter(|c| {
             opts.with_text
-                || opts.search_term.as_ref().map_or(true, |name| {
-                    c.name.to_lowercase().contains(&name.to_lowercase())
-                })
+                || opts
+                    .search_term
+                    .as_ref()
+                    .map_or(true, |name| c.name.to_lowercase().contains(&name.to_lowercase()))
         })
         .sorted_by_key(|c| {
-            !c.name.to_lowercase().starts_with(
-                &opts
-                    .search_term
-                    .as_deref()
-                    .unwrap_or_default()
-                    .to_lowercase(),
-            )
+            !c.name
+                .to_lowercase()
+                .starts_with(&opts.search_term.as_deref().unwrap_or_default().to_lowercase())
         })
         .peekable();
 
@@ -395,11 +368,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
     let mut cards = vec![];
 
     match &card.card_type {
-        BGCardType::Hero {
-            buddy_id,
-            child_ids,
-            ..
-        } => {
+        BGCardType::Hero { buddy_id, child_ids, .. } => {
             'heropower: {
                 // Getting the starting hero power only. API keeps old
                 // versions of hero powers below that for some reason.
@@ -444,21 +413,12 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 println!("{text}");
             }
         }
-        BGCardType::Minion {
-            upgrade_id: Some(id),
-            ..
-        } => 'golden: {
+        BGCardType::Minion { upgrade_id: Some(id), .. } => 'golden: {
             let Ok(res) = get_card_by_id(*id, locale) else {
                 break 'golden;
             };
 
-            let BGCardType::Minion {
-                attack,
-                health,
-                text,
-                ..
-            } = &res.card_type
-            else {
+            let BGCardType::Minion { attack, health, text, .. } = &res.card_type else {
                 break 'golden;
             };
 
@@ -487,9 +447,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
 
 fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let res = AGENT
-        .get(&format!(
-            "https://us.api.blizzard.com/hearthstone/cards/{id}"
-        ))
+        .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{id}"))
         .query("locale", &locale.to_string())
         .query("gameMode", "battlegrounds")
         .query("access_token", &get_access_token())

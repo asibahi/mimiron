@@ -24,16 +24,11 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let mut categories = HashMap::new();
 
     for cmd in &ctx.framework().options().commands {
-        categories
-            .entry(cmd.category.as_deref())
-            .or_insert(Vec::new())
-            .push(cmd);
+        categories.entry(cmd.category.as_deref()).or_insert(Vec::new()).push(cmd);
     }
 
-    let fields = categories
-        .into_iter()
-        .filter(|(_, cmds)| !cmds.is_empty())
-        .map(|(category, cmds)| {
+    let fields =
+        categories.into_iter().filter(|(_, cmds)| !cmds.is_empty()).map(|(category, cmds)| {
             let cmds = cmds
                 .into_iter()
                 .filter(|cmd| !cmd.hide_in_help)
@@ -101,23 +96,14 @@ pub(crate) async fn on_error(
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
             let command = ctx.command().name.clone();
-            let guild = ctx
-                .guild()
-                .map(|g| g.name.clone())
-                .unwrap_or("Direct Messages".into());
+            let guild = ctx.guild().map(|g| g.name.clone()).unwrap_or("Direct Messages".into());
             let invocation = ctx.invocation_string();
             let mut error = error.to_string();
             if rand::random::<u8>() % 5 == 0 && ctx.command().category != Some("Deck".into()) {
                 error += "\nOther ways to search can be found in /help.";
             }
 
-            tracing::warn!(
-                command,
-                guild,
-                invocation,
-                error,
-                "Command returned an error."
-            );
+            tracing::warn!(command, guild, invocation, error, "Command returned an error.");
             ctx.say(error).await?;
         }
         error => poise::builtins::on_error(error).await?,
@@ -127,10 +113,7 @@ pub(crate) async fn on_error(
 
 pub(crate) fn on_success(ctx: &Context) {
     let command = ctx.command().name.clone();
-    let guild = ctx
-        .guild()
-        .map(|g| g.name.clone())
-        .unwrap_or("Direct Messages".into());
+    let guild = ctx.guild().map(|g| g.name.clone()).unwrap_or("Direct Messages".into());
 
     let invocation = ctx.invocation_string();
 
@@ -169,9 +152,7 @@ pub(crate) async fn paginated_card_print<T>(
     let mut current_page = 0;
 
     let mut reply = poise::CreateReply::default();
-    reply
-        .embeds
-        .extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
+    reply.embeds.extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
 
     if embed_chunks.len() <= 1 {
         ctx.send(reply).await?;
@@ -180,9 +161,8 @@ pub(crate) async fn paginated_card_print<T>(
 
     let ctx_id = ctx.id();
 
-    let prev_button = serenity::CreateButton::new(&(format!("{ctx_id}prev")))
-        .label("<")
-        .disabled(true);
+    let prev_button =
+        serenity::CreateButton::new(&(format!("{ctx_id}prev"))).label("<").disabled(true);
 
     let pages_indicator = serenity::CreateButton::new("pagination_view")
         .label(format!("{}/{}", current_page + 1, embed_chunks.len()))
@@ -213,19 +193,11 @@ pub(crate) async fn paginated_card_print<T>(
 
         let button_row = vec![
             prev_button.clone().disabled(current_page == 0),
-            pages_indicator
-                .clone()
-                .label(format!("{}/{}", current_page + 1, embed_chunks.len())),
-            next_button
-                .clone()
-                .disabled(current_page == embed_chunks.len() - 1),
+            pages_indicator.clone().label(format!("{}/{}", current_page + 1, embed_chunks.len())),
+            next_button.clone().disabled(current_page == embed_chunks.len() - 1),
         ];
 
-        let content = embed_chunks[current_page]
-            .iter()
-            .map(Lazy::force)
-            .cloned()
-            .collect_vec();
+        let content = embed_chunks[current_page].iter().map(Lazy::force).cloned().collect_vec();
 
         press
             .create_response(
@@ -246,9 +218,7 @@ pub(crate) async fn paginated_card_print<T>(
             next_button.disabled(true),
         ])]);
 
-    last_reply
-        .embeds
-        .extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
+    last_reply.embeds.extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
 
     msg.edit(ctx, last_reply).await?;
 

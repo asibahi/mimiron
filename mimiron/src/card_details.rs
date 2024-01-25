@@ -131,10 +131,7 @@ impl Localize for Set {
 
 pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
     let set = METADATA.sets.iter().find(|s| {
-        s.id == id
-            || s.alias_set_ids
-                .as_ref()
-                .is_some_and(|aliases| aliases.contains(&id))
+        s.id == id || s.alias_set_ids.as_ref().is_some_and(|aliases| aliases.contains(&id))
     });
 
     set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale).clone())
@@ -377,24 +374,11 @@ impl Display for RuneCost {
 
 #[derive(Clone)]
 pub enum CardType {
-    Hero {
-        armor: u8,
-    },
-    Minion {
-        attack: u8,
-        health: u8,
-        minion_types: HashSet<MinionType>,
-    },
-    Spell {
-        school: Option<SpellSchool>,
-    },
-    Weapon {
-        attack: u8,
-        durability: u8,
-    },
-    Location {
-        durability: u8,
-    },
+    Hero { armor: u8 },
+    Minion { attack: u8, health: u8, minion_types: HashSet<MinionType> },
+    Spell { school: Option<SpellSchool> },
+    Weapon { attack: u8, durability: u8 },
+    Location { durability: u8 },
     HeroPower,
     Unknown,
 }
@@ -411,12 +395,7 @@ impl Localize for CardType {
 
                 let get_type = |i: u8| {
                     // all this just to say "Minion"
-                    METADATA
-                        .types
-                        .iter()
-                        .find(|det| det.id == i)
-                        .unwrap()
-                        .name(self.1)
+                    METADATA.types.iter().find(|det| det.id == i).unwrap().name(self.1)
                 };
 
                 match self.0 {
@@ -424,11 +403,7 @@ impl Localize for CardType {
                         let hero = get_type(3); // 3 for Hero
                         write!(f, "{hero} [{armor}]{colon}")
                     }
-                    CardType::Minion {
-                        attack,
-                        health,
-                        minion_types,
-                    } => {
+                    CardType::Minion { attack, health, minion_types } => {
                         let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
                         let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
                         write!(f, "{attack}/{health} {blurp}{colon}")
@@ -483,16 +458,10 @@ struct HearthSimData {
 }
 
 pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
-    HEARTH_SIM_IDS
-        .iter()
-        .find(|c| c.dbf_id == card.id || c.name == card.name)
-        .map(|c| c.id.clone())
+    HEARTH_SIM_IDS.iter().find(|c| c.dbf_id == card.id || c.name == card.name).map(|c| c.id.clone())
 }
 
 #[allow(unused)]
 pub(crate) fn validate_id(invalid_id: usize) -> Option<usize> {
-    HEARTH_SIM_IDS
-        .iter()
-        .find(|c| c.dbf_id == invalid_id)
-        .and_then(|c| c.count_as_copy_of_dbf_id)
+    HEARTH_SIM_IDS.iter().find(|c| c.dbf_id == invalid_id).and_then(|c| c.count_as_copy_of_dbf_id)
 }

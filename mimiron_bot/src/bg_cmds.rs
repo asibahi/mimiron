@@ -31,9 +31,7 @@ pub async fn bg(
 pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let opts = bg::SearchOptions::empty()
-        .search_for(Some(search_term))
-        .with_locale(locale);
+    let opts = bg::SearchOptions::empty().search_for(Some(search_term)).with_locale(locale);
     let cards = bg::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
@@ -97,37 +95,34 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
         | t @ bg::BGCardType::Anomaly { .. } => {
             vec![(" ", format!("{}", t.in_locale(locale)), true)]
         }
-        bg::BGCardType::Hero { .. } | bg::BGCardType::HeroPower { .. } => vec![],
+        bg::BGCardType::Hero { .. } | bg::BGCardType::HeroPower { .. } => {
+            vec![]
+        }
     };
 
-    fields.extend(
-        bg::get_and_print_associated_cards(&card, locale)
-            .into_iter()
-            .filter_map(|assoc_card| match assoc_card.card_type {
-                ref minion @ bg::BGCardType::Minion { ref text, .. } => {
-                    let title = match card.card_type {
-                        bg::BGCardType::Minion { .. } => "Triple",
-                        bg::BGCardType::Hero { .. } => "Buddy",
-                        _ => "UNKNOWN",
-                    };
+    fields.extend(bg::get_and_print_associated_cards(&card, locale).into_iter().filter_map(
+        |assoc_card| match assoc_card.card_type {
+            ref minion @ bg::BGCardType::Minion { ref text, .. } => {
+                let title = match card.card_type {
+                    bg::BGCardType::Minion { .. } => "Triple",
+                    bg::BGCardType::Hero { .. } => "Buddy",
+                    _ => "UNKNOWN",
+                };
 
-                    let content = format!("{}: {}", minion.in_locale(locale), markdown(&text));
-                    Some((title, content, false))
-                }
-                ref hp @ bg::BGCardType::HeroPower { ref text, .. } => {
-                    let content = format!("{}: {}", hp.in_locale(locale), markdown(&text));
-                    Some((" ", content, false))
-                }
-                _ => None,
-            }),
-    );
+                let content = format!("{}: {}", minion.in_locale(locale), markdown(&text));
+                Some((title, content, false))
+            }
+            ref hp @ bg::BGCardType::HeroPower { ref text, .. } => {
+                let content = format!("{}: {}", hp.in_locale(locale), markdown(&text));
+                Some((" ", content, false))
+            }
+            _ => None,
+        },
+    ));
 
     serenity::CreateEmbed::default()
         .title(&card.name)
-        .url(format!(
-            "https://hearthstone.blizzard.com/en-us/battlegrounds/{}",
-            card.id
-        ))
+        .url(format!("https://hearthstone.blizzard.com/en-us/battlegrounds/{}", card.id))
         .thumbnail(&card.image)
         .description(description)
         .fields(fields)

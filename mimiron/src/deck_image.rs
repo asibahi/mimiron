@@ -87,10 +87,10 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
     let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
 
-        let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
-            sbs.iter()
-                .fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc)
-        });
+        let sideboards_length = deck
+            .sideboard_cards
+            .as_ref()
+            .map_or(0, |sbs| sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc));
 
         let length = (main_deck_length + sideboards_length) as u32;
 
@@ -125,10 +125,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
         let mut sb_pos_tracker = ordered_cards.len() as u32;
 
         for sb in sideboards {
-            let (col, row) = (
-                sb_pos_tracker / cards_in_col,
-                sb_pos_tracker % cards_in_col + 1,
-            );
+            let (col, row) = (sb_pos_tracker / cards_in_col, sb_pos_tracker % cards_in_col + 1);
             img.copy_from(
                 &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
@@ -136,10 +133,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
             )?;
             sb_pos_tracker += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard)
-                .keys()
-                .map(|c| &slug_map[c])
-            {
+            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[c]) {
                 let i = sb_pos_tracker;
                 let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
@@ -273,14 +267,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     let scale = Scale::uniform(40.0);
 
     // card name
-    draw_text(
-        &mut img,
-        (255, 255, 255),
-        CROP_HEIGHT as i32 + 10,
-        15,
-        scale,
-        name,
-    );
+    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT as i32 + 10, 15, scale, name);
 
     // mana square
     drawing::draw_filled_rect_mut(
@@ -292,14 +279,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     // card cost
     let cost = card.cost.to_string();
     let (tw, _) = drawing::text_size(scale, &FONTS[0].0, &cost);
-    draw_text(
-        &mut img,
-        (255, 255, 255),
-        (CROP_HEIGHT as i32 - tw) / 2,
-        15,
-        scale,
-        &cost,
-    );
+    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT as i32 - tw) / 2, 15, scale, &cost);
 
     // rarity square
     drawing::draw_filled_rect_mut(
@@ -339,10 +319,7 @@ fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<&Ca
     let ordered_sbs_cards = deck
         .sideboard_cards
         .iter()
-        .flat_map(|sbs| {
-            sbs.iter()
-                .flat_map(|sb| order_cards(&sb.cards_in_sideboard))
-        })
+        .flat_map(|sbs| sbs.iter().flat_map(|sb| order_cards(&sb.cards_in_sideboard)))
         .collect::<Vec<_>>();
 
     // if a card is in two zones it'd have the same slug in both.
@@ -392,11 +369,7 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
 
 fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<()> {
     let title = deck.title.clone().unwrap_or_else(|| {
-        format!(
-            "{} - {}",
-            deck.class.in_locale(locale),
-            deck.format.to_uppercase()
-        )
+        format!("{} - {}", deck.class.in_locale(locale), deck.format.to_uppercase())
     });
 
     // size
@@ -431,11 +404,7 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
         .get(
             &(format!(
                 "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-                class
-                    .in_en_us()
-                    .to_string()
-                    .to_ascii_lowercase()
-                    .replace(' ', "")
+                class.in_en_us().to_string().to_ascii_lowercase().replace(' ', "")
             )),
         )
         .call()?
@@ -457,11 +426,7 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
         .ok_or_else(|| anyhow!("Card {} has no crop image", card.name))?;
 
     let mut buf = Vec::new();
-    AGENT
-        .get(&link)
-        .call()?
-        .into_reader()
-        .read_to_end(&mut buf)?;
+    AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
 
     let crop = image::load_from_memory(&buf)?;
 

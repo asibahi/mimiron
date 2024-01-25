@@ -132,21 +132,13 @@ impl Localize for Card {
                 let name = self.0.name.bold();
                 let cost = self.0.cost;
 
-                let runes = self
-                    .0
-                    .rune_cost
-                    .as_ref()
-                    .map_or_else(String::new, |r| format!("{r} "));
+                let runes = self.0.rune_cost.as_ref().map_or_else(String::new, |r| format!("{r} "));
 
                 let rarity = &self.0.rarity.in_locale(self.1);
                 let class = self.0.class.iter().map(|c| c.in_locale(self.1)).join("/");
                 let card_info = &self.0.card_type.in_locale(self.1);
 
-                write!(
-                    f,
-                    "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.",
-                    ""
-                )?;
+                write!(f, "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.", "")?;
 
                 if f.alternate() {
                     let set = self.0.card_set(self.1);
@@ -177,17 +169,12 @@ impl From<CardData> for Card {
             class: if c.multi_class_ids.is_empty() {
                 HashSet::from([c.class_id.unwrap_or_default().into()])
             } else {
-                c.multi_class_ids
-                    .into_iter()
-                    .map(Class::from)
-                    .collect::<HashSet<_>>()
+                c.multi_class_ids.into_iter().map(Class::from).collect::<HashSet<_>>()
             },
             cost: c.mana_cost,
             rune_cost: c.rune_cost,
             card_type: match c.card_type_id.unwrap_or_default() {
-                3 => CardType::Hero {
-                    armor: c.armor.unwrap_or_default(),
-                },
+                3 => CardType::Hero { armor: c.armor.unwrap_or_default() },
                 4 => CardType::Minion {
                     attack: c.attack.unwrap_or_default(),
                     health: c.health.unwrap_or_default(),
@@ -198,16 +185,12 @@ impl From<CardData> for Card {
                         .map(MinionType::from)
                         .collect(),
                 },
-                5 => CardType::Spell {
-                    school: c.spell_school_id.map(SpellSchool::from),
-                },
+                5 => CardType::Spell { school: c.spell_school_id.map(SpellSchool::from) },
                 7 => CardType::Weapon {
                     attack: c.attack.unwrap_or_default(),
                     durability: c.durability.unwrap_or_default(),
                 },
-                39 => CardType::Location {
-                    durability: c.health.unwrap_or_default(),
-                },
+                39 => CardType::Location { durability: c.health.unwrap_or_default() },
                 10 => CardType::HeroPower,
                 _ => CardType::Unknown,
             },
@@ -257,10 +240,7 @@ impl SearchOptions {
     }
     #[must_use]
     pub fn include_noncollectibles(self, noncollectibles: bool) -> Self {
-        Self {
-            noncollectibles,
-            ..self
-        }
+        Self { noncollectibles, ..self }
     }
     #[must_use]
     pub fn with_locale(self, locale: Locale) -> Self {
@@ -297,11 +277,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .filter(|c| opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
         // cards have copies in different sets
         .unique_by(|c| opts.reprints.either(c.id, c.name.clone()))
-        .sorted_by_key(|c| {
-            !c.name
-                .to_lowercase()
-                .starts_with(&search_term.to_lowercase())
-        })
+        .sorted_by_key(|c| !c.name.to_lowercase().starts_with(&search_term.to_lowercase()))
         .peekable();
 
     if cards.peek().is_none() {

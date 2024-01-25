@@ -32,11 +32,9 @@ impl Display for TextTree {
             Self::String(s) => write!(f, "{s}"),
             Self::Bold(b) => write!(f, "{}", b.to_string().bold()),
             Self::Italic(i) => write!(f, "{}", i.to_string().italic()),
-            Self::Seq(s) => write!(
-                f,
-                "{}",
-                s.iter().fold(String::new(), |acc, s| acc + &s.to_string())
-            ),
+            Self::Seq(s) => {
+                write!(f, "{}", s.iter().fold(String::new(), |acc, s| acc + &s.to_string()))
+            }
         }
     }
 }
@@ -140,10 +138,7 @@ pub struct TextPiece {
 
 impl TextPiece {
     pub fn new(text: &str, style: TextStyle) -> Self {
-        Self {
-            text: text.into(),
-            style,
-        }
+        Self { text: text.into(), style }
     }
 
     fn embolden(self) -> Self {
@@ -197,10 +192,7 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
     traverse_inner(tree, visit);
 
     collector.into_iter().flat_map(|tp| {
-        tp.text
-            .split_inclusive(' ')
-            .map(|t| TextPiece::new(t, tp.style))
-            .collect::<Vec<_>>()
+        tp.text.split_inclusive(' ').map(|t| TextPiece::new(t, tp.style)).collect::<Vec<_>>()
     })
 }
 
@@ -220,10 +212,7 @@ pub fn card_text_to_markdown(i: &str) -> String {
 
     let boxes = get_boxes_and_glue(i).coalesce(|x, y| {
         if x.style == y.style {
-            Ok(TextPiece {
-                text: format!("{}{}", x.text, y.text),
-                style: x.style,
-            })
+            Ok(TextPiece { text: format!("{}{}", x.text, y.text), style: x.style })
         } else {
             Err((x, y))
         }

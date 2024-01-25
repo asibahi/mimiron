@@ -14,15 +14,12 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
-    let discord_token = secret_store
-        .get("DISCORD_TOKEN")
-        .context("'DISCORD_TOKEN' was not found")?;
+    let discord_token =
+        secret_store.get("DISCORD_TOKEN").context("'DISCORD_TOKEN' was not found")?;
 
     std::env::set_var(
         "BLIZZARD_CLIENT_ID",
-        secret_store
-            .get("BLIZZARD_CLIENT_ID")
-            .context("'BLIZZARD_CLIENT_ID' was not found")?,
+        secret_store.get("BLIZZARD_CLIENT_ID").context("'BLIZZARD_CLIENT_ID' was not found")?,
     );
     std::env::set_var(
         "BLIZZARD_CLIENT_SECRET",

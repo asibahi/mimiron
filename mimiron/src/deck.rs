@@ -69,13 +69,10 @@ impl Localize for Deck {
         )
         .ok();
 
-        let cards = self
-            .cards
-            .iter()
-            .fold(BTreeMap::<_, usize>::new(), |mut map, card| {
-                *map.entry(card).or_default() += 1;
-                map
-            });
+        let cards = self.cards.iter().fold(BTreeMap::<_, usize>::new(), |mut map, card| {
+            *map.entry(card).or_default() += 1;
+            map
+        });
 
         for (card, count) in cards {
             let count = format_count(count);
@@ -147,10 +144,7 @@ pub struct LookupOptions {
 impl LookupOptions {
     #[must_use]
     pub fn lookup(code: String) -> Self {
-        Self {
-            code,
-            locale: Locale::enUS,
-        }
+        Self { code, locale: Locale::enUS }
     }
     #[must_use]
     pub fn with_locale(self, locale: Locale) -> Self {
@@ -241,10 +235,7 @@ fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
         .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
         .map(|(s, _)| s.trim().to_owned());
 
-    let code = code
-        .split_ascii_whitespace()
-        .find(|s| s.starts_with("AA"))
-        .unwrap_or(code);
+    let code = code.split_ascii_whitespace().find(|s| s.starts_with("AA")).unwrap_or(code);
 
     (title, code)
 }

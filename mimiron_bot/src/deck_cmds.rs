@@ -90,9 +90,7 @@ pub async fn deckcomp(
             .sorted()
             .map(|(card, count)| {
                 let square = crate::helpers::rarity_to_emoji(card.rarity);
-                let count = (count > 1)
-                    .then(|| format!("_{count}x_ "))
-                    .unwrap_or_default();
+                let count = (count > 1).then(|| format!("_{count}x_ ")).unwrap_or_default();
 
                 format!("{} {}{}\n", square, count, card.name)
             })
@@ -104,16 +102,8 @@ pub async fn deckcomp(
     let shared = sort_and_set(deckcomp.shared_cards);
 
     let fields = vec![
-        (
-            deck1.title.as_deref().unwrap_or("Code 1"),
-            deck1.deck_code,
-            false,
-        ),
-        (
-            deck2.title.as_deref().unwrap_or("Code 2"),
-            deck2.deck_code,
-            false,
-        ),
+        (deck1.title.as_deref().unwrap_or("Code 1"), deck1.deck_code, false),
+        (deck2.title.as_deref().unwrap_or("Code 2"), deck2.deck_code, false),
         (deck1.title.as_deref().unwrap_or("Deck 1"), uniques_1, true),
         (deck2.title.as_deref().unwrap_or("Deck 2"), uniques_2, true),
         ("Shared", shared, true),
@@ -144,10 +134,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
     };
 
     let mut embed = serenity::CreateEmbed::new()
-        .title(
-            deck.title
-                .unwrap_or(format!("{} Deck", deck.class.in_locale(locale))),
-        )
+        .title(deck.title.unwrap_or(format!("{} Deck", deck.class.in_locale(locale))))
         .url(format!(
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::encode(&deck.deck_code)
@@ -157,14 +144,11 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
         .attachment(attachment_name);
 
     if rand::random::<u8>() % 10 == 0 {
-        embed = embed.footer(serenity::CreateEmbedFooter::new(
-            "See other useful commands with /help.",
-        ));
+        embed =
+            embed.footer(serenity::CreateEmbedFooter::new("See other useful commands with /help."));
     }
 
-    let reply = poise::CreateReply::default()
-        .attachment(attachment)
-        .embed(embed);
+    let reply = poise::CreateReply::default().attachment(attachment).embed(embed);
 
     ctx.send(reply).await?;
 

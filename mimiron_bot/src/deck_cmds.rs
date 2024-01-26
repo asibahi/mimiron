@@ -92,9 +92,9 @@ pub async fn deckcomp(
                 let square = crate::helpers::rarity_to_emoji(card.rarity);
                 let count = (count > 1).then(|| format!("_{count}x_ ")).unwrap_or_default();
 
-                format!("{} {}{}\n", square, count, card.name)
+                format!("{} {}{}", square, count, card.name)
             })
-            .collect::<String>()
+            .join("\n")
     };
 
     let uniques_1 = sort_and_set(deckcomp.deck1_uniques);

@@ -196,9 +196,9 @@ impl Localize for Card {
         impl Display for Inner<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let padding = 20_usize.saturating_sub(self.0.name.as_str().width());
-                let name = &self.0.name.bold();
+                let name = self.0.name.bold();
 
-                let card_info = &self.0.card_type.in_locale(self.1);
+                let card_info = self.0.card_type.in_locale(self.1);
 
                 write!(f, "{name}{:padding$} ", "")?;
 

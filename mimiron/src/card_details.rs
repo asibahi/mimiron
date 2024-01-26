@@ -134,7 +134,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
         s.id == id || s.alias_set_ids.as_ref().is_some_and(|aliases| aliases.contains(&id))
     });
 
-    set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale).clone())
+    set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale))
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize)]

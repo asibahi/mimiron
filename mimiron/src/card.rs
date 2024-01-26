@@ -134,9 +134,9 @@ impl Localize for Card {
 
                 let runes = self.0.rune_cost.as_ref().map_or_else(String::new, |r| format!("{r} "));
 
-                let rarity = &self.0.rarity.in_locale(self.1);
+                let rarity = self.0.rarity.in_locale(self.1);
                 let class = self.0.class.iter().map(|c| c.in_locale(self.1)).join("/");
-                let card_info = &self.0.card_type.in_locale(self.1);
+                let card_info = self.0.card_type.in_locale(self.1);
 
                 write!(f, "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.", "")?;
 

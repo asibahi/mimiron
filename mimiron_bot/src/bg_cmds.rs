@@ -77,46 +77,35 @@ pub async fn bgtier(
 }
 
 fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
-    let description = match &card.card_type {
-        t @ bg::BGCardType::Hero { .. } => format!("{}", t.in_locale(locale)),
+    let lct = card.card_type.in_locale(locale).to_string();
+    let (description, mut fields) = match &card.card_type {
+        bg::BGCardType::Hero { .. } => (lct, vec![]),
         bg::BGCardType::Minion { text, .. }
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }
         | bg::BGCardType::Reward { text }
-        | bg::BGCardType::Anomaly { text }
-        | bg::BGCardType::HeroPower { text, .. } => markdown(text),
-    };
-
-    let mut fields = match &card.card_type {
-        t @ bg::BGCardType::Minion { .. }
-        | t @ bg::BGCardType::Spell { .. }
-        | t @ bg::BGCardType::Quest { .. }
-        | t @ bg::BGCardType::Reward { .. }
-        | t @ bg::BGCardType::Anomaly { .. } => {
-            vec![(" ", format!("{}", t.in_locale(locale)), true)]
-        }
-        bg::BGCardType::Hero { .. } | bg::BGCardType::HeroPower { .. } => {
-            vec![]
-        }
+        | bg::BGCardType::Anomaly { text } => (markdown(text), vec![(" ", lct, true)]),
+        bg::BGCardType::HeroPower { text, .. } => (markdown(text), vec![]),
     };
 
     fields.extend(bg::get_and_print_associated_cards(&card, locale).into_iter().filter_map(
-        |assoc_card| match assoc_card.card_type {
-            ref minion @ bg::BGCardType::Minion { ref text, .. } => {
-                let title = match card.card_type {
-                    bg::BGCardType::Minion { .. } => "Triple",
-                    bg::BGCardType::Hero { .. } => "Buddy",
-                    _ => "UNKNOWN",
-                };
+        |assoc_card| {
+            let lct = assoc_card.card_type.in_locale(locale);
+            match &assoc_card.card_type {
+                bg::BGCardType::Minion { text, .. } => {
+                    let title = match card.card_type {
+                        bg::BGCardType::Minion { .. } => "Triple",
+                        bg::BGCardType::Hero { .. } => "Buddy",
+                        _ => " ",
+                    };
 
-                let content = format!("{}: {}", minion.in_locale(locale), markdown(&text));
-                Some((title, content, false))
+                    Some((title, format!("{}: {}", lct, markdown(text)), false))
+                }
+                bg::BGCardType::HeroPower { text, .. } => {
+                    Some((" ", format!("{}: {}", lct, markdown(text)), false))
+                }
+                _ => None,
             }
-            ref hp @ bg::BGCardType::HeroPower { ref text, .. } => {
-                let content = format!("{}: {}", hp.in_locale(locale), markdown(&text));
-                Some((" ", content, false))
-            }
-            _ => None,
         },
     ));
 

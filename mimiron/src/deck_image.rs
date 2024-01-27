@@ -245,13 +245,18 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
 
-    if let Err(e) = draw_crop_image(&mut img, card) {
-        eprint!("Failed to get image of {}: {e}            \r", card.name);
-        drawing::draw_filled_rect_mut(
-            &mut img,
-            Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
-            Rgba([r_color.0, r_color.1, r_color.2, 255]),
-        );
+    match get_crop_image(card) {
+        Ok(crop) => {
+            img.copy_from(&crop, CROP_WIDTH, 0).ok();
+        }
+        Err(e) => {
+            eprint!("Failed to get image of {}: {e}            \n", card.name);
+            drawing::draw_filled_rect_mut(
+                &mut img,
+                Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
+                Rgba([r_color.0, r_color.1, r_color.2, 255]),
+            );
+        }
     }
 
     // gradient
@@ -414,7 +419,13 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
     Ok(image::load_from_memory(&buf)?)
 }
 
-fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
+#[cached::proc_macro::cached(
+    time = 120,
+    result = true,
+    key = "(usize)",
+    convert = r#"{(card.id)}"#
+)]
+fn get_crop_image(card: &Card) -> Result<DynamicImage> {
     let link = card
         .crop_image
         .clone()
@@ -428,11 +439,7 @@ fn draw_crop_image(img: &mut RgbaImage, card: &Card) -> Result<()> {
     let mut buf = Vec::new();
     AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
 
-    let crop = image::load_from_memory(&buf)?;
-
-    img.copy_from(&crop, CROP_WIDTH, 0)?;
-
-    Ok(())
+    Ok(image::load_from_memory(&buf)?)
 }
 
 // isolate the function to inline `imageproc::drawing::draw_text_mut` and impl font fallback.

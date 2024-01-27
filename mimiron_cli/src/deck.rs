@@ -4,16 +4,24 @@ use mimiron::{
     deck::{self, LookupOptions},
     localization::{Locale, Localize},
 };
-use std::path::PathBuf;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+    path::PathBuf,
+};
 
-#[derive(Args)]
+#[derive(Args, Clone)]
 pub struct DeckArgs {
     /// Deck code to parse
-    code: String,
+    input: String,
 
     /// Compare with a second deck
     #[arg(short, long, value_name("DECK2"))]
     comp: Option<String>,
+
+    /// Instead of a code, specify a file with multiple deck codes (separated by new lines).
+    #[arg(long, conflicts_with("comp"), conflicts_with("band"))]
+    batch: bool,
 
     /// Add Sideboard cards for E.T.C., Band Manager if the deck code lacks them. Make sure card names are exact.
     #[arg(short, long("addband"), value_name("BAND_MEMBER"), num_args(3), conflicts_with("comp"))]
@@ -52,7 +60,22 @@ enum ImageFormat {
 }
 
 pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
-    let opts = LookupOptions::lookup(args.code).with_locale(locale);
+    if args.batch {
+        let file = BufReader::new(File::open(&args.input)?);
+        for line in file.lines() {
+            let line = line?;
+            let args = DeckArgs { input: line, ..args.clone() };
+            run_one(args, locale)?;
+        }
+    } else {
+        run_one(args, locale)?;
+    }
+
+    Ok(())
+}
+
+pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
+    let opts = LookupOptions::lookup(args.input).with_locale(locale);
 
     let mut deck = if let Some(band) = args.band {
         // Add Band resolution.
@@ -86,16 +109,22 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 
         let img = deck::get_image(&deck, locale, opts)?;
 
-        let file_name = format!(
-            "{} {} {}.png",
-            deck.class.in_locale(locale),
-            deck.format
-                .chars()
-                .filter(|c| c.is_alphanumeric())
-                .map(|c| c.to_ascii_uppercase())
-                .collect::<String>(),
-            chrono::Local::now().format("%Y%m%d %H%M")
-        );
+        let file_name = deck
+            .title
+            .map(|t| {
+                let t = t.chars().filter(|c| c.is_alphanumeric()).collect::<String>();
+                format!("{t}.png")
+            })
+            .unwrap_or(format!(
+                "{} {} {}.png",
+                deck.class.in_locale(locale),
+                deck.format
+                    .chars()
+                    .filter(|c| c.is_alphanumeric())
+                    .map(|c| c.to_ascii_uppercase())
+                    .collect::<String>(),
+                chrono::Local::now().format("%Y%m%d %H%M")
+            ));
 
         let save_file = args
             .output

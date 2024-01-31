@@ -14,7 +14,7 @@ You need to have Rust installed on your system. You can then fork this repositry
 cargo install --path ./mimiron_cli/
 ```
 
-However, you need your Blizzard API credentials as environment variables under `BLIZZARD_CLIENT_ID` and `BLIZZARD_CLIENT_SECRET`.
+However, you need your Blizzard API credentials as environment variables under `BLIZZARD_CLIENT_ID` and `BLIZZARD_CLIENT_SECRET`. If you do not have API credentials, you can ger them from [Battle.net Developer Portal](https://develop.battle.net).
 
 ## Usage
 

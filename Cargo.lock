@@ -1448,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "mimiron"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "base64",
@@ -1492,7 +1492,7 @@ dependencies = [
 
 [[package]]
 name = "mimiron_cli"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "anyhow",
  "chrono",

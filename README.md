@@ -120,7 +120,7 @@ Simply adding the flag `--batch` to the `deck` command allows you to pass a file
 
 For example, if you have a `decks.txt` file with the following data:
 
-```txt
+```
 AAECAeL5AwLlsASAngYOhKAEx8IFyMIF3cIF1/oF5v8FhY4GlZcGlpcGl5cGhJ4G0J4Gq6AGpqgGAAA=
 ### Optional Title # AAECAYjaBQT8+QXt/wWLkgb/lwYNy+IE8OME2fEEtPcEmIEFmYEFkpMFl5UGkZcGzpwGkqAG16IGy7AGAA==
 ### Rank #1 Legend # AAECAZ/HAgSJsgT62wTP9gWknQYNougDiLIEpLYEp7YEhoMF3aQFlaoFyMYFu8cFoukFhY4GxpwGuJ4GAAA=

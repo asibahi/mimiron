@@ -237,9 +237,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     assert!(count > 0);
 
     let name = &card.name;
-
     let r_color = &card.rarity.color();
-
     let slug_height = CROP_HEIGHT;
 
     // main canvas
@@ -250,7 +248,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
             img.copy_from(&crop, CROP_WIDTH, 0).ok();
         }
         Err(e) => {
-            eprint!("Failed to get image of {}: {e}            \n", card.name);
+            eprintln!("Failed to get image of {}: {e}.", card.name);
             drawing::draw_filled_rect_mut(
                 &mut img,
                 Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
@@ -403,6 +401,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
     Ok(())
 }
 
+#[cached::proc_macro::cached(result = true)]
 fn get_class_icon(class: Class) -> Result<DynamicImage> {
     let mut buf = Vec::new();
     AGENT
@@ -420,9 +419,10 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
 }
 
 #[cached::proc_macro::cached(
-    time = 120,
+    time = 86400, // one day.
+    time_refresh = true,
     result = true,
-    key = "(usize)",
+    key = "usize",
     convert = r#"{(card.id)}"#
 )]
 fn get_crop_image(card: &Card) -> Result<DynamicImage> {
@@ -434,7 +434,7 @@ fn get_crop_image(card: &Card) -> Result<DynamicImage> {
             crate::card_details::get_hearth_sim_id(card)
                 .map(|id| format!("https://art.hearthstonejson.com/v1/tiles/{id}.png"))
         })
-        .ok_or_else(|| anyhow!("Card {} has no crop image", card.name))?;
+        .ok_or_else(|| anyhow!("Unable to find crop image for card: {}.", card.name))?;
 
     let mut buf = Vec::new();
     AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;

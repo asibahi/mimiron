@@ -45,7 +45,7 @@ pub struct DeckArgs {
     /// Single: Regular style. Most compact horizontally.
     /// Square: Regular but over 2 columns. Default.
     /// Wide:   Regular but over 3 columns. Most compact vertically.
-    /// Text:   Includes card text.
+    /// Adapt:  Regular but adapts to deck size..
     #[arg(short, long, default_value("square"), requires("image"), verbatim_doc_comment)]
     format: ImageFormat,
 }

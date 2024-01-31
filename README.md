@@ -18,6 +18,8 @@ However, you need your Blizzard API credentials as environment variables under `
 
 ## Usage
 
+> **Note on Localization:** All the commands described below support localized output. The default localization is `enUS`. But you can use any of Blizzard's supported locales. Try all the commands with `--locale deDE` for German loczalization, for example, or `-l jaJP` for Japanese.
+
 ### Card Lookup
 
 Look up a card:
@@ -81,7 +83,7 @@ mimiron deck --image AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgS
 ![Deck image](README/deckimagesquare.png)
 
 
-There are other formats: `groups`, `single`, and `wide`.
+There are other formats: `groups`, `single`, `wide`, and `adapt`.
 
 ```sh
 mimiron deck --image --format groups AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS43AS63ASGgwXgpAW7xAW7xwX7+AW4ngbPngbRngYAAQO42QT9xAX/4QT9xAXFpQX9xAUAAA== 
@@ -109,6 +111,35 @@ mimiron deck --comp AAECAa0GCoSfBOWwBKi2BP/hBJfvBO+RBeKkBf3EBc/GBc2eBg+i6AOhtgSk
 ```
 
 ![Deck comparison in terminal](README/deckcompare.png)
+
+### Batch Deck images
+
+This technically belongs to the previous section but it warrants its own highlight.
+
+Simply adding the flag `--batch` to the `deck` command allows you to pass a file name, instead of a deck code. The app will open the file, go over each line, and provide you with that deck's information.
+
+For example, if you have a `decks.txt` file with the following data:
+
+```txt
+AAECAeL5AwLlsASAngYOhKAEx8IFyMIF3cIF1/oF5v8FhY4GlZcGlpcGl5cGhJ4G0J4Gq6AGpqgGAAA=
+### Optional Title # AAECAYjaBQT8+QXt/wWLkgb/lwYNy+IE8OME2fEEtPcEmIEFmYEFkpMFl5UGkZcGzpwGkqAG16IGy7AGAA==
+### Rank #1 Legend # AAECAZ/HAgSJsgT62wTP9gWknQYNougDiLIEpLYEp7YEhoMF3aQFlaoFyMYFu8cFoukFhY4GxpwGuJ4GAAA=
+```
+
+(Noe that you can add titles to decks. Make sure the title is preceded by three hashes, and followed by one.)
+
+The following command will produce images of three decks in the working directory:
+
+```sh
+mimiron deck --batch decks.txt --image --format wide --output .
+# or for short
+mimiron deck --batch decks.txt -if wide -o .
+```
+
+![First Deck](<README/Warlock STANDARD 20240131 1655.png>) ![Optional Title Deck](README/OptionalTitle.png)
+ ![Rank #1 Legend Deck](README/Rank1Legend.png)
+
+Try it with the `single` option as well.
 
 ### Battlegrounds Lookup
 

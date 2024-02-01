@@ -64,8 +64,10 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
         let file = BufReader::new(File::open(&args.input)?);
         for line in file.lines() {
             let line = line?;
-            let args = DeckArgs { input: line, ..args.clone() };
-            run_one(args, locale)?;
+            let args = DeckArgs { input: line.clone(), ..args.clone() };
+            if let Err(e) = run_one(args, locale) {
+                eprintln!("{e} in \"{line}\"");
+            }
         }
     } else {
         run_one(args, locale)?;

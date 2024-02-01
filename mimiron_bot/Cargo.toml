@@ -14,9 +14,9 @@ workspace = true
 mimiron = { path = "../mimiron" }
 anyhow = "1"
 poise = "0.6.1"
-shuttle-serenity = "0.37"
-shuttle-runtime = "0.37"
-shuttle-secrets = "0.37"
+shuttle-serenity = "0.38"
+shuttle-runtime = "0.38"
+shuttle-secrets = "0.38"
 tracing = "0.1.40"
 tokio = "1"
 itertools = "0.12.0"

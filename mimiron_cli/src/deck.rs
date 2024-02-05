@@ -120,11 +120,7 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
             .unwrap_or(format!(
                 "{} {} {}.png",
                 deck.class.in_locale(locale),
-                deck.format
-                    .chars()
-                    .filter(|c| c.is_alphanumeric())
-                    .map(|c| c.to_ascii_uppercase())
-                    .collect::<String>(),
+                deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>(),
                 chrono::Local::now().format("%Y%m%d %H%M")
             ));
 

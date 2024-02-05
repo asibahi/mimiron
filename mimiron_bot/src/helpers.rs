@@ -17,7 +17,7 @@ pub(crate) fn markdown(i: &str) -> String {
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let footer = "This unofficial bot uses the official Blizzard API, the one used in the official card \
                  library. Code is available at https://github.com/asibahi/mimiron/ . If you have requests \
-                 or suggestions, raise a GitHub Issue or ping @asibahi in the Mimiron Bot server. The bot \
+                 or suggestions, raise a GitHub Issue or ping @mimirons_head in the Mimiron Bot server. The bot \
                  is hosted on the free tier of http://shuttle.rs .";
 
     // funny new ordering every call.

@@ -10,4 +10,4 @@ There is no affiliation whatsoever with Blizzard, Discord, besides using their t
 The owner of the bot is not liable for any misuse of the bot. It is provided as-is.
 
 ## Contact
-People may get in contact through discord "@asibahi". Or through Github issues.
+People may get in contact through discord "@mimirons_head". Or through Github issues.

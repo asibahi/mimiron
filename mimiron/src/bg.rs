@@ -230,7 +230,7 @@ impl From<CardData> for Card {
                     .minion_type_id
                     .into_iter()
                     .chain(c.multi_type_ids.into_iter().flatten())
-                    .map(MinionType::from)
+                    .filter_map(|id| MinionType::try_from(id).ok())
                     .collect(),
                 upgrade_id: *upgrade_id,
             },

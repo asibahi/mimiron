@@ -137,7 +137,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
     set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale))
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(from = "ClassData")]
 pub enum Class {
     DeathKnight,
@@ -153,6 +153,7 @@ pub enum Class {
     Shaman,
     Warlock,
     Warrior,
+    #[default]
     Neutral,
 }
 impl Localize for Class {
@@ -180,7 +181,7 @@ impl From<u8> for Class {
             8 => Self::Shaman,
             9 => Self::Warlock,
             10 => Self::Warrior,
-            _ => Self::Neutral, // 12
+            _ => Self::Neutral, // 12. Fine Default state
         }
     }
 }
@@ -250,7 +251,7 @@ impl From<u8> for Rarity {
             3 => Self::Rare,
             4 => Self::Epic,
             5 => Self::Legendary,
-            _ => Self::Noncollectible,
+            _ => Self::Noncollectible, // Fine default state.
         }
     }
 }
@@ -296,7 +297,8 @@ impl From<u8> for SpellSchool {
             4 => Self::Nature,
             5 => Self::Holy,
             6 => Self::Shadow,
-            _ => Self::Fel, // 7
+            // No other spell schools in the game (unlike Merc minion types) so not susceptible to Blood Elf bug
+            _ => Self::Fel, // 7. 
         }
     }
 }
@@ -321,13 +323,15 @@ impl Localize for MinionType {
         METADATA
             .minion_types
             .iter()
-            .find(|det| *self == Self::from(det.id))
+            // fucking Blood Elfs. They're first, so they return with `_ => Naga` below
+            .find(|det| Self::try_from(det.id).is_ok_and(|s| s == *self))
             .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
-impl From<u8> for MinionType {
-    fn from(value: u8) -> Self {
-        match value {
+impl TryFrom<u8> for MinionType {
+    type Error = anyhow::Error;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        Ok(match value {
             11 => Self::Undead,
             14 => Self::Murloc,
             15 => Self::Demon,
@@ -339,8 +343,9 @@ impl From<u8> for MinionType {
             24 => Self::Dragon,
             26 => Self::All,
             43 => Self::Quilboar,
-            _ => Self::Naga, // 92 but who cares
-        }
+            92 => Self::Naga,
+            _ => anyhow::bail!("Not a valid minion type ID."),
+        })
     }
 }
 impl FromStr for MinionType {
@@ -351,7 +356,7 @@ impl FromStr for MinionType {
             .minion_types
             .iter()
             .find(|det| det.contains(s))
-            .map(|det| Self::from(det.id))
+            .and_then(|det| Self::try_from(det.id).ok())
             .ok_or_else(|| anyhow::anyhow!("Not a valid minion type (yet?)"))
     }
 }

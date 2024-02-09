@@ -298,7 +298,7 @@ impl From<u8> for SpellSchool {
             5 => Self::Holy,
             6 => Self::Shadow,
             // No other spell schools in the game (unlike Merc minion types) so not susceptible to Blood Elf bug
-            _ => Self::Fel, // 7. 
+            _ => Self::Fel, // 7.
         }
     }
 }

@@ -1448,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "mimiron"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "anyhow",
  "base64",

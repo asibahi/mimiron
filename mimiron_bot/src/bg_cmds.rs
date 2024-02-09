@@ -60,8 +60,12 @@ pub async fn bgtext(
 #[poise::command(slash_command, category = "Battlegrounds")]
 pub async fn bgtier(
     ctx: Context<'_>,
-    #[description = "tier"] tier: u8,
-    #[description = "minion type"] minion_type: Option<String>,
+    #[description = "tier"]
+    #[choices(1, 2, 3, 4, 5, 6, 7)]
+    tier: u8,
+    #[description = "minion type"]
+    #[autocomplete = "autocomplete_type"]
+    minion_type: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
@@ -74,6 +78,27 @@ pub async fn bgtier(
     let cards = bg::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+}
+
+// Should probably get a list from the library for ome source of truth. Needs streams.
+async fn autocomplete_type<'a>(
+    _ctx: Context<'_>,
+    partial: &'a str,
+) -> impl Iterator<Item = &'a str> {
+    [
+        "Beast",
+        "Demon",
+        "Dragon",
+        "Elemental",
+        "Mech",
+        "Murloc",
+        "Naga",
+        "Pirate",
+        "Quilboar",
+        "Undead",
+    ]
+    .into_iter()
+    .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
 
 fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {

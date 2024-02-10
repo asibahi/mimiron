@@ -5,6 +5,7 @@ use mimiron::localization::Locale;
 mod bg;
 mod card;
 mod deck;
+mod meta;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -37,6 +38,10 @@ enum Commands {
 
     #[clap(hide = true)]
     Token,
+    
+    // Get a meta deck
+    #[clap(hide = true)]
+    Meta(meta::MetaArgs),
 }
 
 pub fn run() -> Result<()> {
@@ -48,6 +53,7 @@ pub fn run() -> Result<()> {
         Commands::Deck(args) => deck::run(args, locale)?,
         Commands::BG(args) => bg::run(args, locale)?,
         Commands::Token => println!("{}", mimiron::get_access_token()),
+        Commands::Meta(args) => meta::run(args, locale)?,
     }
 
     Ok(())

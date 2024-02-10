@@ -13,6 +13,7 @@ use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Display, Write},
+    str::FromStr,
 };
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
@@ -242,4 +243,54 @@ fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
 
 fn format_count(count: usize) -> String {
     (count > 1).then(|| format!("{count}x")).unwrap_or_default()
+}
+
+// Deck suggestion look up using d0nkey's site.
+// For personal use only unless got permission from d0nkey.
+
+#[derive(Clone, Copy)]
+pub enum Format {
+    Standard,
+    Wild,
+    Twist,
+    // Other(String), // useful for customizing the format in Deck type maybe.
+}
+impl FromStr for Format {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_ascii_lowercase();
+        let s = s.as_str();
+        match s {
+            "wild" | "wld" | "w" => Ok(Format::Wild),
+            "standard" | "std" | "s" => Ok(Format::Standard),
+            "twist" | "t" => Ok(Format::Twist),
+            _ => Err(anyhow!("Unknown format")),
+        }
+    }
+}
+
+pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {
+    // Standard Demon Hunter Deck.
+    // https://www.d0nkey.top/decks?format=2&player_class=DEMONHUNTER
+
+    let class = class.in_en_us().to_string().to_ascii_uppercase().replace(' ', "");
+    let format = match format {
+        Format::Standard => "2",
+        Format::Wild => "1",
+        Format::Twist => "4",
+    };
+
+    let code = AGENT
+        .get("https://www.d0nkey.top/decks")
+        .query("format", format)
+        .query("player_class", &class)
+        .call()?
+        .into_string()?
+        .split_ascii_whitespace()
+        .find(|l| l.starts_with("AA") && !l.contains("span")) // first one !!
+        .ok_or(anyhow!("No deck found for given class and format."))?
+        .to_string();
+
+    lookup(&(LookupOptions { code, locale }))
 }

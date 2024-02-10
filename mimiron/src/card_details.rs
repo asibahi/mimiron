@@ -190,6 +190,18 @@ impl From<ClassData> for Class {
         value.id.into()
     }
 }
+impl FromStr for Class {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        METADATA
+            .classes
+            .iter()
+            .find(|det| det.contains(s))
+            .map(|det| Self::from(det.id))
+            .ok_or_else(|| anyhow::anyhow!("Not a valid class (yet?)"))
+    }
+}
 impl Class {
     #[must_use]
     pub fn color(&self) -> (u8, u8, u8) {

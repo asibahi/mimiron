@@ -281,16 +281,27 @@ pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {
         Format::Twist => "4",
     };
 
-    let code = AGENT
+    let req = AGENT
         .get("https://www.d0nkey.top/decks")
         .query("format", format)
-        .query("player_class", &class)
-        .call()?
-        .into_string()?
-        .split_ascii_whitespace()
-        .find(|l| l.starts_with("AA") && !l.contains("span")) // first one !!
-        .ok_or(anyhow!("No deck found for given class and format."))?
-        .to_string();
+        .query("player_class", &class);
+
+    let fst_try = req.clone().call()?.into_string()?;
+
+    let fst_try =
+        fst_try.split_ascii_whitespace().find(|l| l.starts_with("AA") && !l.contains("span"));
+
+    let code = match fst_try {
+        Some(code) => code.to_string(),
+        None => req
+            .query("rank", "all")
+            .call()?
+            .into_string()?
+            .split_ascii_whitespace()
+            .find(|l| l.starts_with("AA") && !l.contains("span"))
+            .ok_or(anyhow!("No deck found for given class and format."))?
+            .to_string(),
+    };
 
     lookup(&(LookupOptions { code, locale }))
 }

@@ -194,12 +194,27 @@ impl FromStr for Class {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        METADATA
-            .classes
-            .iter()
-            .find(|det| det.contains(s))
-            .map(|det| Self::from(det.id))
-            .ok_or_else(|| anyhow::anyhow!("Not a valid class (yet?)"))
+        match s {
+            "DK" | "Dk" | "dk" => Ok(Self::DeathKnight),
+            "DH" | "Dh" | "dh" => Ok(Self::DemonHunter),
+            "DR" | "Dr" | "dr" => Ok(Self::Druid),
+            // "EV" | "Ev" | "ev" => Ok(Self::Evoker),
+            "HU" | "Hu" | "hu" => Ok(Self::Hunter),
+            "MA" | "Ma" | "ma" => Ok(Self::Mage),
+            // "MO" | "Mo" | "mo" => Ok(Self::Monk),
+            "PA" | "Pa" | "pa" => Ok(Self::Paladin),
+            "PR" | "Pr" | "pr" => Ok(Self::Priest),
+            "RO" | "Ro" | "ro" => Ok(Self::Rogue),
+            "SH" | "Sh" | "sh" => Ok(Self::Shaman),
+            "WL" | "Wl" | "wl" | "WK" | "Wk" | "wk" => Ok(Self::Warlock),
+            "WR" | "Wr" | "wr" => Ok(Self::Warrior),
+            _ => METADATA
+                .classes
+                .iter()
+                .find(|det| det.contains(s))
+                .map(|det| Self::from(det.id))
+                .ok_or_else(|| anyhow::anyhow!("Not a valid class (yet?)")),
+        }
     }
 }
 impl Class {

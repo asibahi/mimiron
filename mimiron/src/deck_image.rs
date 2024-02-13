@@ -112,7 +112,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
-        let slug = &slug_map[card];
+        let slug = &slug_map[&card.id];
 
         let i = i as u32;
         let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
@@ -133,7 +133,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
             )?;
             sb_pos_tracker += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[c]) {
+            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
                 let i = sb_pos_tracker;
                 let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
@@ -152,14 +152,14 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
     let class_cards = ordered_cards
         .iter()
         .filter(|&(c, _)| !c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[c])
+        .map(|(c, _)| &slug_map[&c.id])
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
         .filter(|&(c, _)| c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[c])
+        .map(|(c, _)| &slug_map[&c.id])
         .enumerate()
         .collect::<Vec<_>>();
 
@@ -222,7 +222,7 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
             for (i, slug) in order_cards(&sb.cards_in_sideboard)
                 .iter()
                 .enumerate()
-                .map(|(i, (c, _))| (i, &slug_map[c]))
+                .map(|(i, (c, _))| (i, &slug_map[&c.id]))
             {
                 let i = i as u32 + 2;
                 img.copy_from(slug, column_start, i * ROW_HEIGHT + MARGIN)?;
@@ -317,7 +317,7 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<&Card, DynamicImage>) {
+fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<usize, DynamicImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards
@@ -332,7 +332,7 @@ fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<&Ca
         .chain(ordered_sbs_cards.into_par_iter())
         .map(|(card, count)| {
             let slug = get_card_slug(card, count);
-            (card, slug)
+            (card.id, slug)
         })
         .collect::<HashMap<_, _>>();
 

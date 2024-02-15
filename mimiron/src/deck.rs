@@ -171,10 +171,17 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
 
     deck.title = title;
 
+    // if the deck has invalid card IDs, add dummy cards.
     if let Some(ref invalid_ids) = deck.invalid_card_ids {
         for id in invalid_ids {
             deck.cards.push(card::Card::dummy(*id));
         }
+    }
+
+    // remove cosmetic cards from all sideboards.
+    // Currently only has an effect on Zilliax Cosmetic Modules
+    for sb in deck.sideboard_cards.iter_mut().flatten() {
+        sb.cards_in_sideboard.retain(|c| !c.cosmetic);
     }
 
     Ok(deck)

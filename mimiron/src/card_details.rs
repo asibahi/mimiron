@@ -165,6 +165,7 @@ impl Localize for Class {
             .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
+// Used in Card Json
 impl From<u8> for Class {
     fn from(value: u8) -> Self {
         match value {
@@ -185,6 +186,7 @@ impl From<u8> for Class {
         }
     }
 }
+// Used in Deck Json.
 impl From<ClassData> for Class {
     fn from(value: ClassData) -> Self {
         value.id.into()

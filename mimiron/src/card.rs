@@ -50,6 +50,9 @@ struct CardData {
 
     spell_school_id: Option<u8>,
 
+    // Whether card is functional or cosmetic. For Zilliax Deluxe 3000.
+    is_zilliax_cosmetic_module: bool,
+
     // Flavor
     image: String,
     crop_image: Option<String>,
@@ -76,6 +79,9 @@ pub struct Card {
     pub image: String,
     pub crop_image: Option<String>,
     pub flavor_text: String,
+
+    // Whether card is functional or cosmetic.
+    pub cosmetic: bool,
 }
 impl Card {
     pub(crate) fn dummy(id: usize) -> Self {
@@ -92,6 +98,7 @@ impl Card {
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
             crop_image: Some("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into()),
             flavor_text: String::new(),
+            cosmetic: false,
         }
     }
     #[must_use]
@@ -200,6 +207,8 @@ impl From<CardData> for Card {
             image: c.image,
             crop_image: c.crop_image,
             flavor_text: c.flavor_text,
+
+            cosmetic: c.is_zilliax_cosmetic_module,
         }
     }
 }

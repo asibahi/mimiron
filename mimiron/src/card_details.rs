@@ -4,6 +4,7 @@ use crate::{
     AGENT,
 };
 use colored::Colorize;
+use either::Either::{self, Left, Right};
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -81,29 +82,33 @@ impl Localize for LocalizedName {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Details {
     pub id: u8,
-    name: LocalizedName,
+    #[serde(with = "either::serde_untagged")]
+    name: Either<LocalizedName, String>,
 }
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
-        let ln = self.name.clone();
-        let st = search_term.to_lowercase();
-        ln.deDE.to_lowercase().eq(&st)
-            || ln.enUS.to_lowercase().eq(&st)
-            || ln.esES.to_lowercase().eq(&st)
-            || ln.esMX.to_lowercase().eq(&st)
-            || ln.frFR.to_lowercase().eq(&st)
-            || ln.itIT.to_lowercase().eq(&st)
-            || ln.jaJP.eq(&st)
-            || ln.koKR.eq(&st)
-            || ln.plPL.to_lowercase().eq(&st)
-            || ln.ptBR.to_lowercase().eq(&st)
-            || ln.ruRU.to_lowercase().eq(&st)
-            || ln.thTH.eq(&st)
-            || ln.zhTW.eq(&st)
-            || ln.zhCN.is_some_and(|s| s.eq(&st))
+        match self.name.clone() {
+            Left(ln) => {
+                ln.deDE.eq_ignore_ascii_case(search_term)
+                    || ln.enUS.eq_ignore_ascii_case(search_term)
+                    || ln.esES.eq_ignore_ascii_case(search_term)
+                    || ln.esMX.eq_ignore_ascii_case(search_term)
+                    || ln.frFR.eq_ignore_ascii_case(search_term)
+                    || ln.itIT.eq_ignore_ascii_case(search_term)
+                    || ln.jaJP.eq(search_term)
+                    || ln.koKR.eq(search_term)
+                    || ln.plPL.eq_ignore_ascii_case(search_term)
+                    || ln.ptBR.eq_ignore_ascii_case(search_term)
+                    || ln.ruRU.eq_ignore_ascii_case(search_term)
+                    || ln.thTH.eq(search_term)
+                    || ln.zhTW.eq(search_term)
+                    || ln.zhCN.is_some_and(|s| s.eq(search_term))
+            }
+            Right(s) => s.eq_ignore_ascii_case(search_term),
+        }
     }
     pub fn name(&self, locale: Locale) -> String {
-        self.name.in_locale(locale)
+        self.name.clone().right_or_else(|ln| ln.in_locale(locale))
     }
 }
 
@@ -138,7 +143,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
-#[serde(from = "ClassData")]
+#[serde(from = "Details")]
 pub enum Class {
     DeathKnight,
     DemonHunter,
@@ -187,8 +192,8 @@ impl From<u8> for Class {
     }
 }
 // Used in Deck Json.
-impl From<ClassData> for Class {
-    fn from(value: ClassData) -> Self {
+impl From<Details> for Class {
+    fn from(value: Details) -> Self {
         value.id.into()
     }
 }
@@ -238,10 +243,6 @@ impl Class {
             Self::Neutral => (169, 169, 169),
         }
     }
-}
-#[derive(Deserialize)]
-struct ClassData {
-    id: u8,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

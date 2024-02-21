@@ -69,6 +69,7 @@ pub async fn allcards(
 
     let opts = card::SearchOptions::search_for(search_term)
         .include_noncollectibles(true)
+        .include_reprints(true)
         .with_locale(locale);
     let cards = card::lookup(&opts)?;
 

@@ -135,11 +135,11 @@ impl Localize for Set {
 }
 
 pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
-    let set = METADATA.sets.iter().find(|s| {
-        s.id == id || s.alias_set_ids.as_ref().is_some_and(|aliases| aliases.contains(&id))
-    });
-
-    set.map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale))
+    METADATA
+        .sets
+        .iter()
+        .find(|s| s.id == id || s.alias_set_ids.iter().flatten().contains(&id))
+        .map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale))
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]

@@ -249,7 +249,9 @@ impl SearchOptions {
     }
     #[must_use]
     pub fn include_noncollectibles(self, noncollectibles: bool) -> Self {
-        Self { noncollectibles, ..self }
+        // When searching for noncollectibles, include "reprints", which are cards with the same name.
+        // For things like "Khadgar"
+        Self { noncollectibles, reprints: self.reprints || noncollectibles, ..self }
     }
     #[must_use]
     pub fn with_locale(self, locale: Locale) -> Self {

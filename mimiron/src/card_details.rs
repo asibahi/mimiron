@@ -9,7 +9,7 @@ use itertools::Itertools;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fmt::{Display, Formatter},
     str::FromStr,
 };
@@ -475,11 +475,12 @@ impl Localize for CardType {
 // Hearthstone Json unofficial (from HearthSim)
 // Uses https://hearthstonejson.com data for back up if needed.
 
-static HEARTH_SIM_IDS: Lazy<Vec<HearthSimData>> = Lazy::new(|| {
+static HEARTH_SIM_IDS: Lazy<HashMap<usize, HearthSimData>> = Lazy::new(|| {
     AGENT
         .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.json")
         .call()
         .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
+        .map(|v| v.into_iter().map(|d| (d.dbf_id, d)).collect::<HashMap<_, _>>())
         .unwrap_or_default()
 });
 
@@ -489,14 +490,14 @@ struct HearthSimData {
     dbf_id: usize,
     count_as_copy_of_dbf_id: Option<usize>,
     id: String,
-    name: String,
+    // name: String, // is this needed at all?
 }
 
 pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
-    HEARTH_SIM_IDS.iter().find(|c| c.dbf_id == card.id || c.name == card.name).map(|c| c.id.clone())
+    HEARTH_SIM_IDS.get(&card.id).map(|c| c.id.clone())
 }
 
 #[allow(unused)]
 pub(crate) fn validate_id(invalid_id: usize) -> Option<usize> {
-    HEARTH_SIM_IDS.iter().find(|c| c.dbf_id == invalid_id).and_then(|c| c.count_as_copy_of_dbf_id)
+    HEARTH_SIM_IDS.get(&invalid_id).and_then(|c| c.count_as_copy_of_dbf_id)
 }

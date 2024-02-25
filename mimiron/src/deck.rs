@@ -14,8 +14,10 @@ use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Display, Write},
+    io::Cursor,
     str::FromStr,
 };
+use varint_rs::VarintReader;
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
 
@@ -171,16 +173,30 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
         })?
         .into_json::<Deck>()?;
 
-    deck.title = title;
+    let (fmt, hero) = extract_format_and_hero(code);
 
-    // Format is the third number in the deckstring: https://hearthsim.info/docs/deckstrings/
-    deck.format = match BASE64_STANDARD.decode(code).map(|v| v[2]) {
-        Ok(1) => "Wild".into(),
-        Ok(2) => "Standard".into(),
-        Ok(3) => "Classic".into(),
-        Ok(4) => "Twist".into(),
-        _ => deck.format,
+    deck.format = match fmt {
+        1 => "Wild".into(),
+        2 => "Standard".into(),
+        3 => "Classic".into(),
+        4 => "Twist".into(),
+        _ => deck.format, // if unknown number use the format returned from Blizzard API.
     };
+
+    deck.title = title.or_else(|| {
+        let hero = AGENT
+            .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{hero}"))
+            .query("locale", &opts.locale.to_string())
+            .query("access_token", &get_access_token())
+            .query("collectible", "0,1")
+            .call()
+            .ok()?
+            .into_json::<Card>()
+            .ok()?
+            .name;
+
+        Some(format!("{hero} - {}", deck.format.to_uppercase()))
+    });
 
     // if the deck has invalid card IDs, add dummy cards.
     if let Some(ref invalid_ids) = deck.invalid_card_ids {
@@ -196,6 +212,26 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     }
 
     Ok(deck)
+}
+
+fn extract_format_and_hero(code: &str) -> (usize, usize) {
+    // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
+
+    let decoded = BASE64_STANDARD
+        .decode(code)
+        .expect("Must be a valid code or calling function would return earlier.");
+
+    let mut buffer = Cursor::new(decoded);
+
+    // Format is the third number.
+    buffer.set_position(2);
+    let fmt = buffer.read_usize_varint().unwrap();
+
+    // Hero ID is the fifth number.
+    buffer.set_position(4);
+    let hero = buffer.read_usize_varint().unwrap();
+
+    (fmt, hero)
 }
 
 pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {

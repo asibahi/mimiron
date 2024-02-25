@@ -19,6 +19,7 @@ use imageproc::{
     pixelops::weighted_sum,
     rect::Rect,
 };
+use itertools::Itertools;
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use rusttype::{Font, Scale};
@@ -87,10 +88,9 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
     let (mut img, cards_in_col) = {
         let main_deck_length = ordered_cards.len();
 
-        let sideboards_length = deck
-            .sideboard_cards
-            .as_ref()
-            .map_or(0, |sbs| sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.len() + 1 + acc));
+        let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
+            sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.iter().unique().count() + 1 + acc)
+        });
 
         let length = (main_deck_length + sideboards_length) as u32;
 
@@ -122,23 +122,22 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_pos_tracker = ordered_cards.len() as u32;
+        let mut sb_cursor = ordered_cards.len() as u32;
 
         for sb in sideboards {
-            let (col, row) = (sb_pos_tracker / cards_in_col, sb_pos_tracker % cards_in_col + 1);
+            let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
             img.copy_from(
                 &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
             )?;
-            sb_pos_tracker += 1;
+            sb_cursor += 1;
 
             for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
-                let i = sb_pos_tracker;
-                let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+                let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
-                sb_pos_tracker += 1;
+                sb_cursor += 1;
             }
         }
     }
@@ -170,8 +169,8 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
         if !neutral_cards.is_empty() {
             columns += 1;
         }
-        if let Some(sideboards) = &deck.sideboard_cards {
-            columns += sideboards.len();
+        if deck.sideboard_cards.is_some() {
+            columns += 1;
         }
 
         columns as u32 * COLUMN_WIDTH + MARGIN
@@ -189,12 +188,6 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
 
     draw_deck_title(&mut img, locale, deck)?;
 
-    // Doesn't currently accomodate longer deck titles
-    if !neutral_cards.is_empty() {
-        let neutrals_title = get_heading_slug("Neutrals");
-        img.copy_from(&neutrals_title, COLUMN_WIDTH + MARGIN, MARGIN)?;
-    }
-
     // class cards
     for (i, slug) in class_cards {
         let i = i as u32 + 1;
@@ -209,23 +202,22 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        for (sb_i, sb) in sideboards.iter().enumerate() {
-            // 2 can be assumed here because all one of current sideboard cards are neutral.
-            let column_start = COLUMN_WIDTH * (2 + sb_i as u32) + MARGIN;
+        // 2 can be assumed here because all two of current sideboard cards are neutral.
+        let sb_col = COLUMN_WIDTH * 2 + MARGIN;
+        let mut sb_cursor = 1;
 
+        for sb in sideboards {
             img.copy_from(
                 &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
-                column_start,
-                ROW_HEIGHT + MARGIN,
+                sb_col,
+                sb_cursor * ROW_HEIGHT + MARGIN,
             )?;
 
-            for (i, slug) in order_cards(&sb.cards_in_sideboard)
-                .iter()
-                .enumerate()
-                .map(|(i, (c, _))| (i, &slug_map[&c.id]))
-            {
-                let i = i as u32 + 2;
-                img.copy_from(slug, column_start, i * ROW_HEIGHT + MARGIN)?;
+            sb_cursor += 1;
+
+            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
+                img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
+                sb_cursor += 1;
             }
         }
     }

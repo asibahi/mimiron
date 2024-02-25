@@ -6,6 +6,7 @@ use crate::{
     AGENT,
 };
 use anyhow::{anyhow, Result};
+use base64::prelude::*;
 use colored::Colorize;
 use counter::Counter;
 use itertools::Itertools;
@@ -155,6 +156,7 @@ impl LookupOptions {
 
 pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let (title, code) = extract_title_and_code(&opts.code);
+
     let mut deck = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", &opts.locale.to_string())
@@ -170,6 +172,15 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
         .into_json::<Deck>()?;
 
     deck.title = title;
+
+    // Format is the third number in the deckstring: https://hearthsim.info/docs/deckstrings/
+    deck.format = match BASE64_STANDARD.decode(code).map(|v| v[2]) {
+        Ok(1) => "Wild".into(),
+        Ok(2) => "Standard".into(),
+        Ok(3) => "Classic".into(),
+        Ok(4) => "Twist".into(),
+        _ => deck.format,
+    };
 
     // if the deck has invalid card IDs, add dummy cards.
     if let Some(ref invalid_ids) = deck.invalid_card_ids {

@@ -38,13 +38,9 @@ pub async fn deck_inner(
 ) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let opts = LookupOptions::lookup(code).with_locale(locale);
+    let opts = LookupOptions::lookup(code).with_locale(locale).with_custom_format(format);
 
-    let mut deck = deck::lookup(&opts)?;
-
-    if let Some(fmt) = format {
-        deck.format = fmt;
-    }
+    let deck = deck::lookup(&opts)?;
 
     send_deck_reply(ctx, deck, locale).await
 }

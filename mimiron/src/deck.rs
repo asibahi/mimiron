@@ -143,16 +143,21 @@ impl Localize for DeckDifference {
 pub struct LookupOptions {
     code: String,
     locale: Locale,
+    format: Option<String>,
 }
 
 impl LookupOptions {
     #[must_use]
     pub fn lookup(code: String) -> Self {
-        Self { code, locale: Locale::enUS }
+        Self { code, locale: Locale::enUS, format: None }
     }
     #[must_use]
     pub fn with_locale(self, locale: Locale) -> Self {
         Self { locale, ..self }
+    }
+    #[must_use]
+    pub fn with_custom_format(self, format: Option<String>) -> Self {
+        Self { format, ..self }
     }
 }
 
@@ -175,11 +180,12 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
 
     let (fmt, hero) = extract_format_and_hero(code);
 
-    deck.format = match fmt {
-        1 => "Wild".into(),
-        2 => "Standard".into(),
-        3 => "Classic".into(),
-        4 => "Twist".into(),
+    deck.format = match (fmt, opts.format.clone()) {
+        (_, Some(fmt)) => fmt,
+        (1, _) => "Wild".into(),
+        (2, _) => "Standard".into(),
+        (3, _) => "Classic".into(),
+        (4, _) => "Twist".into(),
         _ => deck.format, // if unknown number use the format returned from Blizzard API.
     };
 
@@ -329,15 +335,15 @@ pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {
     // https://www.d0nkey.top/decks?format=2&player_class=DEMONHUNTER
 
     let class = class.in_en_us().to_string().to_ascii_uppercase().replace(' ', "");
-    let format = match format {
-        Format::Standard => "2",
-        Format::Wild => "1",
-        Format::Twist => "4",
+    let (fmt_num, format) = match format {
+        Format::Standard => ("2", Some("Standard".into())),
+        Format::Wild => ("1", Some("Wild".into())),
+        Format::Twist => ("4", Some("Twist".into())),
     };
 
     let req = AGENT
         .get("https://www.d0nkey.top/decks")
-        .query("format", format)
+        .query("format", fmt_num)
         .query("player_class", &class);
 
     let fst_try = req.clone().call()?.into_string()?;
@@ -357,5 +363,5 @@ pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {
             .to_string(),
     };
 
-    lookup(&(LookupOptions { code, locale }))
+    lookup(&(LookupOptions { code, locale, format }))
 }

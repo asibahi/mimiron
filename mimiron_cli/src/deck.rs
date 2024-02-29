@@ -77,19 +77,14 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 }
 
 pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
-    let opts = LookupOptions::lookup(args.input).with_locale(locale);
+    let opts = LookupOptions::lookup(args.input).with_locale(locale).with_custom_format(args.mode);
 
-    let mut deck = if let Some(band) = args.band {
+    let deck = if let Some(band) = args.band {
         // Add Band resolution.
         deck::add_band(&opts, band)?
     } else {
         deck::lookup(&opts)?
     };
-
-    // Deck format/mode override
-    if let Some(format) = args.mode {
-        deck.format = format;
-    }
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {

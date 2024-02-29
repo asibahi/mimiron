@@ -21,6 +21,54 @@ use varint_rs::VarintReader;
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
 
+
+#[derive(Clone, Deserialize)]
+pub enum Format {
+    Standard,
+    Wild,
+    Classic,
+    Twist,
+    Custom(String), // useful for customizing the format in Deck type maybe.
+}
+impl Display for Format {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Format::Standard => write!(f, "Standard"),
+            Format::Wild => write!(f, "Wild"),
+            Format::Classic => write!(f, "Classic"),
+            Format::Twist => write!(f, "Twist"),
+            Format::Custom(fmt) => write!(f, "{fmt}"),
+        }
+    }
+}
+impl FromStr for Format {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_ascii_lowercase();
+        let s = s.as_str();
+        Ok(match s {
+            "wild" | "wld" | "w" => Format::Wild,
+            "standard" | "std" | "s" => Format::Standard,
+            "twist" | "t" => Format::Twist,
+            "classc" | "c" => Format::Classic,
+            fmt => Format::Custom(fmt.into()),
+        })
+    }
+}
+impl TryFrom<usize> for Format {
+    type Error = anyhow::Error;
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Ok(match value {
+            1 => Self::Wild,
+            2 => Self::Standard,
+            3 => Self::Classic,
+            4 => Self::Twist,
+            _ => anyhow::bail!("Not a valid format ID."),
+        })
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Sideboard {
@@ -33,7 +81,7 @@ pub struct Sideboard {
 pub struct Deck {
     pub title: Option<String>,
     pub deck_code: String,
-    pub format: String,
+    pub format: Format,
     pub class: Class,
     pub cards: Vec<Card>,
     pub sideboard_cards: Option<Vec<Sideboard>>,
@@ -68,7 +116,7 @@ impl Localize for Deck {
         writeln!(
             buffer,
             "\t{} {}.",
-            &self.format.to_uppercase().bold(),
+            &self.format.to_string().to_uppercase().bold(),
             &self.class.in_locale(locale).to_string().bold()
         )
         .ok();
@@ -180,14 +228,12 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
 
     let (fmt, hero) = extract_format_and_hero(code);
 
-    deck.format = match (fmt, opts.format.clone()) {
-        (_, Some(fmt)) => fmt,
-        (1, _) => "Wild".into(),
-        (2, _) => "Standard".into(),
-        (3, _) => "Classic".into(),
-        (4, _) => "Twist".into(),
-        _ => deck.format, // if unknown number use the format returned from Blizzard API.
-    };
+    deck.format = opts
+        .format
+        .as_ref()
+        .and_then(|s| Format::from_str(s).ok())
+        .or_else(|| Format::try_from(fmt).ok())
+        .unwrap_or(deck.format);
 
     deck.title = title.or_else(|| {
         let hero = AGENT
@@ -201,7 +247,7 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
             .ok()?
             .name;
 
-        Some(format!("{hero} - {}", deck.format.to_uppercase()))
+        Some(format!("{hero} - {}", deck.format.to_string().to_uppercase()))
     });
 
     // if the deck has invalid card IDs, add dummy cards.
@@ -308,37 +354,18 @@ fn format_count(count: usize) -> String {
 // Deck suggestion look up using d0nkey's site.
 // For personal use only unless got permission from d0nkey.
 
-#[derive(Clone, Copy)]
-pub enum Format {
-    Standard,
-    Wild,
-    Twist,
-    // Other(String), // useful for customizing the format in Deck type maybe.
-}
-impl FromStr for Format {
-    type Err = anyhow::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.to_ascii_lowercase();
-        let s = s.as_str();
-        match s {
-            "wild" | "wld" | "w" => Ok(Format::Wild),
-            "standard" | "std" | "s" => Ok(Format::Standard),
-            "twist" | "t" => Ok(Format::Twist),
-            _ => Err(anyhow!("Unknown format")),
-        }
-    }
-}
-
+#[allow(clippy::needless_pass_by_value)]
 pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {
     // Standard Demon Hunter Deck.
     // https://www.d0nkey.top/decks?format=2&player_class=DEMONHUNTER
 
     let class = class.in_en_us().to_string().to_ascii_uppercase().replace(' ', "");
-    let (fmt_num, format) = match format {
-        Format::Standard => ("2", Some("Standard".into())),
-        Format::Wild => ("1", Some("Wild".into())),
-        Format::Twist => ("4", Some("Twist".into())),
+    let fmt_num = match format {
+        Format::Standard => "2",
+        Format::Wild => "1",
+        Format::Twist => "4",
+        _ => anyhow::bail!("Format not supported on d0nkey"),
     };
 
     let req = AGENT
@@ -363,5 +390,5 @@ pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {
             .to_string(),
     };
 
-    lookup(&(LookupOptions { code, locale, format }))
+    lookup(&(LookupOptions { code, locale, format: None }))
 }

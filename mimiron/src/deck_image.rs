@@ -364,7 +364,7 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
 
 fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<()> {
     let title = deck.title.clone().unwrap_or_else(|| {
-        format!("{} - {}", deck.class.in_locale(locale), deck.format.to_uppercase())
+        format!("{} - {}", deck.class.in_locale(locale), deck.format.to_string().to_uppercase())
     });
 
     // size

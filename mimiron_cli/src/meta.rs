@@ -6,7 +6,7 @@ use mimiron::{
     localization::{Locale, Localize},
 };
 
-#[derive(Args, Clone, Copy)]
+#[derive(Args, Clone)]
 pub struct MetaArgs {
     class: Class,
     #[arg(default_value = "standard")]

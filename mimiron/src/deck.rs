@@ -29,7 +29,8 @@ pub enum Format {
     Wild,
     Classic,
     Twist,
-    Custom(String), // how to make this catch new modes?
+    #[serde(untagged)] // apparently the incantation for default case.
+    Custom(String),
 }
 impl Display for Format {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

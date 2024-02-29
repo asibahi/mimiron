@@ -38,7 +38,7 @@ enum Commands {
 
     #[clap(hide = true)]
     Token,
-    
+
     // Get a meta deck
     #[clap(hide = true)]
     Meta(meta::MetaArgs),

@@ -23,12 +23,13 @@ pub use crate::deck_image::{get as get_image, ImageOptions};
 
 
 #[derive(Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Format {
     Standard,
     Wild,
     Classic,
     Twist,
-    Custom(String), // useful for customizing the format in Deck type maybe.
+    Custom(String), // how to make this catch new modes?
 }
 impl Display for Format {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

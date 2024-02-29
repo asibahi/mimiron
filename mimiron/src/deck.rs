@@ -21,15 +21,13 @@ use varint_rs::VarintReader;
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
 
-
 #[derive(Clone, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(from = "String")]
 pub enum Format {
     Standard,
     Wild,
     Classic,
     Twist,
-    #[serde(untagged)] // apparently the incantation for default case.
     Custom(String),
 }
 impl Display for Format {
@@ -47,15 +45,20 @@ impl FromStr for Format {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.to_ascii_lowercase();
+        Ok(s.to_owned().into())
+    }
+}
+impl From<String> for Format {
+    fn from(value: String) -> Self {
+        let s = value.to_ascii_lowercase();
         let s = s.as_str();
-        Ok(match s {
+        match s {
             "wild" | "wld" | "w" => Format::Wild,
             "standard" | "std" | "s" => Format::Standard,
             "twist" | "t" => Format::Twist,
             "classc" | "c" => Format::Classic,
             fmt => Format::Custom(fmt.into()),
-        })
+        }
     }
 }
 impl TryFrom<usize> for Format {
@@ -355,7 +358,6 @@ fn format_count(count: usize) -> String {
 
 // Deck suggestion look up using d0nkey's site.
 // For personal use only unless got permission from d0nkey.
-
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn meta_deck(class: Class, format: Format, locale: Locale) -> Result<Deck> {

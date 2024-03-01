@@ -60,9 +60,9 @@ impl From<String> for Format {
         }
     }
 }
-impl TryFrom<usize> for Format {
+impl TryFrom<u8> for Format {
     type Error = anyhow::Error;
-    fn try_from(value: usize) -> Result<Self, Self::Error> {
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
             1 => Self::Wild,
             2 => Self::Standard,
@@ -235,13 +235,13 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     deck.format = opts
         .format
         .as_ref()
-        .and_then(|s| Format::from_str(s).ok())
-        .or_else(|| Format::try_from(fmt).ok())
+        .and_then(|s| s.parse().ok())
+        .or_else(|| fmt.and_then(|f| f.try_into().ok()))
         .unwrap_or(deck.format);
 
     deck.title = title.or_else(|| {
         let hero = AGENT
-            .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{hero}"))
+            .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", hero?))
             .query("locale", &opts.locale.to_string())
             .query("access_token", &get_access_token())
             .query("collectible", "0,1")
@@ -270,7 +270,7 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     Ok(deck)
 }
 
-fn extract_format_and_hero(code: &str) -> (usize, usize) {
+fn extract_format_and_hero(code: &str) -> (Option<u8>, Option<usize>) {
     // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 
     let decoded = BASE64_STANDARD
@@ -281,11 +281,11 @@ fn extract_format_and_hero(code: &str) -> (usize, usize) {
 
     // Format is the third number.
     buffer.set_position(2);
-    let fmt = buffer.read_usize_varint().unwrap();
+    let fmt = buffer.read_u8_varint().ok();
 
     // Hero ID is the fifth number.
     buffer.set_position(4);
-    let hero = buffer.read_usize_varint().unwrap();
+    let hero = buffer.read_usize_varint().ok();
 
     (fmt, hero)
 }

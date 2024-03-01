@@ -49,15 +49,14 @@ impl FromStr for Format {
     }
 }
 impl From<String> for Format {
-    fn from(value: String) -> Self {
-        let s = value.to_ascii_lowercase();
-        let s = s.as_str();
-        match s {
+    fn from(mut value: String) -> Self {
+        value.make_ascii_lowercase();
+        match value.as_str() {
             "wild" | "wld" | "w" => Format::Wild,
             "standard" | "std" | "s" => Format::Standard,
             "twist" | "t" => Format::Twist,
-            "classc" | "c" => Format::Classic,
-            fmt => Format::Custom(fmt.into()),
+            "classic" | "c" => Format::Classic,
+            _ => Format::Custom(value),
         }
     }
 }

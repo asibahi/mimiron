@@ -178,10 +178,13 @@ pub(crate) async fn paginated_card_print<T>(
     ])]);
 
     let msg = ctx.send(reply).await?;
+    let user_id = ctx.author().id;
 
     // Code copied from poise pagination sample with relevant edits. See comments there for explanation
     while let Some(press) = serenity::collector::ComponentInteractionCollector::new(ctx)
-        .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
+        .filter(move |press| {
+            press.data.custom_id.starts_with(&ctx_id.to_string()) && press.user.id == user_id
+        })
         .timeout(std::time::Duration::from_secs(300)) // 5 minutes
         .await
     {

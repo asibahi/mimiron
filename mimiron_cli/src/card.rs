@@ -34,7 +34,7 @@ pub fn run(args: CardArgs, locale: Locale) -> Result<()> {
         .with_text(args.text)
         .include_reprints(args.reprints)
         .include_noncollectibles(args.all);
-    let cards = card::lookup(&opts)?;
+    let cards = card::lookup(&opts)?.take(30);
 
     for card in cards {
         println!("{:#}", card.in_locale(locale));

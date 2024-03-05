@@ -116,14 +116,15 @@ impl Localize for Deck {
 
         if let Some(title) = &self.title {
             writeln!(buffer, "\t{}", title.bold()).ok();
+        } else {
+            writeln!(
+                buffer,
+                "\t{} {}.",
+                &self.format.to_string().to_uppercase().bold(),
+                &self.class.in_locale(locale).to_string().bold()
+            )
+            .ok();
         }
-        writeln!(
-            buffer,
-            "\t{} {}.",
-            &self.format.to_string().to_uppercase().bold(),
-            &self.class.in_locale(locale).to_string().bold()
-        )
-        .ok();
 
         let cards = self.cards.iter().fold(BTreeMap::<_, usize>::new(), |mut map, card| {
             *map.entry(card).or_default() += 1;

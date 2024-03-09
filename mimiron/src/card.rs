@@ -284,10 +284,14 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut cards = res
         .cards
         .into_iter()
-        // filtering only cards that include the text in the name, instead of the body,
-        // depending on the opts.with_text variable
-        .filter(|c| opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
-        // cards have copies in different sets
+        .filter(|c| {
+            // Filtering out hero portraits
+            c.card_set != 17
+            // Depending on opts.with_text, whether to restrict searches to card names 
+            // or expand to search boxes.
+                && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
+        })
+        // cards may have copies in different sets
         .unique_by(|c| opts.reprints.either(c.id, c.name.clone()))
         .sorted_by_key(|c| !c.name.to_lowercase().starts_with(&search_term.to_lowercase()))
         .peekable();

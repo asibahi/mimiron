@@ -249,9 +249,7 @@ impl SearchOptions {
     }
     #[must_use]
     pub fn include_noncollectibles(self, noncollectibles: bool) -> Self {
-        // When searching for noncollectibles, include "reprints", which are cards with the same name.
-        // For things like "Khadgar"
-        Self { noncollectibles, reprints: self.reprints || noncollectibles, ..self }
+        Self { noncollectibles, ..self }
     }
     #[must_use]
     pub fn with_locale(self, locale: Locale) -> Self {
@@ -285,14 +283,15 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .cards
         .into_iter()
         .filter(|c| {
-            // Filtering out hero portraits
-            c.card_set != 17
+            // Filtering out hero portraits if not searching for incollectibles
+            (opts.noncollectibles || c.card_set != 17)
             // Depending on opts.with_text, whether to restrict searches to card names 
             // or expand to search boxes.
                 && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
         })
-        // cards may have copies in different sets
-        .unique_by(|c| opts.reprints.either(c.id, c.name.clone()))
+        // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)
+        .unique_by(|c| opts.reprints.either(c.id, (c.name.clone(), c.text.clone())))
+        // when searching for Ragnaros guarantee that Ragnaros is the first result.
         .sorted_by_key(|c| !c.name.to_lowercase().starts_with(&search_term.to_lowercase()))
         .peekable();
 

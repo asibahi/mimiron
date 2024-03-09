@@ -264,7 +264,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .query("locale", &opts.locale.to_string())
         .query("textFilter", search_term)
-        .query("pageSize", "99")
+        .query("pageSize", "500")
         .query("access_token", &get_access_token());
 
     if opts.noncollectibles {

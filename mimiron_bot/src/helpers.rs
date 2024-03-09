@@ -144,6 +144,7 @@ pub(crate) async fn paginated_card_print<T>(
 ) -> Result<(), Error> {
     // pagination elements
     let embed_chunks = cards
+        .take(90)
         .map(|c| Lazy::new(|| inner_card_embed(c)))
         .chunks(3)
         .into_iter()

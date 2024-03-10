@@ -1,6 +1,7 @@
 use crate::{
     card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
+    helpers::CardSearchResponse,
     localization::{Locale, Localize},
     CardTextDisplay, AGENT,
 };
@@ -206,13 +207,6 @@ impl From<CardData> for Card {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CardSearchResponse {
-    cards: Vec<Card>,
-    card_count: usize,
-}
-
 pub struct SearchOptions {
     search_term: String,
     with_text: bool,
@@ -264,7 +258,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         res = res.query("collectible", "0,1");
     }
 
-    let res = res.call()?.into_json::<CardSearchResponse>()?;
+    let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
 
     if res.card_count == 0 {
         return Err(anyhow!(

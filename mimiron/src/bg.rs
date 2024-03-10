@@ -1,6 +1,7 @@
 use crate::{
     card_details::MinionType,
     get_access_token,
+    helpers::CardSearchResponse,
     localization::{Locale, Localize},
     CardTextDisplay, AGENT,
 };
@@ -236,8 +237,10 @@ impl From<CardData> for Card {
             Some(bg) if bg.quest => BGCardType::Quest { text: c.text },
             Some(bg) if bg.reward => BGCardType::Reward { text: c.text },
 
+            _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },
             _ if c.card_type_id == 10 => BGCardType::HeroPower { text: c.text, cost: c.mana_cost },
-            _ /* if c.card_type_id == 43 */ => BGCardType::Anomaly { text: c.text },
+
+            _ => BGCardType::Spell { tier: 0, cost: c.mana_cost, text: c.text },
         };
 
         Self {
@@ -247,13 +250,6 @@ impl From<CardData> for Card {
             card_type,
         }
     }
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CardSearchResponse {
-    cards: Vec<Card>,
-    card_count: usize,
 }
 
 pub struct SearchOptions {
@@ -322,7 +318,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         res = res.query("tier", &t.to_string());
     }
 
-    let res = res.call()?.into_json::<CardSearchResponse>()?;
+    let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
 
     if res.card_count == 0 {
         return Err(anyhow!("No Battlegrounds card found. Check your spelling."));

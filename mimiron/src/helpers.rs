@@ -296,3 +296,14 @@ mod traverse_tests {
         Ok(())
     }
 }
+
+// ====================
+// Actual helper struct
+// ====================
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CardSearchResponse<T> {
+    pub cards: Vec<T>,
+    pub card_count: usize,
+}

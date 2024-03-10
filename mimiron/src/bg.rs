@@ -236,8 +236,8 @@ impl From<CardData> for Card {
             Some(bg) if bg.quest => BGCardType::Quest { text: c.text },
             Some(bg) if bg.reward => BGCardType::Reward { text: c.text },
 
-            _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },
-            _ => BGCardType::HeroPower { text: c.text, cost: c.mana_cost },
+            _ if c.card_type_id == 10 => BGCardType::HeroPower { text: c.text, cost: c.mana_cost },
+            _ /* if c.card_type_id == 43 */ => BGCardType::Anomaly { text: c.text },
         };
 
         Self {
@@ -363,19 +363,18 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
     match &card.card_type {
         BGCardType::Hero { buddy_id, child_ids, .. } => {
             'heropower: {
-                // Getting the starting hero power only. API keeps old
-                // versions of hero powers below that for some reason.
-                // First hero power is usually the smallest ID.
-                let Some(id) = child_ids
+                // Getting the starting hero power only. API sometimes has outdated HPs.
+                // The smallest ChildID Hero Power is (usually) the correct hero power.
+                // Hope we don't get rate limited ...
+                let Some(res) = child_ids
                     .iter()
-                    .filter(|&&id| &Some(id) != buddy_id)
-                    .min()
+                    .sorted()
+                    .filter_map(|id| get_card_by_id(*id, locale).ok())
+                    .find(|c| matches!(c.card_type, BGCardType::HeroPower { .. }))
                 else {
                     break 'heropower;
                 };
-                let Ok(res) = get_card_by_id(*id, locale) else {
-                    break 'heropower;
-                };
+
                 let text = textwrap::fill(
                     &format!("{:+}", res.in_locale(locale)),
                     textwrap::Options::new(textwrap::termwidth() - 10)
@@ -390,10 +389,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
             }
 
             'buddy: {
-                let Some(buddy_id) = buddy_id else {
-                    break 'buddy;
-                };
-                let Ok(res) = get_card_by_id(*buddy_id, locale) else {
+                let Some(res) = buddy_id.and_then(|id| get_card_by_id(id, locale).ok()) else {
                     break 'buddy;
                 };
 

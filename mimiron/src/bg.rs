@@ -366,12 +366,9 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 // Getting the starting hero power only. API keeps old
                 // versions of hero powers below that for some reason.
                 // First hero power is usually the smallest ID.
-                //
-                // Card ID 70136 is Blood Gem. 1694 is Banana
-                // Workaround for Blackthorn and Mukla, respectively.
                 let Some(id) = child_ids
                     .iter()
-                    .filter(|&&id| id != 70136 && id != 1694 && &Some(id) != buddy_id)
+                    .filter(|&&id| &Some(id) != buddy_id)
                     .min()
                 else {
                     break 'heropower;

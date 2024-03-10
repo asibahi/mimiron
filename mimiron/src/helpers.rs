@@ -54,51 +54,18 @@ impl CardTextDisplay for str {
 
     fn to_markdown(&self) -> String {
         let mut buffer = String::new();
-        let mut prev_style = TextStyle::Plain;
 
         for piece in get_text_boxes(self) {
-            let tag = match (prev_style, piece.style) {
-                (TextStyle::Plain, TextStyle::Plain)
-                | (TextStyle::Bold, TextStyle::Bold)
-                | (TextStyle::Italic, TextStyle::Italic)
-                | (TextStyle::BoldItalic, TextStyle::BoldItalic) => "",
-
-                (TextStyle::Plain, TextStyle::Italic)
-                | (TextStyle::Bold, TextStyle::BoldItalic)
-                | (TextStyle::Italic, TextStyle::Plain)
-                | (TextStyle::BoldItalic, TextStyle::Bold) => "*",
-
-                (TextStyle::Plain, TextStyle::Bold)
-                | (TextStyle::Bold, TextStyle::Plain)
-                | (TextStyle::Italic, TextStyle::BoldItalic)
-                | (TextStyle::BoldItalic, TextStyle::Italic) => "**",
-
-                (TextStyle::Plain, TextStyle::BoldItalic)
-                | (TextStyle::BoldItalic, TextStyle::Plain) => "***",
-
-                (TextStyle::Bold, TextStyle::Italic) => "** *", // should never happen?
-                (TextStyle::Italic, TextStyle::Bold) => "* **", // should never happen?
+            let Ok(()) = (match piece.style {
+                TextStyle::Plain => write!(buffer, "{}", piece.text),
+                TextStyle::Bold => write!(buffer, "**{}**", piece.text),
+                TextStyle::Italic => write!(buffer, "*{}*", piece.text),
+                TextStyle::BoldItalic => write!(buffer, "***{}***", piece.text),
+            }) else {
+                buffer = self.into();
+                break;
             };
-
-            let Ok(()) = write!(buffer, "{tag}{}", piece.text) else {
-                return self.into();
-            };
-
-            prev_style = piece.style;
         }
-
-        let Ok(()) = write!(
-            buffer,
-            "{}",
-            match prev_style {
-                TextStyle::Plain => "",
-                TextStyle::Bold => "**",
-                TextStyle::Italic => "*",
-                TextStyle::BoldItalic => "***",
-            }
-        ) else {
-            return self.into();
-        };
 
         buffer
     }

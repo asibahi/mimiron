@@ -7,7 +7,7 @@ use nom::{
     sequence::delimited,
     IResult,
 };
-use std::fmt::{Display, Write};
+use std::fmt::Write;
 
 // ====================
 // Text Tree
@@ -21,23 +21,92 @@ enum TextTree {
     Seq(Vec<TextTree>),
 }
 
-// ====================
-// Card Text to Console
-// ====================
+pub trait CardTextDisplay {
+    fn to_console(&self) -> String;
+    fn to_markdown(&self) -> String;
+}
 
-impl Display for TextTree {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl CardTextDisplay for str {
+    fn to_console(&self) -> String {
         use colored::Colorize;
-        match self {
-            Self::String(s) => write!(f, "{s}"),
-            Self::Bold(b) => write!(f, "{}", b.to_string().bold()),
-            Self::Italic(i) => write!(f, "{}", i.to_string().italic()),
-            Self::Seq(s) => {
-                write!(f, "{}", s.iter().fold(String::new(), |acc, s| acc + &s.to_string()))
-            }
+
+        let mut buffer = String::new();
+
+        for piece in get_text_boxes(self) {
+            let Ok(()) = (match piece.style {
+                TextStyle::Plain => write!(buffer, "{}", piece.text),
+                TextStyle::Bold => write!(buffer, "{}", piece.text.bold()),
+                TextStyle::Italic => write!(buffer, "{}", piece.text.italic()),
+                TextStyle::BoldItalic => write!(buffer, "{}", piece.text.bold().italic()),
+            }) else {
+                buffer = self.into();
+                break;
+            };
         }
+
+        textwrap::fill(
+            &buffer,
+            textwrap::Options::new(textwrap::termwidth() - 10)
+                .initial_indent("\t")
+                .subsequent_indent("\t"),
+        )
+    }
+
+    fn to_markdown(&self) -> String {
+        let mut buffer = String::new();
+        let mut prev_style = TextStyle::Plain;
+
+        for piece in get_text_boxes(self) {
+            let tag = match (prev_style, piece.style) {
+                (TextStyle::Plain, TextStyle::Plain)
+                | (TextStyle::Bold, TextStyle::Bold)
+                | (TextStyle::Italic, TextStyle::Italic)
+                | (TextStyle::BoldItalic, TextStyle::BoldItalic) => "",
+
+                (TextStyle::Plain, TextStyle::Italic)
+                | (TextStyle::Bold, TextStyle::BoldItalic)
+                | (TextStyle::Italic, TextStyle::Plain)
+                | (TextStyle::BoldItalic, TextStyle::Bold) => "*",
+
+                (TextStyle::Plain, TextStyle::Bold)
+                | (TextStyle::Bold, TextStyle::Plain)
+                | (TextStyle::Italic, TextStyle::BoldItalic)
+                | (TextStyle::BoldItalic, TextStyle::Italic) => "**",
+
+                (TextStyle::Plain, TextStyle::BoldItalic)
+                | (TextStyle::BoldItalic, TextStyle::Plain) => "***",
+
+                (TextStyle::Bold, TextStyle::Italic) => "** *", // should never happen?
+                (TextStyle::Italic, TextStyle::Bold) => "* **", // should never happen?
+            };
+
+            let Ok(()) = write!(buffer, "{tag}{}", piece.text) else {
+                return self.into();
+            };
+
+            prev_style = piece.style;
+        }
+
+        let Ok(()) = write!(
+            buffer,
+            "{}",
+            match prev_style {
+                TextStyle::Plain => "",
+                TextStyle::Bold => "**",
+                TextStyle::Italic => "*",
+                TextStyle::BoldItalic => "***",
+            }
+        ) else {
+            return self.into();
+        };
+
+        buffer
     }
 }
+
+// ====================
+// Parser from HTML tags to TextTree
+// ====================
 
 fn parse_bold(i: &str) -> IResult<&str, TextTree> {
     let marks = delimited(tag("<b>"), parse_body, tag("</b>"));
@@ -64,10 +133,6 @@ fn parse_body(i: &str) -> IResult<&str, TextTree> {
 
 fn to_text_tree(i: &str) -> Result<TextTree, &str> {
     all_consuming(parse_body)(i).map(|(_, s)| s).map_err(|_| i)
-}
-
-pub fn prettify(i: &str) -> String {
-    to_text_tree(i).map_or_else(|_| i.to_owned(), |s| s.to_string())
 }
 
 #[cfg(test)]
@@ -127,45 +192,23 @@ mod prettify_tests {
 }
 
 // ====================
-// Card Text on Image
+// TextTree to Boxes and Glue (originally done for Card text on Images)
 // ====================
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct TextPiece {
+struct TextPiece {
     text: String,
     style: TextStyle,
 }
 
 impl TextPiece {
-    pub fn new(text: &str, style: TextStyle) -> Self {
+    fn new(text: &str, style: TextStyle) -> Self {
         Self { text: text.into(), style }
-    }
-
-    fn embolden(self) -> Self {
-        Self {
-            style: match self.style {
-                TextStyle::Plain => TextStyle::Bold,
-                TextStyle::Italic => TextStyle::BoldItalic,
-                _ => self.style,
-            },
-            ..self
-        }
-    }
-
-    fn italicize(self) -> Self {
-        Self {
-            style: match self.style {
-                TextStyle::Plain => TextStyle::Italic,
-                TextStyle::Bold => TextStyle::BoldItalic,
-                _ => self.style,
-            },
-            ..self
-        }
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum TextStyle {
+enum TextStyle {
     Plain,
     Bold,
     Italic,
@@ -175,8 +218,28 @@ pub enum TextStyle {
 fn traverse_inner(tree: TextTree, visit: &mut dyn FnMut(TextPiece)) {
     match tree {
         TextTree::String(text) => visit(TextPiece::new(&text, TextStyle::Plain)),
-        TextTree::Bold(inner) => traverse_inner(*inner, &mut |tp| visit(tp.embolden())),
-        TextTree::Italic(inner) => traverse_inner(*inner, &mut |tp| visit(tp.italicize())),
+        TextTree::Bold(inner) => traverse_inner(*inner, &mut |tp| {
+            let emboldened = TextPiece {
+                style: match tp.style {
+                    TextStyle::Plain => TextStyle::Bold,
+                    TextStyle::Italic => TextStyle::BoldItalic,
+                    _ => tp.style,
+                },
+                ..tp
+            };
+            visit(emboldened);
+        }),
+        TextTree::Italic(inner) => traverse_inner(*inner, &mut |tp| {
+            let italicized = TextPiece {
+                style: match tp.style {
+                    TextStyle::Plain => TextStyle::Italic,
+                    TextStyle::Bold => TextStyle::BoldItalic,
+                    _ => tp.style,
+                },
+                ..tp
+            };
+            visit(italicized);
+        }),
         TextTree::Seq(seq) => seq.into_iter().for_each(|tt| traverse_inner(tt, visit)),
     }
 }
@@ -196,73 +259,19 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
     })
 }
 
-pub fn get_boxes_and_glue(i: &str) -> impl Iterator<Item = TextPiece> {
+fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> {
     let tree = match to_text_tree(i) {
         Ok(inner) => inner,
         Err(text) => TextTree::String(text.to_owned()),
     };
 
-    traverse_text_tree(tree)
-}
-
-#[must_use]
-pub fn card_text_to_markdown(i: &str) -> String {
-    let mut buffer = String::new();
-    let mut prev_style = TextStyle::Plain;
-
-    let boxes = get_boxes_and_glue(i).coalesce(|x, y| {
+    traverse_text_tree(tree).coalesce(|x, y| {
         if x.style == y.style {
             Ok(TextPiece { text: format!("{}{}", x.text, y.text), style: x.style })
         } else {
             Err((x, y))
         }
-    });
-
-    for piece in boxes {
-        let tag = match (prev_style, piece.style) {
-            (TextStyle::Plain, TextStyle::Plain)
-            | (TextStyle::Bold, TextStyle::Bold)
-            | (TextStyle::Italic, TextStyle::Italic)
-            | (TextStyle::BoldItalic, TextStyle::BoldItalic) => "",
-
-            (TextStyle::Plain, TextStyle::Italic)
-            | (TextStyle::Bold, TextStyle::BoldItalic)
-            | (TextStyle::Italic, TextStyle::Plain)
-            | (TextStyle::BoldItalic, TextStyle::Bold) => "*",
-
-            (TextStyle::Plain, TextStyle::Bold)
-            | (TextStyle::Bold, TextStyle::Plain)
-            | (TextStyle::Italic, TextStyle::BoldItalic)
-            | (TextStyle::BoldItalic, TextStyle::Italic) => "**",
-
-            (TextStyle::Plain, TextStyle::BoldItalic)
-            | (TextStyle::BoldItalic, TextStyle::Plain) => "***",
-
-            (TextStyle::Bold, TextStyle::Italic) => "** *", // should never happen?
-            (TextStyle::Italic, TextStyle::Bold) => "* **", // should never happen?
-        };
-
-        let Ok(()) = write!(buffer, "{tag}{}", piece.text) else {
-            return i.into();
-        };
-
-        prev_style = piece.style;
-    }
-
-    let Ok(()) = write!(
-        buffer,
-        "{}",
-        match prev_style {
-            TextStyle::Plain => "",
-            TextStyle::Bold => "**",
-            TextStyle::Italic => "*",
-            TextStyle::BoldItalic => "***",
-        }
-    ) else {
-        return i.into();
-    };
-
-    buffer
+    })
 }
 
 #[cfg(test)]

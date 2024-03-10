@@ -1,9 +1,8 @@
 use crate::{
     card_details::MinionType,
     get_access_token,
-    helpers::prettify,
     localization::{Locale, Localize},
-    AGENT,
+    CardTextDisplay, AGENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
@@ -94,15 +93,9 @@ impl Localize for BGCardType {
         impl Display for Inner<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fn inner(text: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                    let text = prettify(text);
+                    let text = text.to_console();
 
                     if f.alternate() {
-                        let text = textwrap::fill(
-                            &text,
-                            textwrap::Options::new(textwrap::termwidth() - 10)
-                                .initial_indent("\t")
-                                .subsequent_indent("\t"),
-                        );
                         write!(f, "\n{text}")?;
                     } else if f.sign_plus() {
                         // dumbass hack to get unformatted text fur get_associated_cards
@@ -373,7 +366,9 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 // Getting the starting hero power only. API keeps old
                 // versions of hero powers below that for some reason.
                 // First hero power is usually the smallest ID.
-                let Some(id) = child_ids.iter().min() else {
+                //
+                // Card ID 70136 is Blood Gem.
+                let Some(id) = child_ids.iter().filter(|&&id| id != 70136).min() else {
                     break 'heropower;
                 };
                 let Ok(res) = get_card_by_id(*id, locale) else {
@@ -426,13 +421,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
 
             println!("{upgraded}");
 
-            let text = textwrap::fill(
-                &prettify(text),
-                textwrap::Options::new(textwrap::termwidth() - 10)
-                    .initial_indent("\t")
-                    .subsequent_indent("\t"),
-            )
-            .yellow();
+            let text = &text.to_console().yellow();
 
             cards.push(res);
 

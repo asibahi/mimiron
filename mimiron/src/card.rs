@@ -1,9 +1,8 @@
 use crate::{
     card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
-    helpers::prettify,
     localization::{Locale, Localize},
-    AGENT,
+    CardTextDisplay, AGENT,
 };
 use anyhow::{anyhow, Result};
 use colored::Colorize;
@@ -150,13 +149,7 @@ impl Localize for Card {
                 if f.alternate() {
                     let set = self.0.card_set(self.1);
 
-                    let text = prettify(&self.0.text);
-                    let text = textwrap::fill(
-                        &text,
-                        textwrap::Options::new(textwrap::termwidth() - 10)
-                            .initial_indent("\t")
-                            .subsequent_indent("\t"),
-                    );
+                    let text = self.0.text.to_console();
 
                     write!(f, " {set}\n{text}")?;
                 }

@@ -1,10 +1,11 @@
 use crate::{
-    helpers::{get_server_locale, markdown, paginated_card_print},
+    helpers::{get_server_locale, paginated_card_print},
     Context, Error,
 };
 use mimiron::{
     bg,
     localization::{Locale, Localize},
+    CardTextDisplay,
 };
 use poise::serenity_prelude as serenity;
 
@@ -109,8 +110,8 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }
         | bg::BGCardType::Reward { text }
-        | bg::BGCardType::Anomaly { text } => (markdown(text), vec![(" ", lct, true)]),
-        bg::BGCardType::HeroPower { text, .. } => (markdown(text), vec![]),
+        | bg::BGCardType::Anomaly { text } => (text.to_markdown(), vec![(" ", lct, true)]),
+        bg::BGCardType::HeroPower { text, .. } => (text.to_markdown(), vec![]),
     };
 
     fields.extend(bg::get_and_print_associated_cards(&card, locale).into_iter().filter_map(
@@ -124,10 +125,10 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
                         _ => " ",
                     };
 
-                    Some((title, format!("{}: {}", lct, markdown(text)), false))
+                    Some((title, format!("{}: {}", lct, text.to_markdown()), false))
                 }
                 bg::BGCardType::HeroPower { text, .. } => {
-                    Some((" ", format!("{}: {}", lct, markdown(text)), false))
+                    Some((" ", format!("{}: {}", lct, text.to_markdown()), false))
                 }
                 _ => None,
             }

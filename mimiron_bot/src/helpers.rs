@@ -9,10 +9,6 @@ use mimiron::{
 use once_cell::unsync::Lazy;
 use poise::serenity_prelude as serenity;
 
-pub(crate) fn markdown(i: &str) -> String {
-    mimiron::card_text_to_markdown(i)
-}
-
 #[poise::command(slash_command, hide_in_help)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let footer = "This unofficial bot uses the official Blizzard API, the one used in the official card \

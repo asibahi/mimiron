@@ -1,4 +1,7 @@
-use crate::{helpers::{get_server_locale, Emoji}, Context, Error};
+use crate::{
+    helpers::{get_server_locale, Emoji},
+    Context, Error,
+};
 use itertools::Itertools;
 use mimiron::{
     card,

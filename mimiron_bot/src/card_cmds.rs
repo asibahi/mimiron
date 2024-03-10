@@ -1,10 +1,11 @@
 use crate::{
-    helpers::{Emoji, get_server_locale, markdown, paginated_card_print},
+    helpers::{get_server_locale, paginated_card_print, Emoji},
     Context, Error,
 };
 use mimiron::{
     card,
     localization::{Locale, Localize},
+    CardTextDisplay,
 };
 use poise::serenity_prelude as serenity;
 
@@ -86,13 +87,23 @@ fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
     ];
 
     if !card.flavor_text.is_empty() {
-        fields.push(("Flavor Text", markdown(&card.flavor_text), false));
+        fields.push((
+            "Flavor Text",
+            {
+                let i: &str = &card.flavor_text;
+                i.to_markdown()
+            },
+            false,
+        ));
     }
 
     serenity::CreateEmbed::default()
         .title(&card.name)
         .url(format!("https://hearthstone.blizzard.com/en-us/cards/{}", &card.id))
-        .description(markdown(&card.text))
+        .description({
+            let i: &str = &card.text;
+            i.to_markdown()
+        })
         .color(card.rarity.color())
         .thumbnail(&card.image)
         .fields(fields)

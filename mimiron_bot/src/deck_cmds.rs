@@ -1,4 +1,4 @@
-use crate::{helpers::get_server_locale, Context, Error};
+use crate::{helpers::{get_server_locale, Emoji}, Context, Error};
 use itertools::Itertools;
 use mimiron::{
     card,
@@ -85,7 +85,7 @@ pub async fn deckcomp(
         map.into_iter()
             .sorted()
             .map(|(card, count)| {
-                let square = crate::helpers::rarity_to_emoji(card.rarity);
+                let square = card.rarity.emoji();
                 let count = (count > 1).then(|| format!("_{count}x_ ")).unwrap_or_default();
 
                 format!("{} {}{}", square, count, card.name)

@@ -61,32 +61,36 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn class_to_emoji(class: &Class) -> &'static str {
-    // emojis are in Mimiron Bot server
-    match class {
-        Class::DeathKnight => "<:dk:1182031994822086786>",
-        Class::DemonHunter => "<:dh:1182032009359528116>",
-        Class::Druid => "<:dr:1182032011184066650>",
-        Class::Hunter => "<:hu:1182032019052576878>",
-        Class::Mage => "<:ma:1182032003177127937>",
-        Class::Paladin => "<:pa:1182032015890063403>",
-        Class::Priest => "<:pr:1182032001667182732>",
-        Class::Rogue => "<:ro:1182031993064665088>",
-        Class::Shaman => "<:sh:1182031998802464808>",
-        Class::Warlock => "<:wk:1182032014757601340>",
-        Class::Warrior => "<:wr:1182032006171861152>",
-        Class::Neutral => "",
+pub trait Emoji {
+    fn emoji(&self) -> &'static str;
+}
+impl Emoji for Class {
+    fn emoji(&self) -> &'static str {
+        match self {
+            Self::DeathKnight => "<:dk:1182031994822086786>",
+            Self::DemonHunter => "<:dh:1182032009359528116>",
+            Self::Druid => "<:dr:1182032011184066650>",
+            Self::Hunter => "<:hu:1182032019052576878>",
+            Self::Mage => "<:ma:1182032003177127937>",
+            Self::Paladin => "<:pa:1182032015890063403>",
+            Self::Priest => "<:pr:1182032001667182732>",
+            Self::Rogue => "<:ro:1182031993064665088>",
+            Self::Shaman => "<:sh:1182031998802464808>",
+            Self::Warlock => "<:wk:1182032014757601340>",
+            Self::Warrior => "<:wr:1182032006171861152>",
+            Self::Neutral => "",
+        }
     }
 }
-
-pub fn rarity_to_emoji(rarity: Rarity) -> &'static str {
-    // emojis are in Mimiron Bot server
-    match rarity {
-        Rarity::Legendary => "<:legendary:1182038161099067522>",
-        Rarity::Epic => "<:epic:1182038156841844837>",
-        Rarity::Rare => "<:rare:1182038164781678674>",
-        Rarity::Noncollectible => "<:artifact:1189986811079045282>",
-        Rarity::Common | Rarity::Free => "<:common:1182038153767419986>",
+impl Emoji for Rarity {
+    fn emoji(&self) -> &'static str {
+        match self {
+            Self::Legendary => "<:legendary:1182038161099067522>",
+            Self::Epic => "<:epic:1182038156841844837>",
+            Self::Rare => "<:rare:1182038164781678674>",
+            Self::Noncollectible => "<:artifact:1189986811079045282>",
+            Self::Common | Self::Free => "<:common:1182038153767419986>",
+        }
     }
 }
 
@@ -163,14 +167,14 @@ pub(crate) async fn paginated_card_print<T>(
     let ctx_id = ctx.id();
 
     let prev_button =
-        serenity::CreateButton::new(&(format!("{ctx_id}prev"))).label("<").disabled(true);
+        serenity::CreateButton::new(format!("{ctx_id}prev")).label("<").disabled(true);
 
     let pages_indicator = serenity::CreateButton::new("pagination_view")
         .label(format!("{}/{}", current_page + 1, embed_chunks.len()))
         .style(serenity::ButtonStyle::Secondary)
         .disabled(true);
 
-    let next_button = serenity::CreateButton::new(&(format!("{ctx_id}next"))).label(">");
+    let next_button = serenity::CreateButton::new(format!("{ctx_id}next")).label(">");
 
     reply = reply.components(vec![serenity::CreateActionRow::Buttons(vec![
         prev_button.clone(),

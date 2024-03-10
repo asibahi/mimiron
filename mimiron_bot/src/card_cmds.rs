@@ -1,5 +1,5 @@
 use crate::{
-    helpers::{class_to_emoji, get_server_locale, markdown, paginated_card_print, rarity_to_emoji},
+    helpers::{Emoji, get_server_locale, markdown, paginated_card_print},
     Context, Error,
 };
 use mimiron::{
@@ -76,9 +76,9 @@ pub async fn allcards(
 }
 
 fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
-    let class = card.class.iter().map(class_to_emoji).collect::<String>();
+    let class = card.class.iter().map(Emoji::emoji).collect::<String>();
 
-    let rarity = rarity_to_emoji(card.rarity);
+    let rarity = card.rarity.emoji();
 
     let mut fields = vec![
         (" ", format!("{} ({}) {}", class, card.cost, card.card_type.in_locale(locale)), true),

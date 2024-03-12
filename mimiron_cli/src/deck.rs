@@ -106,18 +106,12 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
 
         let img = deck::get_image(&deck, locale, opts)?;
 
-        let file_name = deck
-            .title
-            .map(|t| {
-                let t = t.chars().filter(|c| c.is_alphanumeric()).collect::<String>();
-                format!("{t}.png")
-            })
-            .unwrap_or(format!(
-                "{} {} {}.png",
-                deck.class.in_locale(locale),
-                deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>(),
-                chrono::Local::now().format("%Y%m%d %H%M")
-            ));
+        let file_name = format!(
+            "{} {} {}.png",
+            deck.title.unwrap_or(deck.class.in_locale(locale).to_string()),
+            deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>(),
+            chrono::Local::now().format("%Y%m%d %H%M")
+        );
 
         let save_file = args
             .output

@@ -89,7 +89,7 @@ pub struct Deck {
     pub class: Class,
     pub cards: Vec<Card>,
     pub sideboard_cards: Option<Vec<Sideboard>>,
-    invalid_card_ids: Option<Vec<usize>>,
+    pub(crate) invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
     #[must_use]

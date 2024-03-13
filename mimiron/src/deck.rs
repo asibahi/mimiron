@@ -327,19 +327,16 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     }
 
     // Sideboard cards. Not sure if they're always available?
-    if let Ok(sb_count) = buffer.read_u8_varint() {
-        for _ in 0..sb_count {
-            let inner_count = buffer.read_u8_varint()?;
+    if buffer.read_u8_varint().is_ok_and(|i| i == 1) {
+        let count = buffer.read_u8_varint()?;
+        for _ in 0..count {
+            let id = buffer.read_usize_varint()?;
+            let id = validate_id(id);
 
-            for _ in 0..inner_count {
-                let id = buffer.read_usize_varint()?;
-                let id = validate_id(id);
+            let sb_id = buffer.read_usize_varint()?;
+            let sb_id = validate_id(sb_id);
 
-                let sb_id = buffer.read_usize_varint()?;
-                let sb_id = validate_id(sb_id);
-
-                raw_data.sideboard_cards.push((id, sb_id));
-            }
+            raw_data.sideboard_cards.push((id, sb_id));
         }
     }
 

@@ -219,6 +219,14 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let (title, raw_data) = extract_title_and_raw(&opts.code);
     let raw_data = raw_data.ok_or(anyhow!("invalid code"))?;
 
+    raw_data_to_deck(opts, raw_data, title)
+}
+
+fn raw_data_to_deck(
+    opts: &LookupOptions,
+    raw_data: RawCodeData,
+    title: Option<String>,
+) -> Result<Deck> {
     let mut req = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", &opts.locale.to_string())
@@ -350,38 +358,29 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    let deck = lookup(opts)?;
+    let mut raw_data = decode_deck_code(&opts.code)?;
 
-    if deck.cards.iter().all(|c| c.id != ETC_ID) {
+    if raw_data.cards.iter().all(|&id| id != ETC_ID) {
         return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
     }
-
-    if deck.sideboard_cards.is_some() {
-        return Err(anyhow!("Deck already has a Sideboard."));
+    if raw_data.sideboard_cards.iter().any(|&(_, id)| id == ETC_ID) {
+        return Err(anyhow!("Deck already has an {ETC_NAME} Sideboard."));
     }
-
-    let card_ids = deck.cards.iter().map(|c| c.id).join(",");
 
     let band_ids = band
         .into_iter()
         .map(|name| {
             card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))?
                 // Undocumented API Found by looking through playhearthstone.com card library
-                .map(|c| format!("{id}:{ETC_ID}", id = c.id))
+                .map(|c| (c.id, ETC_ID))
                 .next()
                 .ok_or_else(|| anyhow!("Band found brown M&M's."))
         })
-        .collect::<Result<Vec<String>>>()?
-        .join(",");
+        .collect::<Result<Vec<(_, _)>>>()?;
 
-    Ok(AGENT
-        .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &opts.locale.to_string())
-        .query("access_token", &get_access_token())
-        .query("ids", &card_ids)
-        .query("sideboardCards", &band_ids)
-        .call()?
-        .into_json::<Deck>()?)
+    raw_data.sideboard_cards.extend(band_ids);
+
+    raw_data_to_deck(opts, raw_data, None)
 }
 
 fn extract_title_and_raw(code: &str) -> (Option<String>, Option<RawCodeData>) {

@@ -219,18 +219,17 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let (title, raw_data) = extract_title_and_raw(&opts.code);
     let raw_data = raw_data.ok_or(anyhow!("invalid code"))?;
 
-    let card_ids = raw_data.cards.iter().join(",");
-
     let mut req = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", &opts.locale.to_string())
         .query("access_token", &get_access_token())
-        .query("ids", &card_ids);
+        .query("ids", &raw_data.cards.iter().join(","));
 
     if !raw_data.sideboard_cards.is_empty() {
-        let sb_cards =
-            raw_data.sideboard_cards.iter().map(|(id, sb_id)| format!("{id}:{sb_id}")).join(",");
-        req = req.query("sideboardCards", &sb_cards);
+        req = req.query(
+            "sideboardCards",
+            &raw_data.sideboard_cards.iter().map(|(id, sb_id)| format!("{id}:{sb_id}")).join(","),
+        );
     }
 
     let mut deck = req.call()?.into_json::<Deck>()?;

@@ -497,7 +497,6 @@ pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
     HEARTH_SIM_IDS.get(&card.id).map(|c| c.id.clone())
 }
 
-#[allow(unused)]
-pub(crate) fn validate_id(invalid_id: usize) -> Option<usize> {
-    HEARTH_SIM_IDS.get(&invalid_id).and_then(|c| c.count_as_copy_of_dbf_id)
+pub(crate) fn validate_id(input_id: usize) -> usize {
+    HEARTH_SIM_IDS.get(&input_id).and_then(|c| c.count_as_copy_of_dbf_id).unwrap_or(input_id)
 }

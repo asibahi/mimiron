@@ -1,6 +1,6 @@
 use crate::{
     card::{self, Card},
-    card_details::Class,
+    card_details::{validate_id, Class},
     get_access_token,
     localization::{Locale, Localize},
     AGENT,
@@ -21,9 +21,10 @@ use varint_rs::VarintReader;
 
 pub use crate::deck_image::{get as get_image, ImageOptions};
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Default, Deserialize)]
 #[serde(from = "String")]
 pub enum Format {
+    #[default]
     Standard,
     Wild,
     Classic,
@@ -89,7 +90,7 @@ pub struct Deck {
     pub class: Class,
     pub cards: Vec<Card>,
     pub sideboard_cards: Option<Vec<Sideboard>>,
-    pub(crate) invalid_card_ids: Option<Vec<usize>>,
+    invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
     #[must_use]
@@ -215,34 +216,37 @@ impl LookupOptions {
 }
 
 pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
-    let (title, code) = extract_title_and_code(&opts.code);
+    let (title, raw_data) = extract_title_and_raw(&opts.code);
+    let raw_data = raw_data.ok_or(anyhow!("invalid code"))?;
 
-    let mut deck = AGENT
+    raw_data_to_deck(opts, raw_data, title)
+}
+
+fn raw_data_to_deck(
+    opts: &LookupOptions,
+    raw_data: RawCodeData,
+    title: Option<String>,
+) -> Result<Deck> {
+    let mut req = AGENT
         .get("https://us.api.blizzard.com/hearthstone/deck")
         .query("locale", &opts.locale.to_string())
-        .query("code", code)
         .query("access_token", &get_access_token())
-        .call()
-        .map_err(|e| match e {
-            ureq::Error::Status(status, _) => {
-                anyhow!("Encountered Error: Status {status}. Code may be invalid.")
-            }
-            ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
-        })?
-        .into_json::<Deck>()?;
+        .query("ids", &raw_data.cards.iter().join(","));
 
-    let (fmt, hero) = extract_format_and_hero(code);
+    if !raw_data.sideboard_cards.is_empty() {
+        req = req.query(
+            "sideboardCards",
+            &raw_data.sideboard_cards.iter().map(|(id, sb_id)| format!("{id}:{sb_id}")).join(","),
+        );
+    }
 
-    deck.format = opts
-        .format
-        .as_ref()
-        .and_then(|s| s.parse().ok())
-        .or_else(|| fmt.and_then(|f| f.try_into().ok()))
-        .unwrap_or(deck.format);
+    let mut deck = req.call()?.into_json::<Deck>()?;
+
+    deck.format = opts.format.as_ref().and_then(|s| s.parse().ok()).unwrap_or(raw_data.format);
 
     deck.title = title.or_else(|| {
         let hero = AGENT
-            .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", hero?))
+            .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", raw_data.hero))
             .query("locale", &opts.locale.to_string())
             .query("access_token", &get_access_token())
             .query("collectible", "0,1")
@@ -271,24 +275,80 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     Ok(deck)
 }
 
-fn extract_format_and_hero(code: &str) -> (Option<u8>, Option<usize>) {
+#[derive(Default)]
+struct RawCodeData {
+    format: Format,
+    hero: usize,
+    cards: Vec<usize>,
+    sideboard_cards: Vec<(usize, usize)>,
+}
+
+fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 
-    let decoded = BASE64_STANDARD
-        .decode(code)
-        .expect("Must be a valid code or calling function would return earlier.");
-
+    let decoded = BASE64_STANDARD.decode(code)?;
     let mut buffer = Cursor::new(decoded);
+    // while let Ok(id) = buffer.read_usize_varint() {
+    //     println!("{}", id);
+    // }
+
+    let mut raw_data = RawCodeData::default();
 
     // Format is the third number.
     buffer.set_position(2);
-    let fmt = buffer.read_u8_varint().ok();
+    raw_data.format = buffer.read_u8_varint()?.try_into().unwrap_or_default();
 
     // Hero ID is the fifth number.
     buffer.set_position(4);
-    let hero = buffer.read_usize_varint().ok();
+    raw_data.hero = buffer.read_usize_varint()?;
 
-    (fmt, hero)
+    // Single copy cards
+    let count = buffer.read_u8_varint()?;
+    for _ in 0..count {
+        let id = buffer.read_usize_varint()?;
+        let id = validate_id(id);
+
+        raw_data.cards.push(id);
+    }
+
+    // Double copy cards
+    let count = buffer.read_u8_varint()?;
+    for _ in 0..count {
+        let id = buffer.read_usize_varint()?;
+        let id = validate_id(id);
+
+        raw_data.cards.push(id);
+        raw_data.cards.push(id); // twice
+    }
+
+    // N-copy cards
+    let count = buffer.read_u8_varint()?;
+    for _ in 0..count {
+        let id = buffer.read_usize_varint()?;
+        let id = validate_id(id);
+
+        let n = buffer.read_u8_varint()?;
+
+        for _ in 0..n {
+            raw_data.cards.push(id);
+        }
+    }
+
+    // Sideboard cards. Not sure if they're always available?
+    if buffer.read_u8_varint().is_ok_and(|i| i == 1) {
+        let count = buffer.read_u8_varint()?;
+        for _ in 0..count {
+            let id = buffer.read_usize_varint()?;
+            let id = validate_id(id);
+
+            let sb_id = buffer.read_usize_varint()?;
+            let sb_id = validate_id(sb_id);
+
+            raw_data.sideboard_cards.push((id, sb_id));
+        }
+    }
+
+    Ok(raw_data)
 }
 
 pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
@@ -298,41 +358,32 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    let deck = lookup(opts)?;
+    let mut raw_data = decode_deck_code(&opts.code)?;
 
-    if deck.cards.iter().all(|c| c.id != ETC_ID) {
+    if raw_data.cards.iter().all(|&id| id != ETC_ID) {
         return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
     }
-
-    if deck.sideboard_cards.is_some() {
-        return Err(anyhow!("Deck already has a Sideboard."));
+    if raw_data.sideboard_cards.iter().any(|&(_, id)| id == ETC_ID) {
+        return Err(anyhow!("Deck already has an {ETC_NAME} Sideboard."));
     }
-
-    let card_ids = deck.cards.iter().map(|c| c.id).join(",");
 
     let band_ids = band
         .into_iter()
         .map(|name| {
             card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))?
                 // Undocumented API Found by looking through playhearthstone.com card library
-                .map(|c| format!("{id}:{ETC_ID}", id = c.id))
+                .map(|c| (c.id, ETC_ID))
                 .next()
                 .ok_or_else(|| anyhow!("Band found brown M&M's."))
         })
-        .collect::<Result<Vec<String>>>()?
-        .join(",");
+        .collect::<Result<Vec<(_, _)>>>()?;
 
-    Ok(AGENT
-        .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &opts.locale.to_string())
-        .query("access_token", &get_access_token())
-        .query("ids", &card_ids)
-        .query("sideboardCards", &band_ids)
-        .call()?
-        .into_json::<Deck>()?)
+    raw_data.sideboard_cards.extend(band_ids);
+
+    raw_data_to_deck(opts, raw_data, None)
 }
 
-fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
+fn extract_title_and_raw(code: &str) -> (Option<String>, Option<RawCodeData>) {
     /* For when someone pastes something like this:
      * ### Custom Shaman
      * # etc
@@ -347,9 +398,9 @@ fn extract_title_and_code(code: &str) -> (Option<String>, &str) {
         .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
         .map(|(s, _)| s.trim().to_owned());
 
-    let code = code.split_ascii_whitespace().find(|s| s.starts_with("AA")).unwrap_or(code);
+    let raw_data = code.split_ascii_whitespace().find_map(|s| decode_deck_code(s).ok());
 
-    (title, code)
+    (title, raw_data)
 }
 
 fn format_count(count: usize) -> String {

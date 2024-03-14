@@ -88,7 +88,7 @@ impl Card {
         Self {
             id,
             card_set: 1635,
-            name: format!("Invalid Card ID {id}"),
+            name: format!("Unknown Card ID {id}"),
             class: HashSet::from([Class::Neutral]),
             cost: 99,
             rune_cost: None,

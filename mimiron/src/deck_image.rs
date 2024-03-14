@@ -110,18 +110,6 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
 
     draw_deck_title(&mut img, locale, deck)?;
 
-    // if deck.invalid_card_ids.as_ref().is_some_and(|v| v.len() > 0) {
-    //     let (x, y) = img.dimensions();
-    //     draw_text(
-    //         &mut img,
-    //         (0, 0, 0),
-    //         (x - COLUMN_WIDTH + CROP_HEIGHT / 2) as i32,
-    //         (y - ROW_HEIGHT * 2 / 3) as i32,
-    //         Scale::uniform(30.0),
-    //         "Works best with the official Blizzard deck builder",
-    //     );
-    // }
-
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
         let slug = &slug_map[&card.id];

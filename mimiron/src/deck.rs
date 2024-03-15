@@ -219,7 +219,42 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let (title, raw_data) = extract_title_and_raw(&opts.code);
     let raw_data = raw_data.ok_or(anyhow!("invalid code"))?;
 
-    raw_data_to_deck(opts, raw_data, title)
+    let mut deck = AGENT
+        .get("https://us.api.blizzard.com/hearthstone/deck")
+        .query("locale", &opts.locale.to_string())
+        .query("code", &raw_data.deck_code)
+        .query("access_token", &get_access_token())
+        .call()
+        .map_err(|e| match e {
+            ureq::Error::Status(status, _) => {
+                anyhow!("Encountered Error: Status {status}. Code may be invalid.")
+            }
+            ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
+        })?
+        .into_json::<Deck>()?;
+
+    if deck.invalid_card_ids.is_some() {
+        raw_data_to_deck(opts, raw_data, title)
+    } else {
+        deck.format = opts.format.as_ref().and_then(|s| s.parse().ok()).unwrap_or(raw_data.format);
+        
+        deck.title = title.or_else(|| {
+            let hero = AGENT
+                .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", raw_data.hero))
+                .query("locale", &opts.locale.to_string())
+                .query("access_token", &get_access_token())
+                .query("collectible", "0,1")
+                .call()
+                .ok()?
+                .into_json::<Card>()
+                .ok()?
+                .name;
+
+            Some(format!("{hero} - {}", deck.format.to_string().to_uppercase()))
+        });
+
+        Ok(deck)
+    }
 }
 
 fn raw_data_to_deck(
@@ -281,6 +316,7 @@ struct RawCodeData {
     hero: usize,
     cards: Vec<usize>,
     sideboard_cards: Vec<(usize, usize)>,
+    deck_code: String,
 }
 
 fn decode_deck_code(code: &str) -> Result<RawCodeData> {
@@ -347,6 +383,8 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
             raw_data.sideboard_cards.push((id, sb_id));
         }
     }
+
+    raw_data.deck_code = code.to_owned();
 
     Ok(raw_data)
 }

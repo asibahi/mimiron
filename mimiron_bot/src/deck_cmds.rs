@@ -130,7 +130,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
         let img = deck::get_image(&deck, locale, deck::ImageOptions::Adaptable)?;
 
         let mut image_data = Cursor::new(Vec::<u8>::new());
-        img.write_to(&mut image_data, image::ImageOutputFormat::Png)?;
+        img.write_to(&mut image_data, image::ImageFormat::Png)?;
 
         serenity::CreateAttachment::bytes(image_data.into_inner(), attachment_name.as_str())
     };

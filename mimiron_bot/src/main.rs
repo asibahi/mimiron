@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 
 mod bg_cmds;
@@ -13,7 +13,7 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[shuttle_runtime::main]
-async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
+async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
     let discord_token =
         secret_store.get("DISCORD_TOKEN").context("'DISCORD_TOKEN' was not found")?;
 

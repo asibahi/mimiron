@@ -12,6 +12,7 @@ use crate::{
     localization::{Locale, Localize},
     AGENT,
 };
+use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::{anyhow, Result};
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{
@@ -22,7 +23,6 @@ use imageproc::{
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
-use rusttype::{Font, Scale};
 use std::collections::{BTreeMap, HashMap};
 
 //  Numbers based on the crops provided by Blizzard API
@@ -36,24 +36,25 @@ const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
 // fonts unified for all usages now that the Text Box is removed.
-static FONTS: [(Lazy<Font<'_>>, f32); 3] = [
+static FONTS: [(Lazy<FontRef<'_>>, f32); 3] = [
     // Base font
     (
         Lazy::new(|| {
-            Font::try_from_bytes(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
+            FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
         }),
         1.0,
     ),
     // Fallbacks
     (
         Lazy::new(|| {
-            Font::try_from_bytes(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()
+            FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()
         }),
         1.2, // scaling for Noto CJK
     ),
     (
         Lazy::new(|| {
-            Font::try_from_bytes(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()
+            FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf"))
+                .unwrap()
         }),
         1.3, // scaling for Noto Thai
     ),
@@ -259,10 +260,10 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
     // size
-    let scale = Scale::uniform(40.0);
+    let scale = 40.0;
 
     // card name
-    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT as i32 + 10, 15, scale, name);
+    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT + 10, 15, scale, name);
 
     // mana square
     drawing::draw_filled_rect_mut(
@@ -273,8 +274,8 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
 
     // card cost
     let cost = card.cost.to_string();
-    let (tw, _) = drawing::text_size(scale, &FONTS[0].0, &cost);
-    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT as i32 - tw) / 2, 15, scale, &cost);
+    let (tw, _) = drawing::text_size(scale, &*FONTS[0].0, &cost);
+    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, 15, scale, &cost);
 
     // rarity square
     drawing::draw_filled_rect_mut(
@@ -289,15 +290,8 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         (1, Rarity::Legendary) => String::new(),
         _ => count.to_string(),
     };
-    let (tw, _) = drawing::text_size(scale, &FONTS[0].0, &count);
-    draw_text(
-        &mut img,
-        (255, 255, 255),
-        SLUG_WIDTH as i32 - (CROP_HEIGHT as i32 + tw) / 2,
-        15,
-        scale,
-        &count,
-    );
+    let (tw, _) = drawing::text_size(scale, &*FONTS[0].0, &count);
+    draw_text(&mut img, (255, 255, 255), SLUG_WIDTH - (CROP_HEIGHT + tw) / 2, 15, scale, &count);
 
     DynamicImage::ImageRgba8(img)
 }
@@ -336,15 +330,14 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
     // size
-    let scale = Scale::uniform(50.0);
-
-    let (_, th) = drawing::text_size(scale, &FONTS[0].0, "E");
+    let scale = 50.0;
+    let th = FONTS[0].0.as_scaled(scale).ascent() as u32;
 
     draw_text(
         &mut img,
         (10, 10, 10),
         15,
-        (CROP_HEIGHT as i32 - th) / 2,
+        (CROP_HEIGHT - th) / 2,
         scale,
         heading, //.to_uppercase(),
     );
@@ -368,16 +361,15 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
     });
 
     // size
-    let scale = Scale::uniform(50.0);
-
-    let (_, th) = drawing::text_size(scale, &FONTS[0].0, "E");
+    let scale = 50.0;
+    let th = FONTS[0].0.as_scaled(scale).ascent() as u32;
 
     // title
     draw_text(
         img,
         (10, 10, 10),
-        MARGIN as i32 + CROP_HEIGHT as i32 + 10,
-        MARGIN as i32 + (CROP_HEIGHT as i32 - th) / 2,
+        MARGIN + CROP_HEIGHT + 10,
+        MARGIN + (CROP_HEIGHT - th) / 2,
         scale,
         &title,
     );
@@ -438,45 +430,43 @@ fn get_crop_image(card: &Card) -> Result<DynamicImage> {
 fn draw_text<'a>(
     canvas: &'a mut RgbaImage,
     color: (u8, u8, u8),
-    x: i32,
-    y: i32,
-    scale: Scale,
+    x: u32,
+    y: u32,
+    scale: f32,
     text: &'a str,
 ) {
-    let image_width = canvas.width() as i32;
-    let image_height = canvas.height() as i32;
-
-    // fonts unified for all usages now that the Text Box is removed.
-    let font = &FONTS[0].0;
+    let (image_width, image_height) = canvas.dimensions();
 
     let mut caret = 0.0;
-    let v_metric = font.v_metrics(scale).ascent;
+    let v_metric = FONTS[0].0.as_scaled(scale).ascent();
 
     for c in text.chars() {
-        let Some(g) = FONTS
-            .iter()
-            .map(|(f_f, f_s)| f_f.glyph(c).scaled(Scale::uniform(scale.x * f_s)))
-            .find(|g| g.id().0 > 0)
-        else {
+        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) else {
             continue;
         };
 
-        let g = g.positioned(rusttype::point(caret, v_metric));
+        let f_f = f_f.as_scaled(scale * f_s);
 
-        caret += g.unpositioned().h_metrics().advance_width;
+        let mut g = f_f.scaled_glyph(c);
+        g.position = (caret, v_metric).into();
 
-        if let Some(bb) = g.pixel_bounding_box() {
-            g.draw(|gx, gy, gv| {
-                let image_x = gx as i32 + bb.min.x + x;
-                let image_y = gy as i32 + bb.min.y + y;
+        caret += f_f.h_advance(g.id);
 
-                if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
-                    let pixel = canvas.get_pixel(image_x as u32, image_y as u32).to_owned();
-                    let color = Rgba([color.0, color.1, color.2, 255]);
-                    let weighted_color = weighted_sum(pixel, color, 1.0 - gv, gv);
-                    canvas.draw_pixel(image_x as u32, image_y as u32, weighted_color);
-                }
-            });
-        }
+        let Some(g) = f_f.outline_glyph(g) else {
+            continue;
+        };
+
+        let bb = g.px_bounds();
+        g.draw(|gx, gy, gv| {
+            let image_x = gx + bb.min.x as u32 + x;
+            let image_y = gy + bb.min.y as u32 + y;
+
+            if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
+                let pixel = canvas.get_pixel(image_x, image_y).to_owned();
+                let color = Rgba([color.0, color.1, color.2, 255]);
+                let weighted_color = weighted_sum(pixel, color, 1.0 - gv, gv);
+                canvas.draw_pixel(image_x, image_y, weighted_color);
+            }
+        });
     }
 }

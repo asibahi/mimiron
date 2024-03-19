@@ -237,7 +237,7 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
         raw_data_to_deck(opts, raw_data, title)
     } else {
         deck.format = opts.format.as_ref().and_then(|s| s.parse().ok()).unwrap_or(raw_data.format);
-        
+
         deck.title = title.or_else(|| {
             let hero = AGENT
                 .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", raw_data.hero))

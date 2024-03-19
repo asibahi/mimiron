@@ -95,7 +95,6 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
 
         let length = (main_deck_length + sideboards_length) as u32;
 
-        // slightly more sophisticated hack for Reno Renathal decks.
         let col_count = col_count.unwrap_or_else(|| (length / 15 + 1).max(2));
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
@@ -174,13 +173,17 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
             columns += 1;
         }
 
-        columns as u32 * COLUMN_WIDTH + MARGIN
+        columns * COLUMN_WIDTH + MARGIN
     };
 
     // deck image height
-    // ignores length of sideboards. unlikely to be larger than both class_cards and neutral_cards
     let deck_img_height = {
-        let length = 1 + class_cards.len().max(neutral_cards.len()) as u32;
+        let length = 1 + class_cards.len().max(neutral_cards.len()).max(
+            deck.sideboard_cards
+                .iter()
+                .flatten()
+                .fold(0, |acc, sb| acc + (sb.cards_in_sideboard.len() + 1)),
+        ) as u32;
         (length * ROW_HEIGHT) + MARGIN
     };
 

@@ -259,6 +259,10 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
 
         let deck = req.call()?.into_json::<Deck>()?;
 
+        if deck.invalid_card_ids.as_ref().is_some_and(|ids| ids.iter().any(|&id| id == 0)) {
+            return Err(anyhow!("Deck invalid IDs are 0."));
+        }
+
         Ok(deck)
     };
 
@@ -321,7 +325,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
         Some(format!("{hero} - {}", deck.format.to_string().to_uppercase()))
     });
 
-    // if the deck has invalid card IDs, add dummy cards.
+    // if the deck has invalid card IDs, add dummy cards with backup Data from HearthSim.
     if let Some(ref invalid_ids) = deck.invalid_card_ids {
         for id in invalid_ids {
             deck.cards.push(card::Card::dummy(*id));

@@ -7,13 +7,13 @@
 
 use crate::{
     card::Card,
-    card_details::{Class, Rarity},
+    card_details::{get_hearth_sim_crop_image, get_hearth_sim_details, CardType, Class, Rarity},
     deck::Deck,
     localization::{Locale, Localize},
     AGENT,
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{
     drawing::{self, Canvas as _},
@@ -232,19 +232,25 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
 fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     assert!(count > 0);
 
-    let name = &card.name;
-    let r_color = &card.rarity.color();
-    let slug_height = CROP_HEIGHT;
+    let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
+        matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(card))
+    {
+        (name, cost, rarity)
+    } else {
+        (card.name.as_str(), card.cost, card.rarity)
+    };
+
+    let r_color = rarity.color();
 
     // main canvas
-    let mut img = draw_main_canvas(SLUG_WIDTH, slug_height, (10, 10, 10));
+    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (10, 10, 10));
 
     match get_crop_image(card) {
         Ok(crop) => {
             img.copy_from(&crop, CROP_WIDTH, 0).ok();
         }
         Err(e) => {
-            eprintln!("Failed to get image of {}: {e}.", card.name);
+            eprintln!("Failed to get image of {}: {e}.", name);
             drawing::draw_filled_rect_mut(
                 &mut img,
                 Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
@@ -276,7 +282,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     );
 
     // card cost
-    let cost = card.cost.to_string();
+    let cost = cost.to_string();
     let (tw, _) = drawing::text_size(scale, &*FONTS[0].0, &cost);
     draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, 15, scale, &cost);
 
@@ -288,7 +294,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     );
 
     // card count
-    let count = match (count, &card.rarity) {
+    let count = match (count, rarity) {
         (1, Rarity::Noncollectible) => String::from("!"),
         (1, Rarity::Legendary) => String::new(),
         _ => count.to_string(),
@@ -416,12 +422,8 @@ fn get_crop_image(card: &Card) -> Result<DynamicImage> {
     let link = card
         .crop_image
         .clone()
-        .or_else(|| {
-            // refer to: https://hearthstonejson.com/docs/images.html
-            crate::card_details::get_hearth_sim_id(card)
-                .map(|id| format!("https://art.hearthstonejson.com/v1/tiles/{id}.png"))
-        })
-        .ok_or_else(|| anyhow!("Unable to find crop image for card: {}.", card.name))?;
+        .or_else(|| get_hearth_sim_crop_image(card))
+        .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
     let mut buf = Vec::new();
     AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;

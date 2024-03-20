@@ -1,5 +1,5 @@
 use crate::{
-    get_access_token,
+    card, get_access_token,
     localization::{Locale, Localize},
     AGENT,
 };
@@ -477,10 +477,15 @@ impl Localize for CardType {
 
 static HEARTH_SIM_IDS: Lazy<HashMap<usize, HearthSimData>> = Lazy::new(|| {
     AGENT
-        .get("https://api.hearthstonejson.com/v1/191554/enUS/cards.json")
+        .get("https://api.hearthstonejson.com/v1/latest/enUS/cards.json")
         .call()
         .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
-        .map(|v| v.into_iter().map(|d| (d.dbf_id, d)).collect::<HashMap<_, _>>())
+        .map(|v| {
+            v.into_iter()
+                .filter(|d| d.cost.is_some())
+                .map(|d| (d.dbf_id, d))
+                .collect::<HashMap<_, _>>()
+        })
         .unwrap_or_default()
 });
 
@@ -490,11 +495,29 @@ struct HearthSimData {
     dbf_id: usize,
     count_as_copy_of_dbf_id: Option<usize>,
     id: String,
-    // name: String, // is this needed at all?
+    name: String,
+    cost: Option<u8>,
+    rarity: Option<String>,
 }
 
-pub(crate) fn get_hearth_sim_id(card: &crate::card::Card) -> Option<String> {
-    HEARTH_SIM_IDS.get(&card.id).map(|c| c.id.clone())
+pub(crate) fn get_hearth_sim_crop_image(card: &card::Card) -> Option<String> {
+    HEARTH_SIM_IDS
+        .get(&card.id)
+        .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
+}
+
+// I really hate that I need this. Currently only used for deck images.
+pub(crate) fn get_hearth_sim_details(card: &card::Card) -> Option<(&str, u8, Rarity)> {
+    HEARTH_SIM_IDS.get(&card.id).map(|c| {
+        let rarity = c.rarity.as_deref().map_or(Rarity::Noncollectible, |r| match r {
+            "LEGENDARY" => Rarity::Legendary,
+            "COMMON" => Rarity::Common,
+            "RARE" => Rarity::Rare,
+            "EPIC" => Rarity::Epic,
+            _ => Rarity::Noncollectible,
+        });
+        (c.name.as_str(), c.cost.unwrap(), rarity)
+    })
 }
 
 pub(crate) fn validate_id(input_id: usize) -> usize {

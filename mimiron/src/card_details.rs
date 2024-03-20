@@ -501,7 +501,9 @@ struct HearthSimData {
 }
 
 pub(crate) fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
-    HEARTH_SIM_IDS.get(&id).map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
+    HEARTH_SIM_IDS
+        .get(&id)
+        .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
 }
 
 // I really hate that I need this. Currently only used for deck images.
@@ -512,7 +514,7 @@ pub(crate) fn get_hearth_sim_details(id: &usize) -> Option<(&str, u8, Rarity)> {
             "EPIC" => Rarity::Epic,
             "RARE" => Rarity::Rare,
             "COMMON" => Rarity::Common,
-            _ => Rarity::Noncollectible,
+            _ => Rarity::Free,
         });
         (c.name.as_str(), c.cost.unwrap(), rarity)
     })

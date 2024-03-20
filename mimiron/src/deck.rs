@@ -217,65 +217,92 @@ impl LookupOptions {
 
 pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let (title, raw_data) = extract_title_and_raw(&opts.code);
-    let raw_data = raw_data.ok_or(anyhow!("invalid code"))?;
+    let raw_data = raw_data.ok_or(anyhow!("Unable to parse deck code. Code may be invalid."))?;
 
-    let mut deck = AGENT
-        .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &opts.locale.to_string())
-        .query("code", &raw_data.deck_code)
-        .query("access_token", &get_access_token())
-        .call()
-        .map_err(|e| match e {
-            ureq::Error::Status(status, _) => {
-                anyhow!("Encountered Error: Status {status}. Code may be invalid.")
-            }
-            ureq::Error::Transport(e) => anyhow!("Encountered Error: {e}"),
-        })?
-        .into_json::<Deck>()?;
-
-    if deck.invalid_card_ids.is_some() {
-        raw_data_to_deck(opts, raw_data, title)
-    } else {
-        deck.format = opts.format.as_ref().and_then(|s| s.parse().ok()).unwrap_or(raw_data.format);
-
-        deck.title = title.or_else(|| {
-            let hero = AGENT
-                .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", raw_data.hero))
-                .query("locale", &opts.locale.to_string())
-                .query("access_token", &get_access_token())
-                .query("collectible", "0,1")
-                .call()
-                .ok()?
-                .into_json::<Card>()
-                .ok()?
-                .name;
-
-            Some(format!("{hero} - {}", deck.format.to_string().to_uppercase()))
-        });
-
-        Ok(deck)
-    }
+    Ok(raw_data_to_deck(opts, raw_data, title))
 }
 
-fn raw_data_to_deck(
-    opts: &LookupOptions,
-    raw_data: RawCodeData,
-    title: Option<String>,
-) -> Result<Deck> {
-    let mut req = AGENT
-        .get("https://us.api.blizzard.com/hearthstone/deck")
-        .query("locale", &opts.locale.to_string())
-        .query("access_token", &get_access_token())
-        .query("ids", &raw_data.cards.iter().join(","));
+fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<String>) -> Deck {
+    let get_deck_w_code = || -> Result<Deck> {
+        let deck = AGENT
+            .get("https://us.api.blizzard.com/hearthstone/deck")
+            .query("locale", &opts.locale.to_string())
+            .query("code", &raw_data.deck_code)
+            .query("access_token", &get_access_token())
+            .call()?
+            .into_json::<Deck>()?;
 
-    if !raw_data.sideboard_cards.is_empty() {
-        req = req.query(
-            "sideboardCards",
-            &raw_data.sideboard_cards.iter().map(|(id, sb_id)| format!("{id}:{sb_id}")).join(","),
-        );
-    }
+        if deck.invalid_card_ids.is_some() {
+            return Err(anyhow!("Deck has invalid IDs."));
+        }
 
-    let mut deck = req.call()?.into_json::<Deck>()?;
+        Ok(deck)
+    };
+
+    let get_deck_w_cards = || -> Result<Deck> {
+        let mut req = AGENT
+            .get("https://us.api.blizzard.com/hearthstone/deck")
+            .query("locale", &opts.locale.to_string())
+            .query("access_token", &get_access_token())
+            .query("ids", &raw_data.cards.iter().join(","));
+
+        if !raw_data.sideboard_cards.is_empty() {
+            req = req.query(
+                "sideboardCards",
+                &raw_data
+                    .sideboard_cards
+                    .iter()
+                    .map(|(id, sb_id)| format!("{id}:{sb_id}"))
+                    .join(","),
+            );
+        }
+
+        let deck = req.call()?.into_json::<Deck>()?;
+
+        Ok(deck)
+    };
+
+    let get_dummy_deck = || -> Deck {
+        Deck {
+            title: None,
+            deck_code: raw_data.deck_code.clone(),
+            format: Format::Standard,
+            class: Class::Neutral,
+            cards: raw_data.cards.iter().map(|&id| card::Card::dummy(id)).collect(),
+            sideboard_cards: if raw_data.sideboard_cards.is_empty() {
+                None
+            } else {
+                Some(
+                    raw_data
+                        .sideboard_cards
+                        .iter()
+                        .group_by(|(_, sb_card)| sb_card)
+                        .into_iter()
+                        .map(|(&sb_card, sb)| Sideboard {
+                            sideboard_card: card::Card::dummy(sb_card),
+                            cards_in_sideboard: sb
+                                .into_iter()
+                                .map(|&(c, _)| card::Card::dummy(c))
+                                .collect(),
+                        })
+                        .collect(),
+                )
+            },
+            invalid_card_ids: None,
+        }
+    };
+
+    let mut deck = get_deck_w_code()
+        .or_else(|e| {
+            eprintln!("Encountered error validating code from Blizzard's servers: {e}.");
+            eprintln!("Using direct card data instead.");
+            get_deck_w_cards()
+        })
+        .unwrap_or_else(|e| {
+            eprintln!("Encountered error validating cards from Blizzard's servers: {e}.");
+            eprintln!("Using dummy data instead.");
+            get_dummy_deck()
+        });
 
     deck.format = opts.format.as_ref().and_then(|s| s.parse().ok()).unwrap_or(raw_data.format);
 
@@ -307,7 +334,7 @@ fn raw_data_to_deck(
         sb.cards_in_sideboard.retain(|c| !c.cosmetic);
     }
 
-    Ok(deck)
+    deck
 }
 
 #[derive(Default)]
@@ -418,7 +445,7 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
 
     raw_data.sideboard_cards.extend(band_ids);
 
-    raw_data_to_deck(opts, raw_data, None)
+    Ok(raw_data_to_deck(opts, raw_data, None))
 }
 
 fn extract_title_and_raw(code: &str) -> (Option<String>, Option<RawCodeData>) {

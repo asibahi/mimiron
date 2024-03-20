@@ -1,5 +1,5 @@
 use crate::{
-    card_details::{get_set_by_id, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
+    card_details::{CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     helpers::CardSearchResponse,
     localization::{Locale, Localize},
@@ -85,25 +85,27 @@ pub struct Card {
 }
 impl Card {
     pub(crate) fn dummy(id: usize) -> Self {
+        let data = crate::card_details::get_hearth_sim_details(&id);
+
         Self {
             id,
             card_set: 1635,
-            name: format!("Unknown Card ID {id}"),
+            name: data.map_or(format!("Unknown Card ID {id}"), |(name, ..)| name.to_string()),
             class: HashSet::from([Class::Neutral]),
-            cost: 99,
+            cost: data.map_or(99, |(_, cost, _)| cost),
             rune_cost: None,
             card_type: CardType::Unknown,
-            rarity: Rarity::Noncollectible,
+            rarity: data.map_or(Rarity::Noncollectible, |(.., rarity)| rarity),
             text: String::new(),
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
-            crop_image: None,
+            crop_image: crate::card_details::get_hearth_sim_crop_image(&id),
             flavor_text: String::new(),
             cosmetic: false,
         }
     }
     #[must_use]
     pub fn card_set(&self, locale: Locale) -> String {
-        get_set_by_id(self.card_set, locale)
+        crate::card_details::get_set_by_id(self.card_set, locale)
     }
 }
 

@@ -7,7 +7,7 @@
 
 use crate::{
     card::Card,
-    card_details::{get_hearth_sim_crop_image, get_hearth_sim_details, CardType, Class, Rarity},
+    card_details::{get_hearth_sim_details, CardType, Class, Rarity},
     deck::Deck,
     localization::{Locale, Localize},
     AGENT,
@@ -233,7 +233,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     assert!(count > 0);
 
     let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
-        matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(card))
+        matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(&card.id))
     {
         (name, cost, rarity)
     } else {
@@ -250,7 +250,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
             img.copy_from(&crop, CROP_WIDTH, 0).ok();
         }
         Err(e) => {
-            eprintln!("Failed to get image of {}: {e}.", name);
+            eprintln!("Failed to get image of {name}: {e}.");
             drawing::draw_filled_rect_mut(
                 &mut img,
                 Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
@@ -421,12 +421,11 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
 fn get_crop_image(card: &Card) -> Result<DynamicImage> {
     let link = card
         .crop_image
-        .clone()
-        .or_else(|| get_hearth_sim_crop_image(card))
-        .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
+        .as_deref()
+        .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png");
 
     let mut buf = Vec::new();
-    AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
+    AGENT.get(link).call()?.into_reader().read_to_end(&mut buf)?;
 
     Ok(image::load_from_memory(&buf)?)
 }

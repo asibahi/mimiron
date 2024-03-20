@@ -1,5 +1,5 @@
 use crate::{
-    card, get_access_token,
+    get_access_token,
     localization::{Locale, Localize},
     AGENT,
 };
@@ -500,20 +500,18 @@ struct HearthSimData {
     rarity: Option<String>,
 }
 
-pub(crate) fn get_hearth_sim_crop_image(card: &card::Card) -> Option<String> {
-    HEARTH_SIM_IDS
-        .get(&card.id)
-        .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
+pub(crate) fn get_hearth_sim_crop_image(id: &usize) -> Option<String> {
+    HEARTH_SIM_IDS.get(id).map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
 }
 
 // I really hate that I need this. Currently only used for deck images.
-pub(crate) fn get_hearth_sim_details(card: &card::Card) -> Option<(&str, u8, Rarity)> {
-    HEARTH_SIM_IDS.get(&card.id).map(|c| {
+pub(crate) fn get_hearth_sim_details(id: &usize) -> Option<(&str, u8, Rarity)> {
+    HEARTH_SIM_IDS.get(id).map(|c| {
         let rarity = c.rarity.as_deref().map_or(Rarity::Noncollectible, |r| match r {
             "LEGENDARY" => Rarity::Legendary,
-            "COMMON" => Rarity::Common,
-            "RARE" => Rarity::Rare,
             "EPIC" => Rarity::Epic,
+            "RARE" => Rarity::Rare,
+            "COMMON" => Rarity::Common,
             _ => Rarity::Noncollectible,
         });
         (c.name.as_str(), c.cost.unwrap(), rarity)

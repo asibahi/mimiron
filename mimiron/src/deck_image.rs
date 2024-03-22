@@ -421,11 +421,12 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
 fn get_crop_image(card: &Card) -> Result<DynamicImage> {
     let link = card
         .crop_image
-        .as_deref()
-        .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png");
+        .clone()
+        .or_else(|| crate::card_details::get_hearth_sim_crop_image(card.id))
+        .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
     let mut buf = Vec::new();
-    AGENT.get(link).call()?.into_reader().read_to_end(&mut buf)?;
+    AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
 
     Ok(image::load_from_memory(&buf)?)
 }

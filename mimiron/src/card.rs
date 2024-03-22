@@ -98,7 +98,7 @@ impl Card {
             rarity: data.map_or(Rarity::Noncollectible, |(.., rarity)| rarity),
             text: String::new(),
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
-            crop_image: crate::card_details::get_hearth_sim_crop_image(id),
+            crop_image: None,
             flavor_text: String::new(),
             cosmetic: false,
         }

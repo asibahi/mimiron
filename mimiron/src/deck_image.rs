@@ -9,7 +9,7 @@ use crate::{
     card::Card,
     card_details::{get_hearth_sim_details, CardType, Class, Rarity},
     deck::Deck,
-    localization::{Locale, Localize},
+    localization::Localize,
     AGENT,
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
@@ -78,15 +78,15 @@ pub enum ImageOptions {
     Adaptable,
 }
 
-pub fn get(deck: &Deck, locale: Locale, shape: ImageOptions) -> Result<DynamicImage> {
+pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
     match shape {
-        ImageOptions::Groups => img_groups_format(deck, locale),
-        ImageOptions::Adaptable => img_columns_format(deck, locale, None),
-        ImageOptions::Regular { columns } => img_columns_format(deck, locale, Some(columns as u32)),
+        ImageOptions::Groups => img_groups_format(deck),
+        ImageOptions::Adaptable => img_columns_format(deck, None),
+        ImageOptions::Regular { columns } => img_columns_format(deck, Some(columns as u32)),
     }
 }
 
-fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Result<DynamicImage> {
+fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImage> {
     let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
 
     let (mut img, cards_in_col) = {
@@ -111,7 +111,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
         (img, cards_in_col)
     };
 
-    draw_deck_title(&mut img, locale, deck)?;
+    draw_deck_title(&mut img, deck)?;
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
@@ -148,7 +148,7 @@ fn img_columns_format(deck: &Deck, locale: Locale, col_count: Option<u32>) -> Re
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
+fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
 
     let class_cards = ordered_cards
@@ -193,7 +193,7 @@ fn img_groups_format(deck: &Deck, locale: Locale) -> Result<DynamicImage> {
     // main canvas
     let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
 
-    draw_deck_title(&mut img, locale, deck)?;
+    draw_deck_title(&mut img, deck)?;
 
     // class cards
     for (i, slug) in class_cards {
@@ -365,13 +365,9 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<()> {
-    let title = deck.title.clone().unwrap_or_else(|| {
-        format!("{} - {}", deck.class.in_locale(locale), deck.format.to_string().to_uppercase())
-    });
-
+fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
     // title
-    draw_text(img, (10, 10, 10), MARGIN + CROP_HEIGHT + 10, HEADING_SCALE, &title);
+    draw_text(img, (10, 10, 10), MARGIN + CROP_HEIGHT + 10, HEADING_SCALE, &deck.title);
 
     if let Ok(class_img) = get_class_icon(deck.class) {
         img.copy_from(

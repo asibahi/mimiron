@@ -104,11 +104,11 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
             ImageFormat::Wide => deck::ImageOptions::Regular { columns: 3 },
         };
 
-        let img = deck::get_image(&deck, locale, opts)?;
+        let img = deck::get_image(&deck, opts)?;
 
         let file_name = format!(
             "{} {} {}.png",
-            deck.title.unwrap_or(deck.class.in_locale(locale).to_string()),
+            deck.title,
             deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>(),
             chrono::Local::now().format("%Y%m%d %H%M")
         );

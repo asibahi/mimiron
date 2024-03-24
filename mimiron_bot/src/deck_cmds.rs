@@ -6,7 +6,7 @@ use itertools::Itertools;
 use mimiron::{
     card,
     deck::{self, Deck, LookupOptions},
-    localization::{Locale, Localize},
+    localization::Localize,
 };
 use poise::serenity_prelude as serenity;
 use std::{collections::HashMap, io::Cursor};
@@ -45,7 +45,7 @@ pub async fn deck_inner(
 
     let deck = deck::lookup(&opts)?;
 
-    send_deck_reply(ctx, deck, locale).await
+    send_deck_reply(ctx, deck).await
 }
 
 /// Add a band to a deck with ETC but without a band.
@@ -65,7 +65,7 @@ pub async fn addband(
 
     let deck = deck::add_band(&opts, vec![member1, member2, member3])?;
 
-    send_deck_reply(ctx, deck, locale).await
+    send_deck_reply(ctx, deck).await
 }
 
 /// Compare two decks. Provide both codes.
@@ -101,10 +101,10 @@ pub async fn deckcomp(
     let shared = sort_and_set(deckcomp.shared_cards);
 
     let fields = vec![
-        (deck1.title.as_deref().unwrap_or("Code 1"), deck1.deck_code, false),
-        (deck2.title.as_deref().unwrap_or("Code 2"), deck2.deck_code, false),
-        (deck1.title.as_deref().unwrap_or("Deck 1"), uniques_1, true),
-        (deck2.title.as_deref().unwrap_or("Deck 2"), uniques_2, true),
+        ("Code 1", deck1.deck_code, false),
+        ("Code 2", deck2.deck_code, false),
+        ("Deck 1", uniques_1, true),
+        ("Deck 2", uniques_2, true),
         ("Shared", shared, true),
     ];
 
@@ -120,14 +120,14 @@ pub async fn deckcomp(
     Ok(())
 }
 
-async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result<(), Error> {
+async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     let attachment_name = format!(
         "{}.png",
         deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>()
     );
 
     let attachment = {
-        let img = deck::get_image(&deck, locale, deck::ImageOptions::Adaptable)?;
+        let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
 
         let mut image_data = Cursor::new(Vec::<u8>::new());
         img.write_to(&mut image_data, image::ImageFormat::Png)?;
@@ -136,7 +136,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck, locale: Locale) -> Result
     };
 
     let mut embed = serenity::CreateEmbed::new()
-        .title(deck.title.unwrap_or(format!("{} Deck", deck.class.in_locale(locale))))
+        .title(deck.title)
         .url(format!(
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::encode(&deck.deck_code)

@@ -96,7 +96,7 @@ struct DeckData {
 #[derive(Deserialize)]
 #[serde(from = "DeckData")]
 pub struct Deck {
-    pub title: Option<String>,
+    pub title: String,
     pub deck_code: String,
     pub format: Format,
     pub class: Class,
@@ -124,11 +124,7 @@ impl Deck {
 impl From<DeckData> for Deck {
     fn from(value: DeckData) -> Self {
         Deck {
-            title: Some(format!(
-                "{} - {}",
-                value.hero.name,
-                value.format.to_string().to_uppercase()
-            )),
+            title: format!("{} - {}", value.hero.name, value.format.to_string().to_uppercase()),
             deck_code: value.deck_code,
             format: value.format,
             class: value.class.id.into(),
@@ -144,17 +140,7 @@ impl Localize for Deck {
 
         let code = &self.deck_code;
 
-        if let Some(title) = &self.title {
-            writeln!(buffer, "\t{}", title.bold()).ok();
-        } else {
-            writeln!(
-                buffer,
-                "\t{} {}.",
-                &self.format.to_string().to_uppercase().bold(),
-                &self.class.in_locale(locale).to_string().bold()
-            )
-            .ok();
-        }
+        writeln!(buffer, "\t{}", self.title.bold()).ok();
 
         let cards = self.cards.iter().fold(BTreeMap::<_, usize>::new(), |mut map, card| {
             *map.entry(card).or_default() += 1;
@@ -297,7 +283,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
 
     let get_dummy_deck = || -> Deck {
         Deck {
-            title: None,
+            title: "Hearthstone Deck".into(),
             deck_code: raw_data.deck_code.clone(),
             format: Format::Standard,
             class: Class::Neutral,
@@ -339,20 +325,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
 
     deck.format = opts.format.as_ref().and_then(|s| s.parse().ok()).unwrap_or(raw_data.format);
 
-    deck.title = title.or_else(|| {
-        let hero = AGENT
-            .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{}", raw_data.hero))
-            .query("locale", &opts.locale.to_string())
-            .query("access_token", &get_access_token())
-            .query("collectible", "0,1")
-            .call()
-            .ok()?
-            .into_json::<Card>()
-            .ok()?
-            .name;
-
-        Some(format!("{hero} - {}", deck.format.to_string().to_uppercase()))
-    });
+    deck.title = title.unwrap_or(deck.title);
 
     // if the deck has invalid card IDs, add dummy cards with backup Data from HearthSim.
     if let Some(ref invalid_ids) = deck.invalid_card_ids {

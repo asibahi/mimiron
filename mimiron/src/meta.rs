@@ -33,7 +33,6 @@ struct FirestoneStats {
 #[serde(rename_all = "camelCase")]
 struct DeckStat {
     decklist: String,
-    // format: Format, // Don't I already know the format?
     // last_update: String, // If I care about it, how can I use it?
     player_class: Class, // Useful for quick filtering
     total_games: u32,
@@ -43,12 +42,12 @@ struct DeckStat {
 }
 impl DeckStat {
     fn get_winrate(&self) -> f64 {
-        self.winrate.unwrap_or((self.total_wins / self.total_games).into())
+        self.winrate.unwrap_or(f64::from(self.total_wins) / f64::from(self.total_games))
     }
 }
 
 #[cached::proc_macro::cached(
-    time = 604_800, // one week.
+    time = 86400, // one day.
     result = true,
 )]
 fn get_firestone_data(link: &'static str) -> Result<FirestoneStats> {
@@ -82,11 +81,7 @@ pub fn meta_deck(
     }
 
     let mut decks = decks
-        .sorted_by(|s1, s2| {
-            let w1 = s1.get_winrate();
-            let w2 = s2.get_winrate();
-            w1.total_cmp(&w2).reverse()
-        })
+        .sorted_by(|s1, s2| s1.get_winrate().total_cmp(&s2.get_winrate()).reverse())
         .filter_map(move |ds| {
             let title = format!("Firestone Data: WR:{:.0}%", ds.get_winrate() * 100.0);
 

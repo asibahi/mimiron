@@ -35,6 +35,9 @@ const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
+const HEADING_SCALE: f32 = 50.0;
+const CARD_NAME_SCALE: f32 = 40.0;
+
 // fonts unified for all usages now that the Text Box is removed.
 static FONTS: [(Lazy<FontRef<'_>>, f32); 3] = [
     // Base font
@@ -268,11 +271,8 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     );
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
-    // size
-    let scale = 40.0;
-
     // card name
-    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT + 10, 15, scale, name);
+    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT + 10, 15, CARD_NAME_SCALE, name);
 
     // mana square
     drawing::draw_filled_rect_mut(
@@ -283,8 +283,8 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
 
     // card cost
     let cost = cost.to_string();
-    let (tw, _) = drawing::text_size(scale, &*FONTS[0].0, &cost);
-    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, 15, scale, &cost);
+    let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
+    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, 15, CARD_NAME_SCALE, &cost);
 
     // rarity square
     drawing::draw_filled_rect_mut(
@@ -299,8 +299,15 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         (1, Rarity::Legendary) => String::new(),
         _ => count.to_string(),
     };
-    let (tw, _) = drawing::text_size(scale, &*FONTS[0].0, &count);
-    draw_text(&mut img, (255, 255, 255), SLUG_WIDTH - (CROP_HEIGHT + tw) / 2, 15, scale, &count);
+    let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
+    draw_text(
+        &mut img,
+        (255, 255, 255),
+        SLUG_WIDTH - (CROP_HEIGHT + tw) / 2,
+        15,
+        CARD_NAME_SCALE,
+        &count,
+    );
 
     DynamicImage::ImageRgba8(img)
 }
@@ -339,15 +346,14 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
     // size
-    let scale = 50.0;
-    let th = FONTS[0].0.as_scaled(scale).ascent() as u32;
+    let th = FONTS[0].0.as_scaled(HEADING_SCALE).ascent() as u32;
 
     draw_text(
         &mut img,
         (10, 10, 10),
         15,
         (CROP_HEIGHT - th) / 2,
-        scale,
+        HEADING_SCALE,
         heading, //.to_uppercase(),
     );
 
@@ -370,8 +376,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
     });
 
     // size
-    let scale = 50.0;
-    let th = FONTS[0].0.as_scaled(scale).ascent() as u32;
+    let th = FONTS[0].0.as_scaled(HEADING_SCALE).ascent() as u32;
 
     // title
     draw_text(
@@ -379,7 +384,7 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         (10, 10, 10),
         MARGIN + CROP_HEIGHT + 10,
         MARGIN + (CROP_HEIGHT - th) / 2,
-        scale,
+        HEADING_SCALE,
         &title,
     );
 

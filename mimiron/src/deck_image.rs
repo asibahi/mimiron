@@ -272,7 +272,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
 
     // card name
-    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT + 10, 15, CARD_NAME_SCALE, name);
+    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT + 10, CARD_NAME_SCALE, name);
 
     // mana square
     drawing::draw_filled_rect_mut(
@@ -284,7 +284,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     // card cost
     let cost = cost.to_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, 15, CARD_NAME_SCALE, &cost);
+    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, CARD_NAME_SCALE, &cost);
 
     // rarity square
     drawing::draw_filled_rect_mut(
@@ -304,7 +304,6 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         &mut img,
         (255, 255, 255),
         SLUG_WIDTH - (CROP_HEIGHT + tw) / 2,
-        15,
         CARD_NAME_SCALE,
         &count,
     );
@@ -345,14 +344,10 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
-    // size
-    let th = FONTS[0].0.as_scaled(HEADING_SCALE).ascent() as u32;
-
     draw_text(
         &mut img,
         (10, 10, 10),
         15,
-        (CROP_HEIGHT - th) / 2,
         HEADING_SCALE,
         heading, //.to_uppercase(),
     );
@@ -375,18 +370,8 @@ fn draw_deck_title(img: &mut RgbaImage, locale: Locale, deck: &Deck) -> Result<(
         format!("{} - {}", deck.class.in_locale(locale), deck.format.to_string().to_uppercase())
     });
 
-    // size
-    let th = FONTS[0].0.as_scaled(HEADING_SCALE).ascent() as u32;
-
     // title
-    draw_text(
-        img,
-        (10, 10, 10),
-        MARGIN + CROP_HEIGHT + 10,
-        MARGIN + (CROP_HEIGHT - th) / 2,
-        HEADING_SCALE,
-        &title,
-    );
+    draw_text(img, (10, 10, 10), MARGIN + CROP_HEIGHT + 10, HEADING_SCALE, &title);
 
     if let Ok(class_img) = get_class_icon(deck.class) {
         img.copy_from(
@@ -440,8 +425,7 @@ fn get_crop_image(card: &Card) -> Result<DynamicImage> {
 fn draw_text<'a>(
     canvas: &'a mut RgbaImage,
     color: (u8, u8, u8),
-    x: u32,
-    y: u32,
+    x_offset: u32,
     scale: f32,
     text: &'a str,
 ) {
@@ -449,6 +433,7 @@ fn draw_text<'a>(
 
     let mut caret = 0.0;
     let v_metric = FONTS[0].0.as_scaled(scale).ascent();
+    let y_offset = (CROP_HEIGHT - v_metric as u32) / 2;
 
     for c in text.chars() {
         let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) else {
@@ -468,8 +453,8 @@ fn draw_text<'a>(
 
         let bb = g.px_bounds();
         g.draw(|gx, gy, gv| {
-            let image_x = gx + bb.min.x as u32 + x;
-            let image_y = gy + bb.min.y as u32 + y;
+            let image_x = gx + bb.min.x as u32 + x_offset;
+            let image_y = gy + bb.min.y as u32 + y_offset;
 
             if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
                 let pixel = canvas.get_pixel(image_x, image_y).to_owned();

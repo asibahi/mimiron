@@ -8,6 +8,7 @@ pub mod deck;
 mod deck_image;
 mod helpers;
 pub mod localization;
+pub mod meta;
 
 pub use authorization::get_access_token;
 pub use helpers::CardTextDisplay;

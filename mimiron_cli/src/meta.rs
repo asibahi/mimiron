@@ -2,8 +2,9 @@ use anyhow::Result;
 use clap::Args;
 use mimiron::{
     card_details::Class,
-    deck::{meta_deck, Format},
+    deck::Format,
     localization::{Locale, Localize},
+    meta::meta_deck,
 };
 
 #[derive(Args, Clone)]

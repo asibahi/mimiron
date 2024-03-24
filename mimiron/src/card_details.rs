@@ -143,7 +143,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
-#[serde(from = "Details")]
+#[serde(rename_all = "lowercase")] // for Firestone's API.
 pub enum Class {
     DeathKnight,
     DemonHunter,
@@ -189,12 +189,6 @@ impl From<u8> for Class {
             10 => Self::Warrior,
             _ => Self::Neutral, // 12. Fine Default state
         }
-    }
-}
-// Used in Deck Json.
-impl From<Details> for Class {
-    fn from(value: Details) -> Self {
-        value.id.into()
     }
 }
 impl FromStr for Class {

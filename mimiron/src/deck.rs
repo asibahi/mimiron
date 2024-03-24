@@ -1,6 +1,6 @@
 use crate::{
     card::{self, Card},
-    card_details::{validate_id, Class},
+    card_details::{validate_id, Class, Details},
     get_access_token,
     localization::{Locale, Localize},
     AGENT,
@@ -83,6 +83,18 @@ pub struct Sideboard {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct DeckData {
+    deck_code: String,
+    format: Format,
+    hero: Card,
+    class: Details,
+    cards: Vec<Card>,
+    sideboard_cards: Option<Vec<Sideboard>>,
+    invalid_card_ids: Option<Vec<usize>>,
+}
+
+#[derive(Deserialize)]
+#[serde(from = "DeckData")]
 pub struct Deck {
     pub title: Option<String>,
     pub deck_code: String,
@@ -106,6 +118,23 @@ impl Deck {
             deck1_uniques: deck1_uniques.into_map(),
             deck2_code: other.deck_code.clone(),
             deck2_uniques: (counter2 - counter1).into_map(),
+        }
+    }
+}
+impl From<DeckData> for Deck {
+    fn from(value: DeckData) -> Self {
+        Deck {
+            title: Some(format!(
+                "{} - {}",
+                value.hero.name,
+                value.format.to_string().to_uppercase()
+            )),
+            deck_code: value.deck_code,
+            format: value.format,
+            class: value.class.id.into(),
+            cards: value.cards,
+            sideboard_cards: value.sideboard_cards,
+            invalid_card_ids: value.invalid_card_ids,
         }
     }
 }

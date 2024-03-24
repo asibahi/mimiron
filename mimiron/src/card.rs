@@ -5,7 +5,7 @@ use crate::{
     localization::{Locale, Localize},
     CardTextDisplay, AGENT,
 };
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use colored::Colorize;
 use eitherable::Eitherable;
 use itertools::Itertools;
@@ -263,9 +263,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
 
     if res.card_count == 0 {
-        return Err(anyhow!(
-            "No constructed card found with text {search_term}. Check your spelling."
-        ));
+        anyhow::bail!("No constructed card found with text {search_term}. Check your spelling.");
     }
 
     let mut cards = res
@@ -285,9 +283,9 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .peekable();
 
     if cards.peek().is_none() {
-        return Err(anyhow!(
+        anyhow::bail!(
             "No constructed card found with name \"{search_term}\". Try expanding search to text boxes."
-        ));
+        );
     }
 
     Ok(cards)

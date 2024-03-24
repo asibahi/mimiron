@@ -5,7 +5,7 @@ use crate::{
     localization::{Locale, Localize},
     CardTextDisplay, AGENT,
 };
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use colored::Colorize;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -321,7 +321,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
 
     if res.card_count == 0 {
-        return Err(anyhow!("No Battlegrounds card found. Check your spelling."));
+        anyhow::bail!("No Battlegrounds card found. Check your spelling.");
     }
 
     let mut cards = res
@@ -344,9 +344,9 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .peekable();
 
     if cards.peek().is_none() {
-        return Err(anyhow!(
+        anyhow::bail!(
             "No Battlegrounds card found with this name. Try expanding search to text boxes."
-        ));
+        );
     }
 
     Ok(cards)

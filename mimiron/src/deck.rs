@@ -248,7 +248,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             .into_json::<Deck>()?;
 
         if deck.invalid_card_ids.is_some() {
-            return Err(anyhow!("Deck has invalid IDs."));
+            anyhow::bail!("Deck has invalid IDs.");
         }
 
         Ok(deck)
@@ -275,7 +275,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
         let deck = req.call()?.into_json::<Deck>()?;
 
         if deck.invalid_card_ids.as_ref().is_some_and(|ids| ids.iter().any(|&id| id == 0)) {
-            return Err(anyhow!("Deck invalid IDs are 0."));
+            anyhow::bail!("Deck invalid IDs are 0.");
         }
 
         Ok(deck)
@@ -432,10 +432,10 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     let mut raw_data = decode_deck_code(&opts.code)?;
 
     if raw_data.cards.iter().all(|&id| id != ETC_ID) {
-        return Err(anyhow!("{ETC_NAME} does not exist in the deck."));
+        anyhow::bail!("{ETC_NAME} does not exist in the deck.");
     }
     if raw_data.sideboard_cards.iter().any(|&(_, id)| id == ETC_ID) {
-        return Err(anyhow!("Deck already has an {ETC_NAME} Sideboard."));
+        anyhow::bail!("Deck already has an {ETC_NAME} Sideboard.");
     }
 
     let band_ids = band

@@ -15,9 +15,11 @@ pub struct MetaArgs {
 }
 
 pub(crate) fn run(args: MetaArgs, locale: Locale) -> Result<()> {
-    let deck = meta_deck(args.class, args.format, locale)?;
+    let decks = meta_deck(Some(args.class), args.format, locale)?;
 
-    println!("{}", deck.in_locale(locale));
+    for deck in decks.take(3) {
+        println!("{}", deck.in_locale(locale));
+    }
 
     Ok(())
 }

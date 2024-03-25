@@ -9,6 +9,7 @@ use mimiron::{
     localization::Localize,
 };
 use poise::serenity_prelude as serenity;
+use rand::random;
 use std::{collections::HashMap, io::Cursor};
 
 /// Get deck cards from code
@@ -145,7 +146,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
         .color(deck.class.color())
         .attachment(attachment_name);
 
-    if rand::random::<u8>() % 10 == 0 {
+    if random::<u8>() % 10 == 0 {
         embed =
             embed.footer(serenity::CreateEmbedFooter::new("See other useful commands with /help."));
     }
@@ -157,7 +158,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     Ok(())
 }
 
-/// Get a meta deck.
+/// Get a meta deck from Firestone's data.
 #[poise::command(slash_command, category = "Deck")]
 pub async fn metadeck(
     ctx: Context<'_>,
@@ -170,11 +171,19 @@ pub async fn metadeck(
 
     let class = class.and_then(|s| s.parse().ok());
     let format = format
-        .or(ctx.guild_channel().await.map(|c| c.name)) // clever stuff !! too clever?
+        .or(ctx.guild_channel().await.map(|c| c.name).filter(|n| {
+            n.eq_ignore_ascii_case("standard")
+                || n.eq_ignore_ascii_case("std")
+                || n.eq_ignore_ascii_case("wild")
+                || n.eq_ignore_ascii_case("twist")
+        })) // clever stuff !! too clever?
         .and_then(|s| s.parse().ok())
         .unwrap_or_default();
 
-    let deck = mimiron::meta::meta_deck(class, format, locale)?.next().unwrap();
+    let deck = mimiron::meta::meta_deck(class, format, locale)?
+        .take(5)
+        .find_or_first(|_| random())
+        .unwrap();
 
     send_deck_reply(ctx, deck).await
 }

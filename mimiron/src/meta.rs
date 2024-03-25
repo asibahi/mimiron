@@ -1,7 +1,7 @@
 use crate::{
     card_details::Class,
     deck::{lookup, Deck, Format, LookupOptions},
-    localization::Locale,
+    localization::{Locale, Localize},
     AGENT,
 };
 use anyhow::Result;
@@ -81,9 +81,19 @@ pub fn meta_deck(
     }
 
     let mut decks = decks
-        .sorted_by(|s1, s2| s1.get_winrate().total_cmp(&s2.get_winrate()).reverse())
+        .sorted_by(|s1, s2| {
+            (s2.total_games / 1000).min(10)
+                .cmp(&(s1.total_games / 1000).min(10))
+                .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
+        })
         .filter_map(move |ds| {
-            let title = format!("Firestone Data: WR:{:.0}%", ds.get_winrate() * 100.0);
+            let title = format!(
+                "{:.0}% WR {}/{} {}",
+                ds.get_winrate() * 100.0,
+                ds.total_wins,
+                ds.total_games,
+                ds.player_class.in_locale(locale)
+            );
 
             let mut deck = lookup(&LookupOptions::lookup(ds.decklist).with_locale(locale)).ok()?;
             deck.title = title;

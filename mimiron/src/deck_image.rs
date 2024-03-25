@@ -429,7 +429,15 @@ fn draw_text<'a>(
 
     let mut caret = 0.0;
     let v_metric = FONTS[0].0.as_scaled(scale).ascent();
-    let y_offset = (CROP_HEIGHT - v_metric as u32) / 2;
+    let y_offset = {
+        let mut y = (CROP_HEIGHT - v_metric as u32) / 2;
+
+        // band-aid for Deck title:
+        if image_height > CROP_HEIGHT {
+            y += MARGIN;
+        }
+        y
+    };
 
     for c in text.chars() {
         let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) else {

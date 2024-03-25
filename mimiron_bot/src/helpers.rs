@@ -12,10 +12,11 @@ use poise::serenity_prelude as serenity;
 /// Help Menu
 #[poise::command(slash_command, hide_in_help)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
-    let footer = "This unofficial bot uses the official Blizzard API, the one used in the official card \
-                 library. Code is available at https://github.com/asibahi/mimiron/ . If you have requests \
-                 or suggestions, raise a GitHub Issue or ping @mimirons_head in the Mimiron Bot server. The bot \
-                 is hosted on the free tier of http://shuttle.rs .";
+    let footer = "This bot uses the Blizzard API, which mirrors the official card library, \
+                  with supplemental data from HearthSim and Firestone. Code is available at \
+                  https://github.com/asibahi/mimiron/ . If you have requests or suggestions, \
+                  raise a GitHub Issue or ping @mimirons_head in the Mimiron Bot server. The bot \
+                  is hosted on the free tier of http://shuttle.rs .";
 
     // funny new ordering every call.
     let mut categories = HashMap::new();

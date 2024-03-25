@@ -7,6 +7,7 @@ use mimiron::{
     card,
     deck::{self, Deck, LookupOptions},
     localization::Localize,
+    meta::meta_deck,
 };
 use poise::serenity_prelude as serenity;
 use rand::random;
@@ -180,10 +181,7 @@ pub async fn metadeck(
         .and_then(|s| s.parse().ok())
         .unwrap_or_default();
 
-    let deck = mimiron::meta::meta_deck(class, format, locale)?
-        .take(5)
-        .find_or_first(|_| random())
-        .unwrap();
+    let deck = meta_deck(class, format, locale)?.find_or_first(|_| random()).unwrap();
 
     send_deck_reply(ctx, deck).await
 }

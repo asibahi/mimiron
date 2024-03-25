@@ -1,10 +1,11 @@
 use crate::{
     card_details::Class,
     deck::{lookup, Deck, Format, LookupOptions},
-    localization::{Locale, Localize},
+    localization::Locale,
     AGENT,
 };
 use anyhow::Result;
+use convert_case::{Case, Casing};
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -38,7 +39,7 @@ struct DeckStat {
     total_games: u32,
     total_wins: u32,
     winrate: Option<f64>,
-    // archetype_name: String,
+    archetype_name: String,
 }
 impl DeckStat {
     fn get_winrate(&self) -> f64 {
@@ -82,8 +83,8 @@ pub fn meta_deck(
 
     let mut decks = decks
         .sorted_by(|s1, s2| {
-            (s2.total_games / 1000).min(10)
-                .cmp(&(s1.total_games / 1000).min(10))
+            (s2.total_games.ilog2().min(10))
+                .cmp(&s1.total_games.ilog2().min(10))
                 .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
         })
         .filter_map(move |ds| {
@@ -92,7 +93,7 @@ pub fn meta_deck(
                 ds.get_winrate() * 100.0,
                 ds.total_wins,
                 ds.total_games,
-                ds.player_class.in_locale(locale)
+                ds.archetype_name.to_case(Case::Title),
             );
 
             let mut deck = lookup(&LookupOptions::lookup(ds.decklist).with_locale(locale)).ok()?;

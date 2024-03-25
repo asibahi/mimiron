@@ -12,16 +12,16 @@ use serde::Deserialize;
 // Meta look up using Firestone's internal data.
 
 // Standard
-static STANDARD_DECKS_D_L: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/standard/legend-diamond/last-patch/overview-from-hourly.gz.json";
-static STANDARD_DECKS_ALL: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/standard/all/last-patch/overview-from-hourly.gz.json";
+static STANDARD_DECKS_D_L: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/standard/legend-diamond/past-3/overview-from-hourly.gz.json";
+static STANDARD_DECKS_ALL: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/standard/all/past-3/overview-from-hourly.gz.json";
 
 // Wild
-static WILD_DECKS_D_L: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/wild/legend-diamond/last-patch/overview-from-hourly.gz.json";
-static WILD_DECKS_ALL: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/wild/all/last-patch/overview-from-hourly.gz.json";
+static WILD_DECKS_D_L: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/wild/legend-diamond/past-3/overview-from-hourly.gz.json";
+static WILD_DECKS_ALL: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/wild/all/past-3/overview-from-hourly.gz.json";
 
 // Twist
-static TWIST_DECKS_D_L: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/twist/legend-diamond/last-patch/overview-from-hourly.gz.json";
-static TWIST_DECKS_ALL: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/twist/all/last-patch/overview-from-hourly.gz.json";
+static TWIST_DECKS_D_L: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/twist/legend-diamond/past-3/overview-from-hourly.gz.json";
+static TWIST_DECKS_ALL: &str = "https://static.zerotoheroes.com/api/constructed/stats/decks/twist/all/past-3/overview-from-hourly.gz.json";
 
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

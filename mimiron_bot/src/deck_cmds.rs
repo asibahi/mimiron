@@ -181,7 +181,10 @@ pub async fn metadeck(
         .and_then(|s| s.parse().ok())
         .unwrap_or_default();
 
-    let deck = meta_deck(class, format, locale)?.find_or_first(|_| random()).unwrap();
+    let deck = meta_deck(class, format, locale)?
+        .take(5)
+        .find_or_first(|_| random::<u8>() % 5 == 0)
+        .unwrap();
 
     send_deck_reply(ctx, deck).await
 }

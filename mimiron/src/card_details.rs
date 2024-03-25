@@ -170,7 +170,6 @@ impl Localize for Class {
             .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
-// Used in Card Json
 impl From<u8> for Class {
     fn from(value: u8) -> Self {
         match value {
@@ -419,11 +418,10 @@ impl Localize for CardType {
 
         impl Display for Inner<'_> {
             fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-                // f.alternate() is used for text boxes on images. Regular mode for console output.
+                // Not sure what f.alternate() is used for right now.
                 let colon = if f.alternate() { ":" } else { "" };
 
                 let get_type = |i: u8| {
-                    // all this just to say "Minion"
                     METADATA.types.iter().find(|det| det.id == i).unwrap().name(self.1)
                 };
 
@@ -500,7 +498,6 @@ pub(crate) fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
         .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
 }
 
-// I really hate that I need this. Currently only used for deck images.
 pub(crate) fn get_hearth_sim_details(id: &usize) -> Option<(&str, u8, Rarity)> {
     HEARTH_SIM_IDS.get(id).map(|c| {
         let rarity = c.rarity.as_deref().map_or(Rarity::Noncollectible, |r| match r {

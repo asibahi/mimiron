@@ -80,7 +80,6 @@ pub struct Card {
     pub crop_image: Option<String>,
     pub flavor_text: String,
 
-    // Whether card is functional or cosmetic.
     pub cosmetic: bool,
 }
 impl Card {

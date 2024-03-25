@@ -107,7 +107,6 @@ impl Localize for BGCardType {
                 }
 
                 let get_type = |i: u8| {
-                    // all this just to say "Minion"
                     crate::card_details::METADATA
                         .types
                         .iter()
@@ -310,7 +309,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
             &t.in_en_us() // Is it always enUS?
                 .to_string()
                 .to_lowercase()
-                .replace(' ', ""), // just in case
+                .replace(' ', ""),
         );
     }
 

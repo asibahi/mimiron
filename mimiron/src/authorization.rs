@@ -35,7 +35,6 @@ const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
 const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
 
 fn internal_get_access_token() -> Result<AccessToken> {
-    // need to replace later with something that allows people to input their own creds
     dotenvy::dotenv().ok();
     let id = std::env::var(ID_KEY).map_err(|e| anyhow!("Failed to get {ID_KEY}: {e}"))?;
     let secret =

@@ -156,3 +156,25 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
 
     Ok(())
 }
+
+/// Get a meta deck.
+#[poise::command(slash_command, category = "Deck")]
+pub async fn metadeck(
+    ctx: Context<'_>,
+    #[description = "Class"] class: Option<String>,
+    #[description = "Format"] format: Option<String>,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let locale = get_server_locale(&ctx);
+
+    let class = class.and_then(|s| s.parse().ok());
+    let format = format
+        .or(ctx.guild_channel().await.map(|c| c.name)) // clever stuff !! too clever?
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_default();
+
+    let deck = mimiron::meta::meta_deck(class, format, locale)?.next().unwrap();
+
+    send_deck_reply(ctx, deck).await
+}

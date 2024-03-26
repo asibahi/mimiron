@@ -421,9 +421,8 @@ impl Localize for CardType {
                 // Not sure what f.alternate() is used for right now.
                 let colon = if f.alternate() { ":" } else { "" };
 
-                let get_type = |i: u8| {
-                    METADATA.types.iter().find(|det| det.id == i).unwrap().name(self.1)
-                };
+                let get_type =
+                    |i| METADATA.types.iter().find(|det| det.id == i).unwrap().name(self.1);
 
                 match self.0 {
                     CardType::Hero { armor } => {

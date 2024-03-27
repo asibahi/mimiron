@@ -7,7 +7,7 @@ use mimiron::{
     card,
     deck::{self, Deck, LookupOptions},
     localization::Localize,
-    meta::meta_deck,
+    meta,
 };
 use poise::serenity_prelude as serenity;
 use rand::random;
@@ -159,7 +159,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     Ok(())
 }
 
-/// Get a meta deck from Firestone's data.
+/// Get a "meta" deck from Firestone's data.
 #[poise::command(slash_command, category = "Deck")]
 pub async fn metadeck(
     ctx: Context<'_>,
@@ -171,7 +171,83 @@ pub async fn metadeck(
     let locale = get_server_locale(&ctx);
 
     let class = class.and_then(|s| s.parse().ok());
-    let format = format
+    let format = parse_format(ctx, format).await;
+
+    let deck = meta::meta_deck(class, format, locale)?
+        .take(5)
+        .find_or_first(|_| random::<u8>() % 5 == 0)
+        .unwrap();
+
+    send_deck_reply(ctx, deck).await
+}
+
+/// Get a meta snapshot from Firestone's data.
+#[poise::command(slash_command, category = "Deck")]
+pub async fn metasnap(
+    ctx: Context<'_>,
+    #[description = "Format"] format: Option<String>,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let ctx_id = ctx.id();
+
+    let locale = get_server_locale(&ctx);
+    let format = parse_format(ctx, format).await;
+
+    let format_str = format.to_string().to_uppercase();
+
+    let decks = meta::meta_snap(format, locale)?.enumerate().take(10).collect_vec();
+
+    let description = decks.iter().map(|(i, d)| format!("{}. {}", i + 1, d.title)).join("\n");
+
+    let select_menu_options = decks
+        .iter()
+        .map(|(i, d)| serenity::CreateSelectMenuOption::new(d.title.clone(), i.to_string()))
+        .collect_vec();
+
+    let reply = poise::CreateReply::default()
+        .embed(
+            serenity::CreateEmbed::new()
+                .title(format!("{format_str} Meta Snapshot (from Firestone Data)"))
+                .url("https://go.overwolf.com/firestone-app/")
+                .description(description)
+                .color(decks[0].1.class.color()),
+        )
+        .components(vec![serenity::CreateActionRow::SelectMenu(serenity::CreateSelectMenu::new(
+            format!("{ctx_id}_select_menu"),
+            serenity::CreateSelectMenuKind::String { options: select_menu_options },
+        ))]);
+
+    ctx.send(reply).await?;
+
+    while let Some(interaction) = serenity::collector::ComponentInteractionCollector::new(ctx)
+        .filter(move |interaction| interaction.data.custom_id.starts_with(&ctx_id.to_string()))
+        .timeout(std::time::Duration::from_secs(300)) // 5 minutes
+        .await
+    {
+        let serenity::ComponentInteractionDataKind::StringSelect { ref values } =
+            interaction.data.kind
+        else {
+            continue;
+        };
+
+        let i = values[0].parse::<usize>()?;
+
+        interaction
+            .create_response(
+                ctx.serenity_context(),
+                serenity::CreateInteractionResponse::Acknowledge,
+            )
+            .await?;
+
+        send_deck_reply(ctx, decks[i].1.clone()).await?;
+    }
+
+    Ok(())
+}
+
+async fn parse_format(ctx: Context<'_>, format: Option<String>) -> mimiron::deck::Format {
+    format
         .or(ctx.guild_channel().await.map(|c| c.name).filter(|n| {
             n.eq_ignore_ascii_case("standard")
                 || n.eq_ignore_ascii_case("std")
@@ -179,12 +255,5 @@ pub async fn metadeck(
                 || n.eq_ignore_ascii_case("twist")
         })) // clever stuff !! too clever?
         .and_then(|s| s.parse().ok())
-        .unwrap_or_default();
-
-    let deck = meta_deck(class, format, locale)?
-        .take(5)
-        .find_or_first(|_| random::<u8>() % 5 == 0)
-        .unwrap();
-
-    send_deck_reply(ctx, deck).await
+        .unwrap_or_default()
 }

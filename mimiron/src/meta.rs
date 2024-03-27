@@ -1,3 +1,5 @@
+#![allow(clippy::needless_pass_by_value)]
+
 use crate::{
     card_details::Class,
     deck::{lookup, Deck, Format, LookupOptions},
@@ -56,7 +58,6 @@ fn get_firestone_data(link: &'static str) -> Result<FirestoneStats> {
     Ok(ret)
 }
 
-#[allow(clippy::needless_pass_by_value)]
 pub fn meta_deck(
     class: Option<Class>,
     format: Format,

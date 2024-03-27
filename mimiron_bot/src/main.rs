@@ -44,6 +44,7 @@ async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::deck_context_menu(),
                 deck_cmds::deckcomp(),
                 deck_cmds::metadeck(),
+                deck_cmds::metasnap(),
                 helpers::help(),
             ],
             on_error: |error| {

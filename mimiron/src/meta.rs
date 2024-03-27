@@ -71,8 +71,7 @@ pub fn meta_deck(
 pub fn meta_snap(format: Format, locale: Locale) -> Result<impl Iterator<Item = Deck>> {
     let decks = get_decks_stats(format, None)?
         .unique_by(|ds| ds.archetype_name.clone())
-        .filter_map(move |ds| get_deck_from_deck_stat(ds, locale))
-        .take(10);
+        .filter_map(move |ds| get_deck_from_deck_stat(ds, locale));
 
     Ok(decks)
 }

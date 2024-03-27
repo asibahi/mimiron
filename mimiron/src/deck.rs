@@ -74,7 +74,7 @@ impl TryFrom<u8> for Format {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Sideboard {
     pub sideboard_card: Card,
@@ -93,7 +93,7 @@ struct DeckData {
     invalid_card_ids: Option<Vec<usize>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(from = "DeckData")]
 pub struct Deck {
     pub title: String,

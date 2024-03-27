@@ -123,6 +123,12 @@ pub async fn deckcomp(
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
+    ctx.send(create_deck_reply(deck)?).await?;
+
+    Ok(())
+}
+
+fn create_deck_reply(deck: Deck) -> Result<poise::CreateReply, Error> {
     let attachment_name = format!(
         "{}.png",
         deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>()
@@ -154,9 +160,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
 
     let reply = poise::CreateReply::default().attachment(attachment).embed(embed);
 
-    ctx.send(reply).await?;
-
-    Ok(())
+    Ok(reply)
 }
 
 /// Get a "meta" deck from Firestone's data.
@@ -196,29 +200,39 @@ pub async fn metasnap(
 
     let format_str = format.to_string().to_uppercase();
 
-    let decks = meta::meta_snap(format, locale)?.enumerate().take(10).collect_vec();
-
-    let description = decks.iter().map(|(i, d)| format!("{}. {}", i + 1, d.title)).join("\n");
+    let decks = meta::meta_snap(format, locale)?.enumerate().take(10).collect::<Vec<_>>();
 
     let select_menu_options = decks
         .iter()
         .map(|(i, d)| serenity::CreateSelectMenuOption::new(d.title.clone(), i.to_string()))
-        .collect_vec();
+        .collect::<Vec<_>>();
 
     let reply = poise::CreateReply::default()
         .embed(
             serenity::CreateEmbed::new()
                 .title(format!("{format_str} Meta Snapshot (from Firestone Data)"))
                 .url("https://go.overwolf.com/firestone-app/")
-                .description(description)
+                .description(
+                    decks.iter().map(|(i, d)| format!("{}. {}", i + 1, d.title)).join("\n"),
+                )
                 .color(decks[0].1.class.color()),
         )
-        .components(vec![serenity::CreateActionRow::SelectMenu(serenity::CreateSelectMenu::new(
-            format!("{ctx_id}_select_menu"),
-            serenity::CreateSelectMenuKind::String { options: select_menu_options },
-        ))]);
+        .components(vec![serenity::CreateActionRow::SelectMenu(
+            serenity::CreateSelectMenu::new(
+                format!("{ctx_id}_select_menu"),
+                serenity::CreateSelectMenuKind::String { options: select_menu_options },
+            )
+            .placeholder("Select a deck from the above."),
+        )]);
 
     ctx.send(reply).await?;
+
+    let mut handle: Option<poise::ReplyHandle> = None;
+    let replies = decks
+        .iter()
+        .cloned()
+        .map(|(_, deck)| create_deck_reply(deck))
+        .collect::<Result<Vec<_>, Error>>()?;
 
     while let Some(choice) = serenity::collector::ComponentInteractionCollector::new(ctx)
         .filter(move |choice| choice.data.custom_id.starts_with(&ctx_id.to_string()))
@@ -230,8 +244,6 @@ pub async fn metasnap(
             continue;
         };
 
-        let i = values[0].parse::<usize>()?;
-
         choice
             .create_response(
                 ctx.serenity_context(),
@@ -239,7 +251,14 @@ pub async fn metasnap(
             )
             .await?;
 
-        send_deck_reply(ctx, decks[i].1.clone()).await?;
+        let i = values[0].parse::<usize>()?;
+        let reply = replies[i].clone();
+
+        if let Some(handle) = handle.as_mut() {
+            handle.edit(ctx, reply).await?;
+        } else {
+            handle = Some(ctx.send(reply).await?);
+        }
     }
 
     Ok(())

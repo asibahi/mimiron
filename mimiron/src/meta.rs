@@ -62,6 +62,40 @@ pub fn meta_deck(
     format: Format,
     locale: Locale,
 ) -> Result<impl Iterator<Item = Deck>> {
+    let decks =
+        get_decks_stats(format, class)?.filter_map(move |ds| get_deck_from_deck_stat(ds, locale));
+
+    Ok(decks)
+}
+
+pub fn meta_snap(format: Format, locale: Locale) -> Result<impl Iterator<Item = Deck>> {
+    let decks = get_decks_stats(format, None)?
+        .unique_by(|ds| ds.archetype_name.clone())
+        .filter_map(move |ds| get_deck_from_deck_stat(ds, locale))
+        .take(10);
+
+    Ok(decks)
+}
+
+fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
+    let title = format!(
+        "{:.0}% WR {}/{} {}",
+        ds.get_winrate() * 100.0,
+        ds.total_wins,
+        ds.total_games,
+        ds.archetype_name.to_case(Case::Title),
+    );
+
+    let mut deck = lookup(&LookupOptions::lookup(ds.decklist).with_locale(locale)).ok()?;
+    deck.title = title;
+
+    Some(deck)
+}
+
+fn get_decks_stats(
+    format: Format,
+    class: Option<Class>,
+) -> Result<std::vec::IntoIter<DeckStat>, anyhow::Error> {
     let (d_l, all) = match format {
         Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL),
         Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL),
@@ -81,31 +115,15 @@ pub fn meta_deck(
         decks = second_try.deck_stats.into_iter().filter(filter_decks).peekable();
     }
 
-    let mut decks = decks
-        .sorted_by(|s1, s2| {
-            (s2.total_games.ilog2().min(10))
-                .cmp(&s1.total_games.ilog2().min(10))
-                .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
-        })
-        .filter_map(move |ds| {
-            let title = format!(
-                "{:.0}% WR {}/{} {}",
-                ds.get_winrate() * 100.0,
-                ds.total_wins,
-                ds.total_games,
-                ds.archetype_name.to_case(Case::Title),
-            );
-
-            let mut deck = lookup(&LookupOptions::lookup(ds.decklist).with_locale(locale)).ok()?;
-            deck.title = title;
-
-            Some(deck)
-        })
-        .peekable();
-
     if decks.peek().is_none() {
         anyhow::bail!("No decks found with more than 100 games.");
     }
+
+    let decks = decks.sorted_by(|s1, s2| {
+        (s2.total_games.ilog2().min(10))
+            .cmp(&s1.total_games.ilog2().min(10))
+            .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
+    });
 
     Ok(decks)
 }

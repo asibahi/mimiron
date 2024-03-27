@@ -104,7 +104,7 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
             ImageFormat::Wide => deck::ImageOptions::Regular { columns: 3 },
         };
 
-        let img = deck::get_image(&deck, opts)?;
+        let img = deck.get_image(opts)?;
 
         let file_name = format!(
             "{} {} {}.png",

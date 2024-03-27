@@ -129,7 +129,7 @@ async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
     );
 
     let attachment = {
-        let img = deck::get_image(&deck, deck::ImageOptions::Adaptable)?;
+        let img = deck.get_image(deck::ImageOptions::Adaptable)?;
 
         let mut image_data = Cursor::new(Vec::<u8>::new());
         img.write_to(&mut image_data, image::ImageFormat::Png)?;

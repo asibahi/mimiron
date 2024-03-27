@@ -19,7 +19,7 @@ use std::{
 };
 use varint_rs::VarintReader;
 
-pub use crate::deck_image::{get as get_image, ImageOptions};
+pub use crate::deck_image::ImageOptions;
 
 #[derive(Clone, Default, Deserialize)]
 #[serde(from = "String")]
@@ -119,6 +119,10 @@ impl Deck {
             deck2_code: other.deck_code.clone(),
             deck2_uniques: (counter2 - counter1).into_map(),
         }
+    }
+
+    pub fn get_image(&self, opts: ImageOptions) -> Result<image::DynamicImage> {
+        crate::deck_image::get(self, opts)
     }
 }
 impl From<DeckData> for Deck {

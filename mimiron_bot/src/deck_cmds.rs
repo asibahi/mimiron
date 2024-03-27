@@ -220,20 +220,19 @@ pub async fn metasnap(
 
     ctx.send(reply).await?;
 
-    while let Some(interaction) = serenity::collector::ComponentInteractionCollector::new(ctx)
-        .filter(move |interaction| interaction.data.custom_id.starts_with(&ctx_id.to_string()))
+    while let Some(choice) = serenity::collector::ComponentInteractionCollector::new(ctx)
+        .filter(move |choice| choice.data.custom_id.starts_with(&ctx_id.to_string()))
         .timeout(std::time::Duration::from_secs(300)) // 5 minutes
         .await
     {
-        let serenity::ComponentInteractionDataKind::StringSelect { ref values } =
-            interaction.data.kind
+        let serenity::ComponentInteractionDataKind::StringSelect { ref values } = choice.data.kind
         else {
             continue;
         };
 
         let i = values[0].parse::<usize>()?;
 
-        interaction
+        choice
             .create_response(
                 ctx.serenity_context(),
                 serenity::CreateInteractionResponse::Acknowledge,

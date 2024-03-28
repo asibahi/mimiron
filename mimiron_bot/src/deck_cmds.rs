@@ -9,6 +9,7 @@ use mimiron::{
     localization::Localize,
     meta,
 };
+use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
 use rand::random;
 use std::{collections::HashMap, io::Cursor};
@@ -231,8 +232,8 @@ pub async fn metasnap(
     let replies = decks
         .iter()
         .cloned()
-        .map(|(_, deck)| create_deck_reply(deck))
-        .collect::<Result<Vec<_>, Error>>()?;
+        .map(|(_, deck)| Lazy::new(|| create_deck_reply(deck).unwrap_or_default()))
+        .collect::<Vec<_>>();
 
     while let Some(choice) = serenity::collector::ComponentInteractionCollector::new(ctx)
         .filter(move |choice| choice.data.custom_id.starts_with(&ctx_id.to_string()))
@@ -254,7 +255,7 @@ pub async fn metasnap(
         let i = values[0].parse::<usize>()?;
         let reply = replies[i].clone();
 
-        if let Some(handle) = handle.as_mut() {
+        if let Some(handle) = handle.as_ref() {
             handle.edit(ctx, reply).await?;
         } else {
             handle = Some(ctx.send(reply).await?);

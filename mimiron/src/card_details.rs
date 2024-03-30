@@ -58,22 +58,22 @@ struct LocalizedName {
     zhTW: String,
 }
 impl Localize for LocalizedName {
-    fn in_locale(&self, locale: Locale) -> String {
+    fn in_locale(&self, locale: Locale) -> &str {
         match locale {
-            Locale::deDE => self.deDE.clone(),
-            Locale::enUS => self.enUS.clone(),
-            Locale::esES => self.esES.clone(),
-            Locale::esMX => self.esMX.clone(),
-            Locale::frFR => self.frFR.clone(),
-            Locale::itIT => self.itIT.clone(),
-            Locale::jaJP => self.jaJP.clone(),
-            Locale::koKR => self.koKR.clone(),
-            Locale::plPL => self.plPL.clone(),
-            Locale::ptBR => self.ptBR.clone(),
-            Locale::ruRU => self.ruRU.clone(),
-            Locale::thTH => self.thTH.clone(),
-            Locale::zhCN => self.zhCN.clone().unwrap_or_else(|| self.zhTW.clone()),
-            Locale::zhTW => self.zhTW.clone(),
+            Locale::deDE => self.deDE.as_str(),
+            Locale::enUS => self.enUS.as_str(),
+            Locale::esES => self.esES.as_str(),
+            Locale::esMX => self.esMX.as_str(),
+            Locale::frFR => self.frFR.as_str(),
+            Locale::itIT => self.itIT.as_str(),
+            Locale::jaJP => self.jaJP.as_str(),
+            Locale::koKR => self.koKR.as_str(),
+            Locale::plPL => self.plPL.as_str(),
+            Locale::ptBR => self.ptBR.as_str(),
+            Locale::ruRU => self.ruRU.as_str(),
+            Locale::thTH => self.thTH.as_str(),
+            Locale::zhCN => self.zhCN.as_deref().unwrap_or_else(|| self.zhTW.as_str()),
+            Locale::zhTW => self.zhTW.as_str(),
         }
     }
 }
@@ -87,7 +87,7 @@ pub(crate) struct Details {
 }
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
-        match self.name.clone() {
+        match self.name.as_ref() {
             Left(ln) => {
                 ln.deDE.eq_ignore_ascii_case(search_term)
                     || ln.enUS.eq_ignore_ascii_case(search_term)
@@ -102,13 +102,13 @@ impl Details {
                     || ln.ruRU.eq_ignore_ascii_case(search_term)
                     || ln.thTH.eq(search_term)
                     || ln.zhTW.eq(search_term)
-                    || ln.zhCN.is_some_and(|s| s.eq(search_term))
+                    || ln.zhCN.as_ref().is_some_and(|s| s.eq(search_term))
             }
             Right(s) => s.eq_ignore_ascii_case(search_term),
         }
     }
     pub fn name(&self, locale: Locale) -> String {
-        self.name.clone().right_or_else(|ln| ln.in_locale(locale))
+        self.name.clone().right_or_else(|ln| ln.in_locale(locale).to_string())
     }
 }
 
@@ -129,7 +129,7 @@ pub(crate) struct Set {
     alias_set_ids: Option<Vec<usize>>,
 }
 impl Localize for Set {
-    fn in_locale(&self, locale: Locale) -> String {
+    fn in_locale(&self, locale: Locale) -> &str {
         self.name.in_locale(locale)
     }
 }
@@ -139,7 +139,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
         .sets
         .iter()
         .find(|s| s.id == id || s.alias_set_ids.iter().flatten().contains(&id))
-        .map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale))
+        .map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale).to_string())
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]

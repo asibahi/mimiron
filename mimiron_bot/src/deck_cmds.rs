@@ -124,12 +124,12 @@ pub async fn deckcomp(
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
-    ctx.send(create_deck_reply(deck)?).await?;
+    ctx.send(create_deck_reply(&deck)?).await?;
 
     Ok(())
 }
 
-fn create_deck_reply(deck: Deck) -> Result<poise::CreateReply, Error> {
+fn create_deck_reply(deck: &Deck) -> Result<poise::CreateReply, Error> {
     let attachment_name = format!(
         "{}.png",
         deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>()
@@ -145,7 +145,7 @@ fn create_deck_reply(deck: Deck) -> Result<poise::CreateReply, Error> {
     };
 
     let mut embed = serenity::CreateEmbed::new()
-        .title(deck.title)
+        .title(&deck.title)
         .url(format!(
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::encode(&deck.deck_code)
@@ -234,7 +234,6 @@ pub async fn metasnap(
 
     let replies = decks
         .iter()
-        .cloned()
         .map(|(_, deck)| Lazy::new(|| create_deck_reply(deck).unwrap_or_default()))
         .collect::<Vec<_>>();
 

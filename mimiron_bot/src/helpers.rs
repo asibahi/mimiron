@@ -97,7 +97,7 @@ pub(crate) async fn on_error(
 ) -> Result<(), serenity::Error> {
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
-            let command = ctx.command().name.clone();
+            let command = ctx.command().name.as_str();
             let guild = ctx.guild().map(|g| g.name.clone()).unwrap_or("Direct Messages".into());
             let invocation = ctx.invocation_string();
             let mut error = error.to_string();
@@ -114,7 +114,7 @@ pub(crate) async fn on_error(
 }
 
 pub(crate) fn on_success(ctx: &Context) {
-    let command = ctx.command().name.clone();
+    let command = ctx.command().name.as_str();
     let guild = ctx.guild().map(|g| g.name.clone()).unwrap_or("Direct Messages".into());
 
     let invocation = ctx.invocation_string();

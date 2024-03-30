@@ -178,7 +178,7 @@ pub async fn metadeck(
     let class = class.and_then(|s| s.parse().ok());
     let format = parse_format(ctx, format).await;
 
-    let deck = meta::meta_deck(class, format, locale)?
+    let deck = meta::meta_deck(class, &format, locale)?
         .take(5)
         .find_or_first(|_| random::<u8>() % 5 == 0)
         .unwrap();
@@ -198,37 +198,40 @@ pub async fn metasnap(
 
     let locale = get_server_locale(&ctx);
     let format = parse_format(ctx, format).await;
+    let decks = meta::meta_snap(&format, locale)?.enumerate().take(10).collect::<Vec<_>>();
 
-    let format_str = format.to_string().to_uppercase();
+    let embed = serenity::CreateEmbed::new()
+        .title(format!("{} Meta Snapshot (from Firestone)", format.to_string().to_uppercase()))
+        .url("https://go.overwolf.com/firestone-app/")
+        .description(decks.iter().map(|(i, d)| format!("{}. {}", i + 1, d.title)).join("\n"))
+        .color(decks[0].1.class.color())
+        .footer(serenity::CreateEmbedFooter::new(
+            "Best performing deck of each archetype. \
+            Data is from the past 3 days. \
+            Diamond to Legend (usually).",
+        ));
 
-    let decks = meta::meta_snap(format, locale)?.enumerate().take(10).collect::<Vec<_>>();
+    let select_menu = serenity::CreateSelectMenu::new(
+        format!("{ctx_id}_select_menu"),
+        serenity::CreateSelectMenuKind::String {
+            options: decks
+                .iter()
+                .map(|(i, d)| serenity::CreateSelectMenuOption::new(&d.title, i.to_string()))
+                .collect::<Vec<_>>(),
+        },
+    )
+    .placeholder("Select a deck from the above.");
 
-    let select_menu_options = decks
-        .iter()
-        .map(|(i, d)| serenity::CreateSelectMenuOption::new(d.title.clone(), i.to_string()))
-        .collect::<Vec<_>>();
-
-    let reply = poise::CreateReply::default()
-        .embed(
-            serenity::CreateEmbed::new()
-                .title(format!("{format_str} Meta Snapshot (from Firestone Data)"))
-                .url("https://go.overwolf.com/firestone-app/")
-                .description(
-                    decks.iter().map(|(i, d)| format!("{}. {}", i + 1, d.title)).join("\n"),
-                )
-                .color(decks[0].1.class.color()),
+    let meta_handle = ctx
+        .send(
+            poise::CreateReply::default()
+                .embed(embed.clone())
+                .components(vec![serenity::CreateActionRow::SelectMenu(select_menu.clone())]),
         )
-        .components(vec![serenity::CreateActionRow::SelectMenu(
-            serenity::CreateSelectMenu::new(
-                format!("{ctx_id}_select_menu"),
-                serenity::CreateSelectMenuKind::String { options: select_menu_options },
-            )
-            .placeholder("Select a deck from the above."),
-        )]);
+        .await?;
 
-    ctx.send(reply).await?;
+    let mut list_handle = None::<poise::ReplyHandle>;
 
-    let mut handle: Option<poise::ReplyHandle> = None;
     let replies = decks
         .iter()
         .cloned()
@@ -255,12 +258,21 @@ pub async fn metasnap(
         let i = values[0].parse::<usize>()?;
         let reply = replies[i].clone();
 
-        if let Some(handle) = handle.as_ref() {
-            handle.edit(ctx, reply).await?;
+        if let Some(list_handle) = list_handle.as_ref() {
+            list_handle.edit(ctx, reply).await?;
         } else {
-            handle = Some(ctx.send(reply).await?);
+            list_handle = Some(ctx.send(reply).await?);
         }
     }
+
+    meta_handle
+        .edit(
+            ctx,
+            poise::CreateReply::default().embed(embed).components(vec![
+                serenity::CreateActionRow::SelectMenu(select_menu.disabled(true)),
+            ]),
+        )
+        .await?;
 
     Ok(())
 }

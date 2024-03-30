@@ -14,8 +14,9 @@ pub struct MetaArgs {
     format: Format,
 }
 
+#[allow(clippy::needless_pass_by_value)]
 pub(crate) fn run(args: MetaArgs, locale: Locale) -> Result<()> {
-    let decks = meta_deck(Some(args.class), args.format, locale)?;
+    let decks = meta_deck(Some(args.class), &args.format, locale)?;
 
     for deck in decks.take(3) {
         println!("{}", deck.in_locale(locale));

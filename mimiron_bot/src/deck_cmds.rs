@@ -206,9 +206,8 @@ pub async fn metasnap(
         .description(decks.iter().map(|(i, d)| format!("{}. {}", i + 1, d.title)).join("\n"))
         .color(decks[0].1.class.color())
         .footer(serenity::CreateEmbedFooter::new(
-            "Best performing deck of each archetype. \
-            Data is from the past 3 days. \
-            Diamond to Legend (usually).",
+            "Best performing deck of each archetype.\n\
+            Data is from the past 3 days, Diamond to Legend (usually).",
         ));
 
     let select_menu = serenity::CreateSelectMenu::new(

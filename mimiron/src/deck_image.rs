@@ -115,7 +115,7 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
 
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
-        let slug = &slug_map[&card.id];
+        let slug = &slug_map[&(card.id, Zone::MainDeck)];
 
         let i = i as u32;
         let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
@@ -136,7 +136,10 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
             )?;
             sb_cursor += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
+            for slug in order_cards(&sb.cards_in_sideboard)
+                .keys()
+                .map(|c| &slug_map[&(c.id, Zone::Sideboard)])
+            {
                 let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
@@ -154,14 +157,14 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     let class_cards = ordered_cards
         .iter()
         .filter(|&(c, _)| !c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[&c.id])
+        .map(|(c, _)| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
         .filter(|&(c, _)| c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[&c.id])
+        .map(|(c, _)| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
@@ -222,7 +225,10 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
 
             sb_cursor += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
+            for slug in order_cards(&sb.cards_in_sideboard)
+                .keys()
+                .map(|c| &slug_map[&(c.id, Zone::Sideboard)])
+            {
                 img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
                 sb_cursor += 1;
             }
@@ -232,8 +238,16 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, count: usize) -> RgbaImage {
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+enum Zone {
+    MainDeck,
+    Sideboard,
+}
+
+fn get_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
     assert!(count > 0);
+
+    _ = zone; // unused for now
 
     let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
         matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(&card.id))
@@ -318,22 +332,25 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<usize, RgbaImage>) {
+fn order_deck_and_get_slugs(
+    deck: &Deck,
+) -> (BTreeMap<&Card, usize>, HashMap<(usize, Zone), RgbaImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards
         .iter()
         .flat_map(|sbs| sbs.iter().flat_map(|sb| order_cards(&sb.cards_in_sideboard)))
+        .map(|(card, count)| (card, count, Zone::Sideboard))
         .collect::<Vec<_>>();
 
-    // if a card is in two zones it'd have the same slug in both.
     let slug_map = ordered_cards
         .clone()
         .into_par_iter()
+        .map(|(card, count)| (card, count, Zone::MainDeck))
         .chain(ordered_sbs_cards.into_par_iter())
-        .map(|(card, count)| {
-            let slug = get_card_slug(card, count);
-            (card.id, slug)
+        .map(|(card, count, zone)| {
+            let slug = get_card_slug(card, count, zone);
+            ((card.id, zone), slug)
         })
         .collect::<HashMap<_, _>>();
 

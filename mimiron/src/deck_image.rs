@@ -14,10 +14,10 @@ use crate::{
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::Result;
-use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
+use image::{imageops, DynamicImage, GenericImage, Rgba, RgbaImage};
 use imageproc::{
     drawing::{self, Canvas as _},
-    pixelops::weighted_sum,
+    pixelops::interpolate,
     rect::Rect,
 };
 use itertools::Itertools;
@@ -232,7 +232,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
+fn get_card_slug(card: &Card, count: usize) -> RgbaImage {
     assert!(count > 0);
 
     let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
@@ -308,7 +308,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
         &count,
     );
 
-    DynamicImage::ImageRgba8(img)
+    img
 }
 
 fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
@@ -318,7 +318,7 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<usize, DynamicImage>) {
+fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<usize, RgbaImage>) {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards
@@ -340,7 +340,7 @@ fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<usi
     (ordered_cards, slug_map)
 }
 
-fn get_heading_slug(heading: &str) -> DynamicImage {
+fn get_heading_slug(heading: &str) -> RgbaImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
@@ -352,11 +352,11 @@ fn get_heading_slug(heading: &str) -> DynamicImage {
         heading, //.to_uppercase(),
     );
 
-    DynamicImage::ImageRgba8(img)
+    img
 }
 
 fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
-    let mut img = ImageBuffer::new(width, height);
+    let mut img = RgbaImage::new(width, height);
     drawing::draw_filled_rect_mut(
         &mut img,
         Rect::at(0, 0).of_size(width, height),
@@ -463,7 +463,7 @@ fn draw_text<'a>(
             if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
                 let pixel = canvas.get_pixel(image_x, image_y).to_owned();
                 let color = Rgba([color.0, color.1, color.2, 255]);
-                let weighted_color = weighted_sum(pixel, color, 1.0 - gv, gv);
+                let weighted_color = interpolate(pixel, color, 1.0 - gv);
                 canvas.draw_pixel(image_x, image_y, weighted_color);
             }
         });

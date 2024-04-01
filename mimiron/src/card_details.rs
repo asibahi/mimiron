@@ -72,7 +72,7 @@ impl Localize for LocalizedName {
             Locale::ptBR => self.ptBR.as_str(),
             Locale::ruRU => self.ruRU.as_str(),
             Locale::thTH => self.thTH.as_str(),
-            Locale::zhCN => self.zhCN.as_deref().unwrap_or_else(|| self.zhTW.as_str()),
+            Locale::zhCN => self.zhCN.as_deref().unwrap_or(self.zhTW.as_str()),
             Locale::zhTW => self.zhTW.as_str(),
         }
     }

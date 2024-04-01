@@ -17,7 +17,8 @@ use anyhow::Result;
 use image::{imageops, DynamicImage, GenericImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::{
     drawing::{self, Canvas as _},
-    pixelops::weighted_sum,
+    pixelops::interpolate,
+    point::Point,
     rect::Rect,
 };
 use itertools::Itertools;
@@ -93,7 +94,7 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
         let main_deck_length = ordered_cards.len();
 
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
-            sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.iter().unique().count() + 1 + acc)
+            sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.iter().unique().count() + acc)
         });
 
         let length = (main_deck_length + sideboards_length) as u32;
@@ -113,35 +114,32 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
 
     draw_deck_title(&mut img, deck)?;
 
+    let mut sb_cursor = 0;
+
     // Main deck
     for (i, (card, _)) in ordered_cards.iter().enumerate() {
-        let slug = &slug_map[&card.id];
+        let slug = &slug_map[&(card.id, Zone::MainDeck)];
 
-        let i = i as u32;
+        let i = (i + sb_cursor) as u32;
         let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
 
         img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
-    }
 
-    // sideboard cards
-    if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_cursor = ordered_cards.len() as u32;
+        if let Some(sb_cards) = deck
+            .sideboard_cards
+            .as_ref()
+            .and_then(|sbs| sbs.iter().find(|sb| sb.sideboard_card == **card))
+            .map(|sb| &sb.cards_in_sideboard)
+        {
+            for (sb_i, (sb_card, _)) in order_cards(sb_cards).into_iter().enumerate() {
+                let slug = &slug_map[&(sb_card.id, Zone::Sideboard)];
 
-        for sb in sideboards {
-            let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
-            img.copy_from(
-                &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
-                col * COLUMN_WIDTH + MARGIN,
-                row * ROW_HEIGHT + MARGIN,
-            )?;
-            sb_cursor += 1;
+                let i = sb_i as u32 + 1 + i;
+                let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
 
-            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
-                let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
-
-                sb_cursor += 1;
             }
+            sb_cursor += sb_cards.len();
         }
     }
 
@@ -154,14 +152,14 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     let class_cards = ordered_cards
         .iter()
         .filter(|&(c, _)| !c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[&c.id])
+        .map(|(c, _)| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_cards
         .iter()
         .filter(|&(c, _)| c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[&c.id])
+        .map(|(c, _)| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
@@ -222,7 +220,10 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
 
             sb_cursor += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard).keys().map(|c| &slug_map[&c.id]) {
+            for slug in order_cards(&sb.cards_in_sideboard)
+                .keys()
+                .map(|c| &slug_map[&(c.id, Zone::Sideboard)])
+            {
                 img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
                 sb_cursor += 1;
             }
@@ -232,7 +233,13 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
     Ok(DynamicImage::ImageRgba8(img))
 }
 
-fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+enum Zone {
+    MainDeck,
+    Sideboard,
+}
+
+fn get_card_slug(card: &Card, count: usize, zone: Zone) -> DynamicImage {
     assert!(count > 0);
 
     let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
@@ -247,6 +254,31 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
 
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (10, 10, 10));
+
+    let sb_indent = match zone {
+        Zone::MainDeck => 0,
+        Zone::Sideboard => {
+            let indent = CROP_HEIGHT / 3;
+            drawing::draw_filled_rect_mut(
+                &mut img,
+                Rect::at(0, 0).of_size(indent, CROP_HEIGHT),
+                Rgba([255; 4]),
+            );
+
+            drawing::draw_antialiased_polygon_mut(
+                &mut img,
+                &[
+                    Point::new(0, CROP_HEIGHT as i32 / 2),
+                    Point::new(indent as i32, CROP_HEIGHT as i32),
+                    Point::new(indent as i32, 0),
+                ],
+                Rgba([60, 109, 173, 255]),
+                interpolate,
+            );
+
+            indent
+        }
+    };
 
     match get_crop_image(card) {
         Ok(crop) => {
@@ -277,7 +309,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     // mana square
     drawing::draw_filled_rect_mut(
         &mut img,
-        Rect::at(0, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rect::at(sb_indent as i32, 0).of_size(CROP_HEIGHT - sb_indent, CROP_HEIGHT),
         Rgba([60, 109, 173, 255]),
     );
 
@@ -289,7 +321,7 @@ fn get_card_slug(card: &Card, count: usize) -> DynamicImage {
     // rarity square
     drawing::draw_filled_rect_mut(
         &mut img,
-        Rect::at(SLUG_WIDTH as i32 - CROP_HEIGHT as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rect::at((SLUG_WIDTH - CROP_HEIGHT) as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
         Rgba([r_color.0, r_color.1, r_color.2, 255]),
     );
 
@@ -318,22 +350,26 @@ fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
     })
 }
 
-fn order_deck_and_get_slugs(deck: &Deck) -> (BTreeMap<&Card, usize>, HashMap<usize, DynamicImage>) {
+type OrderedCardsAndSlugMap<'d> = (BTreeMap<&'d Card, usize>, HashMap<(usize, Zone), DynamicImage>);
+
+fn order_deck_and_get_slugs(deck: &Deck) -> OrderedCardsAndSlugMap {
     let ordered_cards = order_cards(&deck.cards);
     let ordered_sbs_cards = deck
         .sideboard_cards
         .iter()
         .flat_map(|sbs| sbs.iter().flat_map(|sb| order_cards(&sb.cards_in_sideboard)))
+        .map(|(card, count)| (card, count, Zone::Sideboard))
         .collect::<Vec<_>>();
 
     // if a card is in two zones it'd have the same slug in both.
     let slug_map = ordered_cards
         .clone()
         .into_par_iter()
+        .map(|(card, count)| (card, count, Zone::MainDeck))
         .chain(ordered_sbs_cards.into_par_iter())
-        .map(|(card, count)| {
-            let slug = get_card_slug(card, count);
-            (card.id, slug)
+        .map(|(card, count, zone)| {
+            let slug = get_card_slug(card, count, zone);
+            ((card.id, zone), slug)
         })
         .collect::<HashMap<_, _>>();
 
@@ -463,7 +499,7 @@ fn draw_text<'a>(
             if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
                 let pixel = canvas.get_pixel(image_x, image_y).to_owned();
                 let color = Rgba([color.0, color.1, color.2, 255]);
-                let weighted_color = weighted_sum(pixel, color, 1.0 - gv, gv);
+                let weighted_color = interpolate(pixel, color, 1.0 - gv);
                 canvas.draw_pixel(image_x, image_y, weighted_color);
             }
         });

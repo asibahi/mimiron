@@ -88,9 +88,10 @@ pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
 
 fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<RgbaImage> {
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
-    let main_deck_length = ordered_main_deck.clone().count();
 
     let (mut img, cards_in_col) = {
+        let main_deck_length = ordered_main_deck.clone().count();
+
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
             sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.iter().unique().count() + 1 + acc)
         });
@@ -100,11 +101,10 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<RgbaImage> 
         let col_count = col_count.unwrap_or_else(|| (length / 15 + 1).max(2));
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
-        // main canvas
         let img = draw_main_canvas(
             COLUMN_WIDTH * col_count + MARGIN,
             ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
-            (255, 255, 255),
+            [255; 4],
         );
 
         (img, cards_in_col)
@@ -113,38 +113,37 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<RgbaImage> 
     draw_deck_title(&mut img, deck)?;
     let slug_map = get_cards_slugs(deck);
 
-    // Main deck
-    for (i, card) in ordered_main_deck.enumerate() {
+    let mut cursor = 0;
+
+    for card in ordered_main_deck {
         let slug = &slug_map[&(card.id, Zone::MainDeck)];
 
-        let i = i as u32;
-        let (col, row) = (i / cards_in_col, i % cards_in_col + 1);
+        let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
 
         img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+
+        cursor += 1;
     }
 
-    // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_cursor = main_deck_length as u32;
-
         for sb in sideboards {
-            let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
+            let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
             img.copy_from(
-                &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
+                &draw_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
             )?;
-            sb_cursor += 1;
+            cursor += 1;
 
             for slug in
                 sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
                     &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
                 })
             {
-                let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
+                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
-                sb_cursor += 1;
+                cursor += 1;
             }
         }
     }
@@ -169,9 +168,8 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
         .enumerate()
         .collect::<Vec<_>>();
 
-    // deck image width
-    // assumes decks will always have class cards
-    let deck_img_width = {
+    let mut img = {
+        // assumes decks will always have class cards
         let mut columns = 1;
         if !neutral_cards.is_empty() {
             columns += 1;
@@ -180,50 +178,39 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
             columns += 1;
         }
 
-        columns * COLUMN_WIDTH + MARGIN
-    };
-
-    // deck image height
-    let deck_img_height = {
-        let length = 1 + class_cards.len().max(neutral_cards.len()).max(
+        let rows = 1 + class_cards.len().max(neutral_cards.len()).max(
             deck.sideboard_cards
                 .iter()
                 .flatten()
                 .fold(0, |acc, sb| acc + (sb.cards_in_sideboard.iter().unique().count() + 1)),
         ) as u32;
-        (length * ROW_HEIGHT) + MARGIN
-    };
 
-    // main canvas
-    let mut img = draw_main_canvas(deck_img_width, deck_img_height, (255, 255, 255));
+        draw_main_canvas(columns * COLUMN_WIDTH + MARGIN, rows * ROW_HEIGHT + MARGIN, [255; 4])
+    };
 
     draw_deck_title(&mut img, deck)?;
 
-    // class cards
     for (i, slug) in class_cards {
         let i = i as u32 + 1;
         img.copy_from(slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
     }
 
-    // neutral cards
     for (i, slug) in neutral_cards {
         let i = i as u32 + 1;
         img.copy_from(slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
     }
 
-    // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        // 2 can be assumed here because all two of current sideboard cards are neutral.
-        let sb_col = COLUMN_WIDTH * 2 + MARGIN;
+        // always last column
+        let sb_col = img.width() - COLUMN_WIDTH - MARGIN;
         let mut sb_cursor = 1;
 
         for sb in sideboards {
             img.copy_from(
-                &get_heading_slug(&format!("> {}", sb.sideboard_card.name)),
+                &draw_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 sb_col,
                 sb_cursor * ROW_HEIGHT + MARGIN,
             )?;
-
             sb_cursor += 1;
 
             for slug in
@@ -248,7 +235,6 @@ enum Zone {
 
 fn draw_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
     assert!(count > 0);
-
     _ = zone; // unused for now
 
     let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
@@ -262,33 +248,32 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
     let r_color = rarity.color();
 
     // main canvas
-    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (10, 10, 10));
+    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, [10, 10, 10, 255]);
 
     match get_crop_image(card) {
         Ok(crop) => {
             img.copy_from(&crop, CROP_WIDTH, 0).ok();
+
+            let mut gradient = RgbaImage::new(CROP_WIDTH, CROP_HEIGHT);
+            imageops::horizontal_gradient(
+                &mut gradient,
+                &Rgba([10u8, 10, 10, 255]),
+                &Rgba([10u8, 10, 10, 0]),
+            );
+            imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
         }
         Err(e) => {
             eprintln!("Failed to get image of {name}: {e}.");
-            drawing::draw_filled_rect_mut(
-                &mut img,
-                Rect::at(CROP_WIDTH as i32, 0).of_size(CROP_WIDTH, CROP_HEIGHT),
-                Rgba([r_color.0, r_color.1, r_color.2, 255]),
+            imageops::horizontal_gradient(
+                &mut *imageops::crop(&mut img, CROP_WIDTH, 0, CROP_WIDTH, CROP_HEIGHT),
+                &Rgba([10u8, 10, 10, 255]),
+                &Rgba([r_color.0, r_color.1, r_color.2, 255]),
             );
         }
     }
 
-    // gradient
-    let mut gradient = RgbaImage::new(CROP_WIDTH, CROP_HEIGHT);
-    imageops::horizontal_gradient(
-        &mut gradient,
-        &Rgba([10u8, 10, 10, 255]),
-        &Rgba([10u8, 10, 10, 0]),
-    );
-    imageops::overlay(&mut img, &gradient, CROP_WIDTH as i64, 0);
-
     // card name
-    draw_text(&mut img, (255, 255, 255), CROP_HEIGHT + 10, CARD_NAME_SCALE, name);
+    draw_text(&mut img, [255; 4], CROP_HEIGHT + 10, CARD_NAME_SCALE, name);
 
     // mana square
     drawing::draw_filled_rect_mut(
@@ -300,7 +285,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
     // card cost
     let cost = cost.to_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, (255, 255, 255), (CROP_HEIGHT - tw) / 2, CARD_NAME_SCALE, &cost);
+    draw_text(&mut img, [255; 4], (CROP_HEIGHT - tw) / 2, CARD_NAME_SCALE, &cost);
 
     // rarity square
     drawing::draw_filled_rect_mut(
@@ -316,13 +301,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
         _ => count.to_string(),
     };
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
-    draw_text(
-        &mut img,
-        (255, 255, 255),
-        SLUG_WIDTH - (CROP_HEIGHT + tw) / 2,
-        CARD_NAME_SCALE,
-        &count,
-    );
+    draw_text(&mut img, [255; 4], SLUG_WIDTH - (CROP_HEIGHT + tw) / 2, CARD_NAME_SCALE, &count);
 
     img
 }
@@ -349,35 +328,22 @@ fn get_cards_slugs(deck: &Deck) -> HashMap<(usize, Zone), RgbaImage> {
         .collect::<HashMap<_, _>>()
 }
 
-fn get_heading_slug(heading: &str) -> RgbaImage {
-    // main canvas
-    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
-
-    draw_text(&mut img, (10, 10, 10), 15, HEADING_SCALE, heading);
-
+fn draw_heading_slug(heading: &str) -> RgbaImage {
+    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, [255; 4]);
+    draw_text(&mut img, [10, 10, 10, 255], 15, HEADING_SCALE, heading);
     img
 }
 
-fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
+fn draw_main_canvas(width: u32, height: u32, color: impl Into<Rgba<u8>>) -> RgbaImage {
     let mut img = RgbaImage::new(width, height);
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(0, 0).of_size(width, height),
-        Rgba([color.0, color.1, color.2, 255]),
-    );
+    drawing::draw_filled_rect_mut(&mut img, Rect::at(0, 0).of_size(width, height), color.into());
     img
 }
 
 fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
     let offset = if let Ok(class_img) = get_class_icon(deck.class) {
         img.copy_from(
-            &image::imageops::resize(
-                &class_img,
-                CROP_HEIGHT,
-                CROP_HEIGHT,
-                imageops::FilterType::Gaussian,
-            ),
-            // &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
+            &imageops::resize(&class_img, CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
             MARGIN,
             MARGIN,
         )?;
@@ -386,7 +352,7 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
         MARGIN
     };
 
-    draw_text(img, (10, 10, 10), offset, HEADING_SCALE, &deck.title);
+    draw_text(img, [10, 10, 10, 255], offset, HEADING_SCALE, &deck.title);
 
     Ok(())
 }
@@ -397,17 +363,13 @@ fn get_class_icon(class: Class) -> Result<RgbaImage> {
         anyhow::bail!("No neutral class icon");
     }
 
+    let link = format!(
+        "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
+        class.in_en_us().to_string().to_ascii_lowercase().replace(' ', "")
+    );
+
     let mut buf = Vec::new();
-    AGENT
-        .get(
-            &(format!(
-                "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-                class.in_en_us().to_string().to_ascii_lowercase().replace(' ', "")
-            )),
-        )
-        .call()?
-        .into_reader()
-        .read_to_end(&mut buf)?;
+    AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
 
     Ok(image::load_from_memory(&buf)?.into())
 }
@@ -432,10 +394,9 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
     Ok(image::load_from_memory(&buf)?.into())
 }
 
-// isolate the function to inline `imageproc::drawing::draw_text_mut` and impl font fallback.
 fn draw_text<'a>(
     canvas: &'a mut RgbaImage,
-    color: (u8, u8, u8),
+    color: impl Into<Rgba<u8>> + Copy,
     x_offset: u32,
     scale: f32,
     text: &'a str,
@@ -466,9 +427,7 @@ fn draw_text<'a>(
 
         caret += f_f.h_advance(g.id);
 
-        let Some(g) = f_f.outline_glyph(g) else {
-            continue;
-        };
+        let Some(g) = f_f.outline_glyph(g) else { continue };
 
         let bb = g.px_bounds();
         g.draw(|gx, gy, gv| {
@@ -476,9 +435,8 @@ fn draw_text<'a>(
             let image_y = gy + bb.min.y as u32 + y_offset;
 
             if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
-                let pixel = canvas.get_pixel(image_x, image_y).to_owned();
-                let color = Rgba([color.0, color.1, color.2, 255]);
-                let weighted_color = interpolate(pixel, color, 1.0 - gv);
+                let pixel = canvas.get_pixel(image_x, image_y);
+                let weighted_color = interpolate(color.into(), *pixel, gv);
                 canvas.draw_pixel(image_x, image_y, weighted_color);
             }
         });

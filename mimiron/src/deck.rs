@@ -121,7 +121,7 @@ impl Deck {
         }
     }
 
-    pub fn get_image(&self, opts: ImageOptions) -> Result<image::DynamicImage> {
+    pub fn get_image(&self, opts: ImageOptions) -> Result<image::RgbaImage> {
         crate::deck_image::get(self, opts)
     }
 }

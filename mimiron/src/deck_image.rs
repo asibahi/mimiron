@@ -14,7 +14,7 @@ use crate::{
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::Result;
-use image::{imageops, DynamicImage, GenericImage, Rgba, RgbaImage};
+use image::{imageops, GenericImage, Rgba, RgbaImage};
 use imageproc::{
     drawing::{self, Canvas as _},
     pixelops::interpolate,
@@ -23,7 +23,7 @@ use imageproc::{
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 //  Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -78,7 +78,7 @@ pub enum ImageOptions {
     Adaptable,
 }
 
-pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
+pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
         ImageOptions::Adaptable => img_columns_format(deck, None),
@@ -86,12 +86,11 @@ pub fn get(deck: &Deck, shape: ImageOptions) -> Result<DynamicImage> {
     }
 }
 
-fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
+fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<RgbaImage> {
+    let ordered_main_deck = deck.cards.iter().sorted().dedup();
+    let main_deck_length = ordered_main_deck.clone().count();
 
     let (mut img, cards_in_col) = {
-        let main_deck_length = ordered_cards.len();
-
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
             sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.iter().unique().count() + 1 + acc)
         });
@@ -112,9 +111,10 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
     };
 
     draw_deck_title(&mut img, deck)?;
+    let slug_map = get_cards_slugs(deck);
 
     // Main deck
-    for (i, (card, _)) in ordered_cards.iter().enumerate() {
+    for (i, card) in ordered_main_deck.enumerate() {
         let slug = &slug_map[&(card.id, Zone::MainDeck)];
 
         let i = i as u32;
@@ -125,7 +125,7 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
 
     // sideboard cards
     if let Some(sideboards) = &deck.sideboard_cards {
-        let mut sb_cursor = ordered_cards.len() as u32;
+        let mut sb_cursor = main_deck_length as u32;
 
         for sb in sideboards {
             let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
@@ -136,9 +136,10 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
             )?;
             sb_cursor += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard)
-                .keys()
-                .map(|c| &slug_map[&(c.id, Zone::Sideboard)])
+            for slug in
+                sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
+                    &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
+                })
             {
                 let (col, row) = (sb_cursor / cards_in_col, sb_cursor % cards_in_col + 1);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
@@ -148,23 +149,23 @@ fn img_columns_format(deck: &Deck, col_count: Option<u32>) -> Result<DynamicImag
         }
     }
 
-    Ok(DynamicImage::ImageRgba8(img))
+    Ok(img)
 }
 
-fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
-    let (ordered_cards, slug_map) = order_deck_and_get_slugs(deck);
+fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
+    let ordered_main_deck = deck.cards.iter().sorted().dedup();
+    let slug_map = get_cards_slugs(deck);
 
-    let class_cards = ordered_cards
-        .iter()
-        .filter(|&(c, _)| !c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[&(c.id, Zone::MainDeck)])
+    let class_cards = ordered_main_deck
+        .clone()
+        .filter(|&c| !c.class.contains(&Class::Neutral))
+        .map(|c| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
-    let neutral_cards = ordered_cards
-        .iter()
-        .filter(|&(c, _)| c.class.contains(&Class::Neutral))
-        .map(|(c, _)| &slug_map[&(c.id, Zone::MainDeck)])
+    let neutral_cards = ordered_main_deck
+        .filter(|&c| c.class.contains(&Class::Neutral))
+        .map(|c| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
@@ -188,7 +189,7 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
             deck.sideboard_cards
                 .iter()
                 .flatten()
-                .fold(0, |acc, sb| acc + (sb.cards_in_sideboard.len() + 1)),
+                .fold(0, |acc, sb| acc + (sb.cards_in_sideboard.iter().unique().count() + 1)),
         ) as u32;
         (length * ROW_HEIGHT) + MARGIN
     };
@@ -225,9 +226,10 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
 
             sb_cursor += 1;
 
-            for slug in order_cards(&sb.cards_in_sideboard)
-                .keys()
-                .map(|c| &slug_map[&(c.id, Zone::Sideboard)])
+            for slug in
+                sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
+                    &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
+                })
             {
                 img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
                 sb_cursor += 1;
@@ -235,16 +237,16 @@ fn img_groups_format(deck: &Deck) -> Result<DynamicImage> {
         }
     }
 
-    Ok(DynamicImage::ImageRgba8(img))
+    Ok(img)
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 enum Zone {
     MainDeck,
-    Sideboard,
+    Sideboard { sb_card_id: usize },
 }
 
-fn get_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
+fn draw_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
     assert!(count > 0);
 
     _ = zone; // unused for now
@@ -325,49 +327,33 @@ fn get_card_slug(card: &Card, count: usize, zone: Zone) -> RgbaImage {
     img
 }
 
-fn order_cards(cards: &[Card]) -> BTreeMap<&Card, usize> {
-    cards.iter().fold(BTreeMap::new(), |mut map, card| {
-        *map.entry(card).or_default() += 1;
-        map
-    })
-}
-
-fn order_deck_and_get_slugs(
-    deck: &Deck,
-) -> (BTreeMap<&Card, usize>, HashMap<(usize, Zone), RgbaImage>) {
-    let ordered_cards = order_cards(&deck.cards);
-    let ordered_sbs_cards = deck
-        .sideboard_cards
+fn get_cards_slugs(deck: &Deck) -> HashMap<(usize, Zone), RgbaImage> {
+    deck.cards
         .iter()
-        .flat_map(|sbs| sbs.iter().flat_map(|sb| order_cards(&sb.cards_in_sideboard)))
-        .map(|(card, count)| (card, count, Zone::Sideboard))
-        .collect::<Vec<_>>();
-
-    let slug_map = ordered_cards
-        .clone()
+        .sorted()
+        .dedup_with_count()
+        .map(|(count, card)| (card, count, Zone::MainDeck))
+        .chain(deck.sideboard_cards.iter().flat_map(|sbs| {
+            sbs.iter().flat_map(|sb| {
+                sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(|(count, card)| {
+                    (card, count, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })
+                })
+            })
+        }))
+        .collect::<Vec<_>>()
         .into_par_iter()
-        .map(|(card, count)| (card, count, Zone::MainDeck))
-        .chain(ordered_sbs_cards.into_par_iter())
         .map(|(card, count, zone)| {
-            let slug = get_card_slug(card, count, zone);
+            let slug = draw_card_slug(card, count, zone);
             ((card.id, zone), slug)
         })
-        .collect::<HashMap<_, _>>();
-
-    (ordered_cards, slug_map)
+        .collect::<HashMap<_, _>>()
 }
 
 fn get_heading_slug(heading: &str) -> RgbaImage {
     // main canvas
     let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, (255, 255, 255));
 
-    draw_text(
-        &mut img,
-        (10, 10, 10),
-        15,
-        HEADING_SCALE,
-        heading, //.to_uppercase(),
-    );
+    draw_text(&mut img, (10, 10, 10), 15, HEADING_SCALE, heading);
 
     img
 }
@@ -383,22 +369,34 @@ fn draw_main_canvas(width: u32, height: u32, color: (u8, u8, u8)) -> RgbaImage {
 }
 
 fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
-    // title
-    draw_text(img, (10, 10, 10), MARGIN + CROP_HEIGHT + 10, HEADING_SCALE, &deck.title);
-
-    if let Ok(class_img) = get_class_icon(deck.class) {
+    let offset = if let Ok(class_img) = get_class_icon(deck.class) {
         img.copy_from(
-            &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
+            &image::imageops::resize(
+                &class_img,
+                CROP_HEIGHT,
+                CROP_HEIGHT,
+                imageops::FilterType::Gaussian,
+            ),
+            // &class_img.resize_to_fill(CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
             MARGIN,
             MARGIN,
         )?;
-    }
+        MARGIN + CROP_HEIGHT + 10
+    } else {
+        MARGIN
+    };
+
+    draw_text(img, (10, 10, 10), offset, HEADING_SCALE, &deck.title);
 
     Ok(())
 }
 
 #[cached::proc_macro::cached(result = true)]
-fn get_class_icon(class: Class) -> Result<DynamicImage> {
+fn get_class_icon(class: Class) -> Result<RgbaImage> {
+    if class == Class::Neutral {
+        anyhow::bail!("No neutral class icon");
+    }
+
     let mut buf = Vec::new();
     AGENT
         .get(
@@ -411,7 +409,7 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
         .into_reader()
         .read_to_end(&mut buf)?;
 
-    Ok(image::load_from_memory(&buf)?)
+    Ok(image::load_from_memory(&buf)?.into())
 }
 
 #[cached::proc_macro::cached(
@@ -421,7 +419,7 @@ fn get_class_icon(class: Class) -> Result<DynamicImage> {
     key = "usize",
     convert = r#"{(card.id)}"#
 )]
-fn get_crop_image(card: &Card) -> Result<DynamicImage> {
+fn get_crop_image(card: &Card) -> Result<RgbaImage> {
     let link = card
         .crop_image
         .clone()
@@ -431,7 +429,7 @@ fn get_crop_image(card: &Card) -> Result<DynamicImage> {
     let mut buf = Vec::new();
     AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
 
-    Ok(image::load_from_memory(&buf)?)
+    Ok(image::load_from_memory(&buf)?.into())
 }
 
 // isolate the function to inline `imageproc::drawing::draw_text_mut` and impl font fallback.

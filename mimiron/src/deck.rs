@@ -6,7 +6,10 @@ use crate::{
     AGENT,
 };
 use anyhow::{anyhow, Result};
-use base64::prelude::*;
+use base64::{
+    alphabet,
+    engine::{DecodePaddingMode, Engine as _, GeneralPurpose, GeneralPurposeConfig},
+};
 use colored::Colorize;
 use counter::Counter;
 use itertools::Itertools;
@@ -359,8 +362,12 @@ struct RawCodeData {
 fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 
-    let decoded = BASE64_STANDARD.decode(code)?;
-    let mut buffer = Cursor::new(decoded);
+    const CONFIG: GeneralPurposeConfig =
+        GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
+    const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
+
+    let decoded = ENGINE.decode(code)?;
+    let mut buffer = Cursor::new(&decoded);
     // while let Ok(id) = buffer.read_usize_varint() {
     //     println!("{}", id);
     // }
@@ -421,7 +428,7 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
         }
     }
 
-    raw_data.deck_code = code.to_owned();
+    raw_data.deck_code = ENGINE.encode(decoded); // Hearthstone requires base64 padding
 
     Ok(raw_data)
 }

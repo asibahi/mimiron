@@ -1,6 +1,6 @@
 use crate::{
     card::{self, Card},
-    card_details::{validate_id, Class, Details},
+    card_details::{validate_id, CardType, Class, Details},
     get_access_token,
     localization::{Locale, Localize},
     AGENT,
@@ -367,13 +367,47 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
         }
     }
 
-    // remove cosmetic cards from all sideboards.
-    // Currently only has an effect on Zilliax Cosmetic Modules
-    for sb in deck.sideboard_cards.iter_mut().flatten() {
-        sb.cards_in_sideboard.retain(|c| !c.cosmetic);
-    }
+    specific_card_adjustments(&mut deck);
 
     deck
+}
+
+fn specific_card_adjustments(deck: &mut Deck) -> () {
+    // This function contains specific adjustments to specific cards as needed.
+
+    // Treatments for Zilliax 3000 Deluxe
+    '_zilliax_3000_deluxe: {
+        const ZILLIAX_3000_DELUXE_ID: usize = 102983;
+
+        for sb in deck.sideboard_cards.iter_mut().flatten() {
+            // removes cosmetic cards from all sideboards.
+            // Currently only has an effect on Zilliax Cosmetic Modules
+            sb.cards_in_sideboard.retain(|c| !c.cosmetic);
+
+            if sb.sideboard_card.id == ZILLIAX_3000_DELUXE_ID {
+                let (zilliax_cost, zilliax_attack, zilliax_health) =
+                    sb.cards_in_sideboard.iter().fold((0, 0, 0), |(acc_c, acc_a, acc_h), c| {
+                        let (a, h) = c.stats();
+                        (
+                            acc_c + c.cost,
+                            acc_a + a.unwrap_or_default(),
+                            acc_h + h.unwrap_or_default(),
+                        )
+                    });
+                deck.cards.iter_mut().find(|c| c.id == ZILLIAX_3000_DELUXE_ID).map(|c| {
+                    let CardType::Minion { ref mut attack, ref mut health, .. } = c.card_type
+                    else {
+                        unreachable!()
+                    };
+                    c.cost = zilliax_cost;
+                    *attack = zilliax_attack;
+                    *health = zilliax_health;
+
+                    c
+                });
+            }
+        }
+    }
 }
 
 fn decode_deck_code(code: &str) -> Result<RawCodeData> {

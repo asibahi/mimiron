@@ -237,9 +237,35 @@ impl LookupOptions {
     }
 }
 
+#[derive(Default)]
+struct RawCodeData {
+    format: Format,
+    hero: usize,
+    cards: Vec<usize>,
+    sideboard_cards: Vec<(usize, usize)>,
+    deck_code: String,
+}
+
 pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
-    let (title, raw_data) = extract_title_and_raw(&opts.code);
-    let raw_data = raw_data.ok_or(anyhow!("Unable to parse deck code. Code may be invalid."))?;
+    let code = &opts.code;
+    /* For when someone pastes something like this:
+     * ### Custom Shaman
+     * # etc
+     * #
+     * AAECAfWfAwjy3QT0oAXmowXipAXFpQX9xAX0yAX00AUL1bIE4LUEssEExc4Exs4Euu0Eyu0EhaoFw9AFxNAFr9EFAAED2aAE/cQFr8MF/cQF0p4G/cQFAAA=
+     * #
+     * # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
+     */
+
+    let raw_data = code
+        .split_ascii_whitespace()
+        .find_map(|s| decode_deck_code(s).ok())
+        .ok_or(anyhow!("Unable to parse deck code. Code may be invalid."))?;
+
+    let title = code
+        .split_once("###")
+        .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
+        .map(|(s, _)| s.trim().to_owned());
 
     Ok(raw_data_to_deck(opts, raw_data, title))
 }
@@ -350,15 +376,6 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
     deck
 }
 
-#[derive(Default)]
-struct RawCodeData {
-    format: Format,
-    hero: usize,
-    cards: Vec<usize>,
-    sideboard_cards: Vec<(usize, usize)>,
-    deck_code: String,
-}
-
 fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 
@@ -463,26 +480,6 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     raw_data.sideboard_cards.extend(band_ids);
 
     Ok(raw_data_to_deck(opts, raw_data, None))
-}
-
-fn extract_title_and_raw(code: &str) -> (Option<String>, Option<RawCodeData>) {
-    /* For when someone pastes something like this:
-     * ### Custom Shaman
-     * # etc
-     * #
-     * AAECAfWfAwjy3QT0oAXmowXipAXFpQX9xAX0yAX00AUL1bIE4LUEssEExc4Exs4Euu0Eyu0EhaoFw9AFxNAFr9EFAAED2aAE/cQFr8MF/cQF0p4G/cQFAAA=
-     * #
-     * # To use this deck, copy it to your clipboard and create a new deck in Hearthstone
-     */
-
-    let title = code
-        .split_once("###")
-        .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
-        .map(|(s, _)| s.trim().to_owned());
-
-    let raw_data = code.split_ascii_whitespace().find_map(|s| decode_deck_code(s).ok());
-
-    (title, raw_data)
 }
 
 fn format_count(count: usize) -> String {

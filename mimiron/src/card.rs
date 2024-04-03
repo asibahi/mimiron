@@ -106,6 +106,19 @@ impl Card {
     pub fn card_set(&self, locale: Locale) -> String {
         crate::card_details::get_set_by_id(self.card_set, locale)
     }
+
+    pub(crate) fn stats(&self) -> (Option<u8>, Option<u8>) {
+        let (attack, health) = match self.card_type {
+            CardType::Minion { attack, health, .. }
+            | CardType::Weapon { attack, durability: health } => (Some(attack), Some(health)),
+            CardType::Hero { armor: health } | CardType::Location { durability: health } => {
+                (None, Some(health))
+            }
+            CardType::Spell { .. } | CardType::HeroPower | CardType::Unknown => (None, None),
+        };
+
+        (attack, health)
+    }
 }
 
 impl PartialEq for Card {

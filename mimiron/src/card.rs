@@ -162,9 +162,7 @@ impl Localize for Card {
 
                 if f.alternate() {
                     let set = self.0.card_set(self.1);
-
                     let text = self.0.text.to_console();
-
                     write!(f, " {set}\n{text}")?;
                 }
                 Ok(())
@@ -272,7 +270,6 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     }
 
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
-
     if res.card_count == 0 {
         anyhow::bail!("No constructed card found with text {search_term}. Check your spelling.");
     }

@@ -87,23 +87,13 @@ fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
     ];
 
     if !card.flavor_text.is_empty() {
-        fields.push((
-            "Flavor Text",
-            {
-                let i: &str = &card.flavor_text;
-                i.to_markdown()
-            },
-            false,
-        ));
+        fields.push(("Flavor Text", card.flavor_text.to_markdown(), false));
     }
 
     serenity::CreateEmbed::default()
         .title(&card.name)
         .url(format!("https://hearthstone.blizzard.com/en-us/cards/{}", &card.id))
-        .description({
-            let i: &str = &card.text;
-            i.to_markdown()
-        })
+        .description(card.text.to_markdown())
         .color(card.rarity.color())
         .thumbnail(&card.image)
         .fields(fields)

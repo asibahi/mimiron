@@ -376,10 +376,9 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
                 )
                 .blue();
+                println!("{text}");
 
                 cards.push(res);
-
-                println!("{text}");
             }
 
             'buddy: {
@@ -394,10 +393,9 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                         .subsequent_indent(&format!("\t{:<20} ", " ")),
                 )
                 .green();
+                println!("{text}");
 
                 cards.push(res);
-
-                println!("{text}");
             }
         }
         BGCardType::Minion { upgrade_id: Some(id), .. } => 'golden: {
@@ -410,14 +408,12 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
             };
 
             let upgraded = format!("\tG: {attack}/{health}").italic().yellow();
-
             println!("{upgraded}");
 
-            let text = &text.to_console().yellow();
+            let text = text.to_console().yellow();
+            println!("{text}");
 
             cards.push(res);
-
-            println!("{text}");
         }
 
         _ => (),

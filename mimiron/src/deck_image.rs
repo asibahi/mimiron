@@ -25,20 +25,23 @@ use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use std::collections::HashMap;
 
-//  Numbers based on the crops provided by Blizzard API
+// Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
 const CROP_HEIGHT: u32 = 64;
 
+const INFO_WIDTH: u32 = CROP_HEIGHT;
+
 const MARGIN: u32 = 5;
 
-const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + CROP_HEIGHT;
+const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + INFO_WIDTH;
 const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
 const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
+
+const CROP_IMAGE_OFFSET: u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
 
 const HEADING_SCALE: f32 = 50.0;
 const CARD_NAME_SCALE: f32 = 40.0;
 
-// fonts unified for all usages now that the Text Box is removed.
 static FONTS: [(Lazy<FontRef<'_>>, f32); 3] = [
     // Base font
     (
@@ -287,7 +290,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
 
     match get_crop_image(card) {
         Ok(crop) => {
-            img.copy_from(&crop, CROP_WIDTH, 0).ok();
+            img.copy_from(&crop, CROP_IMAGE_OFFSET, 0).ok();
 
             let mut gradient = RgbaImage::new(CROP_WIDTH, CROP_HEIGHT);
             imageops::horizontal_gradient(
@@ -295,12 +298,12 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
                 &Rgba([10u8, 10, 10, 255]),
                 &Rgba([10u8, 10, 10, 0]),
             );
-            imageops::overlay(&mut img, &gradient, (CROP_WIDTH) as i64, 0);
+            imageops::overlay(&mut img, &gradient, CROP_IMAGE_OFFSET as i64, 0);
         }
         Err(e) => {
             eprintln!("Failed to get image of {name}: {e}.");
             imageops::horizontal_gradient(
-                &mut *imageops::crop(&mut img, CROP_WIDTH, 0, CROP_WIDTH, CROP_HEIGHT),
+                &mut *imageops::crop(&mut img, CROP_IMAGE_OFFSET, 0, CROP_WIDTH, CROP_HEIGHT),
                 &Rgba([10u8, 10, 10, 255]),
                 &Rgba([r_color.0, r_color.1, r_color.2, 255]),
             );
@@ -310,7 +313,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     let indent = match (zone, sb_style) {
         (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
         (Zone::Sideboard { .. }, SideboardStyle::Indented) => {
-            let indent = CROP_HEIGHT / 2;
+            let indent = INFO_WIDTH / 2;
             drawing::draw_filled_rect_mut(
                 &mut img,
                 Rect::at(0, 0).of_size(indent, CROP_HEIGHT),
@@ -322,24 +325,24 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     };
 
     // card name
-    draw_text(&mut img, [255; 4], indent + CROP_HEIGHT + 10, CARD_NAME_SCALE, name);
+    draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, CARD_NAME_SCALE, name);
 
     // mana square
     drawing::draw_filled_rect_mut(
         &mut img,
-        Rect::at(indent as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rect::at(indent as i32, 0).of_size(INFO_WIDTH, CROP_HEIGHT),
         Rgba([60, 109, 173, 255]),
     );
 
     // card cost
     let cost = cost.to_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, [255; 4], indent + (CROP_HEIGHT - tw) / 2, CARD_NAME_SCALE, &cost);
+    draw_text(&mut img, [255; 4], indent + (INFO_WIDTH - tw) / 2, CARD_NAME_SCALE, &cost);
 
     // rarity square
     drawing::draw_filled_rect_mut(
         &mut img,
-        Rect::at((SLUG_WIDTH - CROP_HEIGHT) as i32, 0).of_size(CROP_HEIGHT, CROP_HEIGHT),
+        Rect::at((SLUG_WIDTH - INFO_WIDTH) as i32, 0).of_size(INFO_WIDTH, CROP_HEIGHT),
         Rgba([r_color.0, r_color.1, r_color.2, 255]),
     );
 
@@ -350,7 +353,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
         _ => count.to_string(),
     };
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
-    draw_text(&mut img, [255; 4], SLUG_WIDTH - (CROP_HEIGHT + tw) / 2, CARD_NAME_SCALE, &count);
+    draw_text(&mut img, [255; 4], SLUG_WIDTH - (INFO_WIDTH + tw) / 2, CARD_NAME_SCALE, &count);
 
     img
 }
@@ -392,11 +395,11 @@ fn draw_main_canvas(width: u32, height: u32, color: impl Into<Rgba<u8>>) -> Rgba
 fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
     let offset = if let Ok(class_img) = get_class_icon(deck.class) {
         img.copy_from(
-            &imageops::resize(&class_img, CROP_HEIGHT, CROP_HEIGHT, imageops::FilterType::Gaussian),
+            &imageops::resize(&class_img, INFO_WIDTH, CROP_HEIGHT, imageops::FilterType::Gaussian),
             MARGIN,
             MARGIN,
         )?;
-        MARGIN + CROP_HEIGHT + 10
+        MARGIN + INFO_WIDTH + 10
     } else {
         MARGIN
     };

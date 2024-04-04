@@ -9,10 +9,6 @@ use nom::{
 };
 use std::fmt::Write;
 
-// ====================
-// Text Tree
-// ====================
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum TextTree {
     String(String),
@@ -295,15 +291,4 @@ mod traverse_tests {
         assert_eq!(dbg!(traversal), expected);
         Ok(())
     }
-}
-
-// ====================
-// Actual helper struct
-// ====================
-
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct CardSearchResponse<T> {
-    pub cards: Vec<T>,
-    pub card_count: usize,
 }

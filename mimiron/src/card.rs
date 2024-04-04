@@ -1,9 +1,8 @@
 use crate::{
     card_details::{CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
-    helpers::CardSearchResponse,
     localization::{Locale, Localize},
-    CardTextDisplay, AGENT,
+    CardSearchResponse, CardTextDisplay, AGENT,
 };
 use anyhow::Result;
 use colored::Colorize;

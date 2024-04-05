@@ -411,9 +411,7 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
 
 #[cached::proc_macro::cached(result = true)]
 fn get_class_icon(class: Class) -> Result<RgbaImage> {
-    if class == Class::Neutral {
-        anyhow::bail!("No neutral class icon");
-    }
+    anyhow::ensure!(class != Class::Neutral);
 
     let link = format!(
         "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",

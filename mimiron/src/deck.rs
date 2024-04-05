@@ -280,9 +280,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             .call()?
             .into_json::<Deck>()?;
 
-        if deck.invalid_card_ids.is_some() {
-            anyhow::bail!("Deck has invalid IDs.");
-        }
+        anyhow::ensure!(deck.invalid_card_ids.is_none(), "Deck has invalid IDs");
 
         Ok(deck)
     };
@@ -307,9 +305,10 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
 
         let deck = req.call()?.into_json::<Deck>()?;
 
-        if deck.invalid_card_ids.as_ref().is_some_and(|ids| ids.iter().any(|&id| id == 0)) {
-            anyhow::bail!("Deck invalid IDs are 0.");
-        }
+        anyhow::ensure!(
+            deck.invalid_card_ids.as_ref().map_or(true, |ids| ids.iter().all(|&id| id != 0)),
+            "Deck invalid IDs are 0."
+        );
 
         Ok(deck)
     };
@@ -321,25 +320,18 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             format: Format::Standard,
             class: Class::Neutral,
             cards: raw_data.cards.iter().map(|&id| card::Card::dummy(id)).collect(),
-            sideboard_cards: if raw_data.sideboard_cards.is_empty() {
-                None
-            } else {
-                Some(
-                    raw_data
-                        .sideboard_cards
-                        .iter()
-                        .group_by(|(_, sb_card)| sb_card)
-                        .into_iter()
-                        .map(|(&sb_card, sb)| Sideboard {
-                            sideboard_card: card::Card::dummy(sb_card),
-                            cards_in_sideboard: sb
-                                .into_iter()
-                                .map(|&(c, _)| card::Card::dummy(c))
-                                .collect(),
-                        })
-                        .collect(),
-                )
-            },
+            sideboard_cards: raw_data
+                .sideboard_cards
+                .iter()
+                .group_by(|(_, sb_card)| sb_card)
+                .into_iter()
+                .map(|(&sb_card, sb)| Sideboard {
+                    sideboard_card: card::Card::dummy(sb_card),
+                    cards_in_sideboard: sb.map(|&(c, _)| card::Card::dummy(c)).collect(),
+                })
+                .map(Some)
+                .collect::<Option<Vec<_>>>()
+                .filter(|v| !v.is_empty()),
             invalid_card_ids: None,
         }
     };
@@ -361,10 +353,8 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
     deck.title = title.unwrap_or(deck.title);
 
     // if the deck has invalid card IDs, add dummy cards with backup Data from HearthSim.
-    if let Some(ref invalid_ids) = deck.invalid_card_ids {
-        for id in invalid_ids {
-            deck.cards.push(card::Card::dummy(*id));
-        }
+    for id in deck.invalid_card_ids.iter().flatten() {
+        deck.cards.push(card::Card::dummy(*id));
     }
 
     specific_card_adjustments(&mut deck);
@@ -485,12 +475,15 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
 
     let mut raw_data = decode_deck_code(&opts.code)?;
 
-    if raw_data.cards.iter().all(|&id| id != ETC_ID) {
-        anyhow::bail!("{ETC_NAME} does not exist in the deck.");
-    }
-    if raw_data.sideboard_cards.iter().any(|&(_, id)| id == ETC_ID) {
-        anyhow::bail!("Deck already has an {ETC_NAME} Sideboard.");
-    }
+    anyhow::ensure!(
+        raw_data.cards.iter().any(|&id| id == ETC_ID),
+        "{ETC_NAME} does not exist in the deck."
+    );
+
+    anyhow::ensure!(
+        raw_data.sideboard_cards.iter().all(|&(_, id)| id != ETC_ID),
+        "Deck already has an {ETC_NAME} Sideboard."
+    );
 
     let band_ids = band
         .into_iter()

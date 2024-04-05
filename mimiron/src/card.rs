@@ -270,9 +270,10 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     }
 
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
-    if res.card_count == 0 {
-        anyhow::bail!("No constructed card found with text {search_term}. Check your spelling.");
-    }
+    anyhow::ensure!(
+        res.card_count > 0,
+        "No constructed card found with text {search_term}. Check your spelling."
+    );
 
     let mut cards = res
         .cards
@@ -290,11 +291,11 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .sorted_by_key(|c| !c.name.to_lowercase().starts_with(&search_term.to_lowercase()))
         .peekable();
 
-    if cards.peek().is_none() {
-        anyhow::bail!(
-            "No constructed card found with name \"{search_term}\". Try expanding search to text boxes."
-        );
-    }
+    anyhow::ensure!(
+        cards.peek().is_some(),
+        "No constructed card found with name \"{search_term}\". \
+        Try expanding search to text boxes."
+    );
 
     Ok(cards)
 }

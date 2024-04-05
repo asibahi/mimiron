@@ -318,9 +318,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
 
-    if res.card_count == 0 {
-        anyhow::bail!("No Battlegrounds card found. Check your spelling.");
-    }
+    anyhow::ensure!(res.card_count > 0, "No Battlegrounds card found. Check your spelling.");
 
     let mut cards = res
         .cards
@@ -341,11 +339,10 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         })
         .peekable();
 
-    if cards.peek().is_none() {
-        anyhow::bail!(
-            "No Battlegrounds card found with this name. Try expanding search to text boxes."
-        );
-    }
+    anyhow::ensure!(
+        cards.peek().is_some(),
+        "No Battlegrounds card found with this name. Try expanding search to text boxes."
+    );
 
     Ok(cards)
 }

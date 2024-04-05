@@ -90,10 +90,7 @@ fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
     Some(deck)
 }
 
-fn get_decks_stats(
-    format: &Format,
-    class: Option<Class>,
-) -> Result<std::vec::IntoIter<DeckStat>, anyhow::Error> {
+fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::IntoIter<DeckStat>> {
     let (d_l, all) = match format {
         Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL),
         Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL),
@@ -113,9 +110,7 @@ fn get_decks_stats(
         decks = second_try.deck_stats.into_iter().filter(filter_decks).peekable();
     }
 
-    if decks.peek().is_none() {
-        anyhow::bail!("No decks found with more than 100 games.");
-    }
+    anyhow::ensure!(decks.peek().is_some(), "No decks found with more than 100 games.");
 
     let decks = decks.sorted_by(|s1, s2| {
         (s2.total_games.ilog2().min(10))

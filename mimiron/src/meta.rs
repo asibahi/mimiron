@@ -91,15 +91,15 @@ fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
 }
 
 fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::IntoIter<DeckStat>> {
-    let (d_l, all) = match format {
-        Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL),
-        Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL),
-        Format::Twist => (TWIST_DECKS_D_L, TWIST_DECKS_ALL),
+    let (d_l, all, min_count, min_log) = match format {
+        Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL, 100, 10), // 2^10 == 1024
+        Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL, 100, 8),              // 2^8  == 256
+        Format::Twist => (TWIST_DECKS_D_L, TWIST_DECKS_ALL, 50, 7),            // 2^7  == 128
         _ => anyhow::bail!("Meta decks for this format are not available"),
     };
 
     let filter_decks = |s: &DeckStat| {
-        s.total_games > 100 && (class.is_none() || class.is_some_and(|c| c == s.player_class))
+        s.total_games > min_count && (class.is_none() || class.is_some_and(|c| c == s.player_class))
     };
 
     let first_try = get_firestone_data(d_l)?;
@@ -110,11 +110,11 @@ fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::In
         decks = second_try.deck_stats.into_iter().filter(filter_decks).peekable();
     }
 
-    anyhow::ensure!(decks.peek().is_some(), "No decks found with more than 100 games.");
+    anyhow::ensure!(decks.peek().is_some(), "No decks found with more than {min_count} games.");
 
     let decks = decks.sorted_by(|s1, s2| {
-        (s2.total_games.ilog2().min(10))
-            .cmp(&s1.total_games.ilog2().min(10))
+        (s2.total_games.ilog2().min(min_log))
+            .cmp(&s1.total_games.ilog2().min(min_log))
             .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
     });
 

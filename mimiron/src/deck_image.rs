@@ -14,12 +14,8 @@ use crate::{
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::Result;
-use image::{imageops, GenericImage, Rgba, RgbaImage};
-use imageproc::{
-    drawing::{self, Canvas as _},
-    pixelops::interpolate,
-    rect::Rect,
-};
+use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
+use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
@@ -88,7 +84,7 @@ pub enum ImageOptions {
 pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
-        ImageOptions::Adaptable => img_columns_format(deck, None, false),
+        ImageOptions::Adaptable => img_columns_format(deck, None, true),
         ImageOptions::Regular { columns, inline_sideboard } => {
             img_columns_format(deck, Some(columns as u32), inline_sideboard)
         }
@@ -115,10 +111,10 @@ fn img_columns_format(
         let col_count = col_count.unwrap_or_else(|| (length / 15 + 1).max(2));
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
-        let img = draw_main_canvas(
+        let img = RgbaImage::from_pixel(
             COLUMN_WIDTH * col_count + MARGIN,
             ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
-            [255; 4],
+            [255; 4].into(),
         );
 
         (img, cards_in_col)
@@ -218,7 +214,11 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
                 .fold(0, |acc, sb| acc + (sb.cards_in_sideboard.iter().unique().count() + 1)),
         ) as u32;
 
-        draw_main_canvas(columns * COLUMN_WIDTH + MARGIN, rows * ROW_HEIGHT + MARGIN, [255; 4])
+        RgbaImage::from_pixel(
+            columns * COLUMN_WIDTH + MARGIN,
+            rows * ROW_HEIGHT + MARGIN,
+            [255; 4].into(),
+        )
     };
 
     draw_deck_title(&mut img, deck)?;
@@ -285,13 +285,27 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
 
     let r_color = rarity.color();
 
+    let indent = match (zone, sb_style) {
+        (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
+        (Zone::Sideboard { .. }, SideboardStyle::Indented) => INFO_WIDTH / 2,
+    };
+
     // main canvas
-    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, [10, 10, 10, 255]);
+    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, _| {
+        if x <= indent.saturating_sub(MARGIN) {
+            [255, 128, 0, 255] // Legendary color for the indent
+        } else if x <= indent {
+            [255; 4]
+        } else if x <= indent + INFO_WIDTH {
+            [60, 109, 173, 255] // Mana Square
+        } else {
+            [10, 10, 10, 255]
+        }
+        .into()
+    });
 
-    match get_crop_image(card) {
-        Ok(crop) => {
-            img.copy_from(&crop, CROP_IMAGE_OFFSET, 0).ok();
-
+    match get_crop_image(card).and_then(|crop| Ok(img.copy_from(&crop, CROP_IMAGE_OFFSET, 0)?)) {
+        Ok(_) => {
             let mut gradient = RgbaImage::new(CROP_WIDTH, CROP_HEIGHT);
             imageops::horizontal_gradient(
                 &mut gradient,
@@ -310,36 +324,16 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
         }
     }
 
-    let indent = match (zone, sb_style) {
-        (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
-        (Zone::Sideboard { .. }, SideboardStyle::Indented) => {
-            let indent = INFO_WIDTH / 2;
-            drawing::draw_filled_rect_mut(
-                &mut img,
-                Rect::at(0, 0).of_size(indent, CROP_HEIGHT),
-                Rgba([255; 4]),
-            );
-
-            indent
-        }
-    };
-
     // card name
-    draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, CARD_NAME_SCALE, name);
-
-    // mana square
-    drawing::draw_filled_rect_mut(
-        &mut img,
-        Rect::at(indent as i32, 0).of_size(INFO_WIDTH, CROP_HEIGHT),
-        Rgba([60, 109, 173, 255]),
-    );
+    draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, 0, CARD_NAME_SCALE, name);
 
     // card cost
     let cost = cost.to_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, [255; 4], indent + (INFO_WIDTH - tw) / 2, CARD_NAME_SCALE, &cost);
+    draw_text(&mut img, [255; 4], indent + (INFO_WIDTH - tw) / 2, 0, CARD_NAME_SCALE, &cost);
 
     // rarity square
+    // drawn latest to overlap previous elements.
     drawing::draw_filled_rect_mut(
         &mut img,
         Rect::at((SLUG_WIDTH - INFO_WIDTH) as i32, 0).of_size(INFO_WIDTH, CROP_HEIGHT),
@@ -353,7 +347,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
         _ => count.to_string(),
     };
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
-    draw_text(&mut img, [255; 4], SLUG_WIDTH - (INFO_WIDTH + tw) / 2, CARD_NAME_SCALE, &count);
+    draw_text(&mut img, [255; 4], SLUG_WIDTH - (INFO_WIDTH + tw) / 2, 0, CARD_NAME_SCALE, &count);
 
     img
 }
@@ -381,14 +375,8 @@ fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zon
 }
 
 fn draw_heading_slug(heading: &str) -> RgbaImage {
-    let mut img = draw_main_canvas(SLUG_WIDTH, CROP_HEIGHT, [255; 4]);
-    draw_text(&mut img, [10, 10, 10, 255], 15, HEADING_SCALE, heading);
-    img
-}
-
-fn draw_main_canvas(width: u32, height: u32, color: impl Into<Rgba<u8>>) -> RgbaImage {
-    let mut img = RgbaImage::new(width, height);
-    drawing::draw_filled_rect_mut(&mut img, Rect::at(0, 0).of_size(width, height), color.into());
+    let mut img = RgbaImage::from_pixel(SLUG_WIDTH, CROP_HEIGHT, [255; 4].into());
+    draw_text(&mut img, [10, 10, 10, 255], 15, 0, HEADING_SCALE, heading);
     img
 }
 
@@ -404,7 +392,7 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
         MARGIN
     };
 
-    draw_text(img, [10, 10, 10, 255], offset, HEADING_SCALE, &deck.title);
+    draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
 
     Ok(())
 }
@@ -448,22 +436,13 @@ fn draw_text<'a>(
     canvas: &'a mut RgbaImage,
     color: impl Into<Rgba<u8>> + Copy,
     x_offset: u32,
+    y_offset: u32, // band-aid for Deck Title.
     scale: f32,
     text: &'a str,
 ) {
-    let (image_width, image_height) = canvas.dimensions();
-
     let mut caret = 0.0;
     let v_metric = FONTS[0].0.as_scaled(scale).ascent();
-    let y_offset = {
-        let mut y = (CROP_HEIGHT - v_metric as u32) / 2;
-
-        // band-aid for Deck title:
-        if image_height > CROP_HEIGHT {
-            y += MARGIN;
-        }
-        y
-    };
+    let y_offset = (CROP_HEIGHT - v_metric as u32) / 2 + y_offset;
 
     for c in text.chars() {
         let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) else {
@@ -484,10 +463,10 @@ fn draw_text<'a>(
             let image_x = gx + bb.min.x as u32 + x_offset;
             let image_y = gy + bb.min.y as u32 + y_offset;
 
-            if (0..image_width).contains(&image_x) && (0..image_height).contains(&image_y) {
+            if canvas.in_bounds(image_x, image_y) {
                 let pixel = canvas.get_pixel(image_x, image_y);
                 let weighted_color = interpolate(color.into(), *pixel, gv);
-                canvas.draw_pixel(image_x, image_y, weighted_color);
+                canvas.put_pixel(image_x, image_y, weighted_color);
             }
         });
     }

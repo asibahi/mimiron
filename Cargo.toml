@@ -2,12 +2,12 @@
 
 resolver = "2"
 members = ["mimiron", "mimiron_cli", "mimiron_bot"]
-default-members = ["mimiron", "mimiron_cli"]
+default_members = ["mimiron", "mimiron_cli"]
 
 [workspace.lints.clippy]
 pedantic = "warn"
-module-name-repetitions = "allow"
+module_name_repetitions = "allow"
 
 # no real reason unless officially released
-missing-errors-doc = "allow" 
+missing_errors_doc = "allow" 
 missing_panics_doc = "allow"

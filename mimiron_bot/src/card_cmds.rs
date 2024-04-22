@@ -22,7 +22,7 @@ pub async fn card(
     let opts = card::SearchOptions::search_for(search_term).with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search for a constructed card by name, including reprints. Be precise!
@@ -39,7 +39,7 @@ pub async fn cardreprints(
         card::SearchOptions::search_for(search_term).include_reprints(true).with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search for a constructed card by text.
@@ -55,7 +55,7 @@ pub async fn cardtext(
     let opts = card::SearchOptions::search_for(search_term).with_text(true).with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search includes all cards, including noncollectibles. Expect some nonsense.
@@ -73,10 +73,10 @@ pub async fn allcards(
         .with_locale(locale);
     let cards = card::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-fn inner_card_embed(card: card::Card, locale: Locale) -> serenity::CreateEmbed {
+fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed {
     let class = card.class.iter().map(Emoji::emoji).collect::<String>();
 
     let rarity = card.rarity.emoji();

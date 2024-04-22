@@ -35,7 +35,7 @@ pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error
     let opts = bg::SearchOptions::empty().search_for(Some(search_term)).with_locale(locale);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search for a battlegrounds card by text.
@@ -54,7 +54,7 @@ pub async fn bgtext(
         .with_text(true);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search for a battlegrounds card by tier and optionally minion type.
@@ -78,12 +78,13 @@ pub async fn bgtier(
         .with_type(minion_type.map(|s| s.parse()).transpose()?);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(c, locale)).await
+    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
+#[allow(clippy::unused_async)]
 // Should probably get a list from the library for ome source of truth. Needs streams.
 async fn autocomplete_type<'a>(
-    _ctx: Context<'_>,
+    _: Context<'_>,
     partial: &'a str,
 ) -> impl Iterator<Item = &'a str> {
     [
@@ -102,7 +103,7 @@ async fn autocomplete_type<'a>(
     .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
 
-fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
+fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
     let lct = card.card_type.in_locale(locale).to_string();
     let (description, mut fields) = match &card.card_type {
         bg::BGCardType::Hero { .. } => (lct, vec![]),
@@ -114,7 +115,7 @@ fn inner_card_embed(card: bg::Card, locale: Locale) -> serenity::CreateEmbed {
         bg::BGCardType::HeroPower { text, .. } => (text.to_markdown(), vec![]),
     };
 
-    fields.extend(bg::get_and_print_associated_cards(&card, locale).into_iter().filter_map(
+    fields.extend(bg::get_and_print_associated_cards(card, locale).into_iter().filter_map(
         |assoc_card| {
             let lct = assoc_card.card_type.in_locale(locale);
             match &assoc_card.card_type {

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::Iterator};
 
 use crate::{Context, Data, Error};
 use itertools::Itertools;
@@ -34,7 +34,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                 .sorted_by_key(|cmd| cmd.slash_action.is_none())
                 .map(|cmd| {
                     let name = cmd.context_menu_name.as_deref().unwrap_or(&cmd.name);
-                    let prefix = cmd.slash_action.map(|_| "`/").unwrap_or("Context menu: `");
+                    let prefix = cmd.slash_action.map_or("Context menu: `", |_| "`/");
                     format!(
                         "{}{}`: _{}_",
                         prefix,
@@ -98,7 +98,8 @@ pub(crate) async fn on_error(
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
             let command = ctx.command().name.as_str();
-            let guild = ctx.guild().map(|g| g.name.clone()).unwrap_or("Direct Messages".into());
+            let guild = ctx.guild().map_or("Direct Messages".into(), |g| g.name.clone());
+
             let invocation = ctx.invocation_string();
             let mut error = error.to_string();
             if rand::random::<u8>() % 5 == 0 && ctx.command().category != Some("Deck".into()) {
@@ -115,7 +116,7 @@ pub(crate) async fn on_error(
 
 pub(crate) fn on_success(ctx: &Context) {
     let command = ctx.command().name.as_str();
-    let guild = ctx.guild().map(|g| g.name.clone()).unwrap_or("Direct Messages".into());
+    let guild = ctx.guild().map_or("Direct Messages".into(), |g| g.name.clone());
 
     let invocation = ctx.invocation_string();
 
@@ -150,7 +151,7 @@ pub(crate) async fn paginated_card_print<T>(
         .map(|c| Lazy::new(|| inner_card_embed(c)))
         .chunks(3)
         .into_iter()
-        .map(|c| c.collect::<Vec<_>>())
+        .map(Iterator::collect::<Vec<_>>)
         .collect::<Vec<_>>();
     let mut current_page = 0;
 

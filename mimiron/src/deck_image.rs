@@ -305,7 +305,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     });
 
     match get_crop_image(card).and_then(|crop| Ok(img.copy_from(&crop, CROP_IMAGE_OFFSET, 0)?)) {
-        Ok(_) => {
+        Ok(()) => {
             let mut gradient = RgbaImage::new(CROP_WIDTH, CROP_HEIGHT);
             imageops::horizontal_gradient(
                 &mut gradient,

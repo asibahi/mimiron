@@ -98,7 +98,7 @@ fn img_columns_format(
 ) -> Result<RgbaImage> {
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
 
-    let (mut img, cards_in_col) = {
+    let (mut img, cards_in_col, title_offset) = {
         let main_deck_length = ordered_main_deck.clone().count();
 
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
@@ -111,16 +111,28 @@ fn img_columns_format(
         let col_count = col_count.unwrap_or_else(|| (length / 15 + 1).max(2));
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
-        let img = RgbaImage::from_pixel(
-            COLUMN_WIDTH * col_count + MARGIN,
-            ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
-            [255; 4].into(),
-        );
+        let mut img = if col_count == 1 {
+            RgbaImage::from_pixel(
+                ROW_HEIGHT * cards_in_col + MARGIN,
+                COLUMN_WIDTH + ROW_HEIGHT + MARGIN,
+                [255; 4].into(),
+            )
+        } else {
+            RgbaImage::from_pixel(
+                COLUMN_WIDTH * col_count + MARGIN,
+                ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
+                [255; 4].into(),
+            )
+        };
 
-        (img, cards_in_col)
+        draw_deck_title(&mut img, deck, col_count == 1);
+        if col_count == 1 {
+            img = imageops::rotate90(&img);
+        }
+
+        (img, cards_in_col, (col_count != 1) as u32)
     };
 
-    draw_deck_title(&mut img, deck)?;
     let slug_map = get_cards_slugs(
         deck,
         if inline_sideboard { SideboardStyle::Indented } else { SideboardStyle::EndOfDeck },
@@ -131,7 +143,7 @@ fn img_columns_format(
     for card in ordered_main_deck {
         let slug = &slug_map[&(card.id, Zone::MainDeck)];
 
-        let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
+        let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
 
         img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
@@ -146,7 +158,7 @@ fn img_columns_format(
                 .flat_map(|sb| sb.cards_in_sideboard.iter().sorted().dedup())
                 .map(|c| &slug_map[&(c.id, Zone::Sideboard { sb_card_id: card.id })])
             {
-                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
+                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
 
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
                 cursor += 1;
@@ -156,7 +168,7 @@ fn img_columns_format(
 
     if !inline_sideboard {
         for sb in deck.sideboard_cards.iter().flatten() {
-            let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
+            let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
             img.copy_from(
                 &draw_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
@@ -169,7 +181,7 @@ fn img_columns_format(
                     &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
                 })
             {
-                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + 1);
+                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
                 cursor += 1;
@@ -221,7 +233,7 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
         )
     };
 
-    draw_deck_title(&mut img, deck)?;
+    draw_deck_title(&mut img, deck, false);
 
     for (i, slug) in class_cards {
         let i = i as u32 + 1;
@@ -380,21 +392,21 @@ fn draw_heading_slug(heading: &str) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(img: &mut RgbaImage, deck: &Deck) -> Result<()> {
+fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
     let offset = if let Ok(class_img) = get_class_icon(deck.class) {
-        img.copy_from(
-            &imageops::resize(&class_img, INFO_WIDTH, CROP_HEIGHT, imageops::FilterType::Gaussian),
-            MARGIN,
-            MARGIN,
-        )?;
+        let mut class_img =
+            imageops::resize(&class_img, INFO_WIDTH, CROP_HEIGHT, imageops::FilterType::Gaussian);
+        if vertical {
+            class_img = imageops::rotate270(&class_img);
+        }
+        img.copy_from(&class_img, MARGIN, MARGIN)
+            .expect("class thumbnail can't be larger than image!!");
         MARGIN + INFO_WIDTH + 10
     } else {
         MARGIN
     };
 
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
-
-    Ok(())
 }
 
 #[cached::proc_macro::cached(result = true)]

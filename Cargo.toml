@@ -1,8 +1,7 @@
 [workspace]
-
 resolver = "2"
 members = ["mimiron", "mimiron_cli", "mimiron_bot"]
-default_members = ["mimiron", "mimiron_cli"]
+default-members = ["mimiron", "mimiron_cli"]
 
 [workspace.lints.clippy]
 pedantic = "warn"

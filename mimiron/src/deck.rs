@@ -12,6 +12,7 @@ use base64::{
 };
 use colored::Colorize;
 use counter::Counter;
+use integer_encoding::VarIntReader;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -20,7 +21,6 @@ use std::{
     io::Cursor,
     str::FromStr,
 };
-use varint_rs::VarintReader;
 
 pub use crate::deck_image::ImageOptions;
 
@@ -409,25 +409,25 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
 
     // Format is the third number.
     buffer.set_position(2);
-    raw_data.format = buffer.read_u8_varint()?.try_into().unwrap_or_default();
+    raw_data.format = buffer.read_varint::<u8>()?.try_into().unwrap_or_default();
 
     // Hero ID is the fifth number.
     buffer.set_position(4);
-    raw_data.hero = buffer.read_usize_varint()?;
+    raw_data.hero = buffer.read_varint::<usize>()?;
 
     // Single copy cards
-    let count = buffer.read_u8_varint()?;
+    let count = buffer.read_varint::<u8>()?;
     for _ in 0..count {
-        let id = buffer.read_usize_varint()?;
+        let id = buffer.read_varint::<usize>()?;
         let id = validate_id(id);
 
         raw_data.cards.push(id);
     }
 
     // Double copy cards
-    let count = buffer.read_u8_varint()?;
+    let count = buffer.read_varint::<u8>()?;
     for _ in 0..count {
-        let id = buffer.read_usize_varint()?;
+        let id = buffer.read_varint::<usize>()?;
         let id = validate_id(id);
 
         raw_data.cards.push(id);
@@ -435,12 +435,12 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     }
 
     // N-copy cards
-    let count = buffer.read_u8_varint()?;
+    let count = buffer.read_varint::<u8>()?;
     for _ in 0..count {
-        let id = buffer.read_usize_varint()?;
+        let id = buffer.read_varint::<usize>()?;
         let id = validate_id(id);
 
-        let n = buffer.read_u8_varint()?;
+        let n = buffer.read_varint::<u8>()?;
 
         for _ in 0..n {
             raw_data.cards.push(id);
@@ -448,13 +448,13 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     }
 
     // Sideboard cards. Not sure if they're always available?
-    if buffer.read_u8_varint().is_ok_and(|i| i == 1) {
-        let count = buffer.read_u8_varint()?;
+    if buffer.read_varint::<u8>().is_ok_and(|i| i == 1) {
+        let count = buffer.read_varint::<u8>()?;
         for _ in 0..count {
-            let id = buffer.read_usize_varint()?;
+            let id = buffer.read_varint::<usize>()?;
             let id = validate_id(id);
 
-            let sb_id = buffer.read_usize_varint()?;
+            let sb_id = buffer.read_varint::<usize>()?;
             let sb_id = validate_id(sb_id);
 
             raw_data.sideboard_cards.push((id, sb_id));

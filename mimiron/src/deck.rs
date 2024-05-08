@@ -401,9 +401,6 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
 
     let decoded = ENGINE.decode(code)?;
     let mut buffer = Cursor::new(&decoded);
-    // while let Ok(id) = buffer.read_usize_varint() {
-    //     println!("{}", id);
-    // }
 
     let mut raw_data = RawCodeData::default();
 
@@ -413,21 +410,21 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
 
     // Hero ID is the fifth number.
     buffer.set_position(4);
-    raw_data.hero = buffer.read_varint::<usize>()?;
+    raw_data.hero = buffer.read_varint()?;
 
     // Single copy cards
-    let count = buffer.read_varint::<u8>()?;
-    for _ in 0..count {
-        let id = buffer.read_varint::<usize>()?;
+    let count = buffer.read_varint()?;
+    for _ in 0u8..count {
+        let id = buffer.read_varint()?;
         let id = validate_id(id);
 
         raw_data.cards.push(id);
     }
 
     // Double copy cards
-    let count = buffer.read_varint::<u8>()?;
-    for _ in 0..count {
-        let id = buffer.read_varint::<usize>()?;
+    let count = buffer.read_varint()?;
+    for _ in 0u8..count {
+        let id = buffer.read_varint()?;
         let id = validate_id(id);
 
         raw_data.cards.push(id);
@@ -435,26 +432,26 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     }
 
     // N-copy cards
-    let count = buffer.read_varint::<u8>()?;
-    for _ in 0..count {
-        let id = buffer.read_varint::<usize>()?;
+    let count = buffer.read_varint()?;
+    for _ in 0u8..count {
+        let id = buffer.read_varint()?;
         let id = validate_id(id);
 
-        let n = buffer.read_varint::<u8>()?;
+        let n = buffer.read_varint()?;
 
-        for _ in 0..n {
+        for _ in 0u8..n {
             raw_data.cards.push(id);
         }
     }
 
     // Sideboard cards. Not sure if they're always available?
     if buffer.read_varint::<u8>().is_ok_and(|i| i == 1) {
-        let count = buffer.read_varint::<u8>()?;
-        for _ in 0..count {
-            let id = buffer.read_varint::<usize>()?;
+        let count = buffer.read_varint()?;
+        for _ in 0u8..count {
+            let id = buffer.read_varint()?;
             let id = validate_id(id);
 
-            let sb_id = buffer.read_varint::<usize>()?;
+            let sb_id = buffer.read_varint()?;
             let sb_id = validate_id(sb_id);
 
             raw_data.sideboard_cards.push((id, sb_id));

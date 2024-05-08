@@ -118,11 +118,15 @@ impl Card {
 
         (attack, health)
     }
+
+    pub(crate) fn text_elements(&self) -> (String, String) {
+        (self.name.clone(), self.text.clone())
+    }
 }
 
 impl PartialEq for Card {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
+        self.name == other.name && self.text == other.text
     }
 }
 impl PartialOrd for Card {
@@ -133,6 +137,7 @@ impl PartialOrd for Card {
 impl Hash for Card {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
+        self.text.hash(state);
     }
 }
 impl Eq for Card {}
@@ -286,15 +291,14 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
                 && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
         })
         // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)
-        .unique_by(|c| opts.reprints.either(c.id, (c.name.clone(), c.text.clone())))
+        .unique_by(|c| opts.reprints.either(c.id, c.text_elements()))
         // when searching for Ragnaros guarantee that Ragnaros is the first result.
         .sorted_by_key(|c| !c.name.to_lowercase().starts_with(&search_term.to_lowercase()))
         .peekable();
 
     anyhow::ensure!(
         cards.peek().is_some(),
-        "No constructed card found with name \"{search_term}\". \
-        Try expanding search to text boxes."
+        "No constructed card found with name \"{search_term}\". Try expanding search to text boxes."
     );
 
     Ok(cards)

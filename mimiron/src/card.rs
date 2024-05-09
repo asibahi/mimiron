@@ -1,5 +1,7 @@
 use crate::{
-    card_details::{CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
+    card_details::{
+        fuzzy_search_hearth_sim, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
+    },
     get_access_token,
     localization::{Locale, Localize},
     CardSearchResponse, CardTextDisplay, AGENT,
@@ -277,7 +279,9 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
     anyhow::ensure!(
         res.card_count > 0,
-        "No constructed card found with text {search_term}. Check your spelling."
+        "No constructed card found with name or text {search_term}. {}.",
+        fuzzy_search_hearth_sim(search_term)
+            .map_or(String::new(), |s| format!("Did you mean \"{s}\"?"))
     );
 
     let mut cards = res

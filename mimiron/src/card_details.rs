@@ -488,7 +488,10 @@ struct HearthSimData {
     id: String,
     name: String,
     cost: Option<u8>,
-    rarity: Option<String>,
+    #[serde(default)]
+    rarity: String,
+    #[serde(default)]
+    collectible: bool,
 }
 
 pub(crate) fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
@@ -499,17 +502,35 @@ pub(crate) fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
 
 pub(crate) fn get_hearth_sim_details(id: &usize) -> Option<(&str, u8, Rarity)> {
     HEARTH_SIM_IDS.get(id).map(|c| {
-        let rarity = c.rarity.as_deref().map_or(Rarity::Noncollectible, |r| match r {
+        let rarity = match c.rarity.as_str() {
             "LEGENDARY" => Rarity::Legendary,
             "EPIC" => Rarity::Epic,
             "RARE" => Rarity::Rare,
             "COMMON" => Rarity::Common,
-            _ => Rarity::Free,
-        });
+            "FREE" => Rarity::Free,
+            _ => Rarity::Noncollectible,
+        };
         (c.name.as_str(), c.cost.unwrap(), rarity)
     })
 }
 
 pub(crate) fn validate_id(input_id: usize) -> usize {
     HEARTH_SIM_IDS.get(&input_id).and_then(|c| c.count_as_copy_of_dbf_id).unwrap_or(input_id)
+}
+
+pub(crate) fn fuzzy_search_hearth_sim(search_term: &str) -> Option<&str> {
+    // according to the docs doing these here is apparently horribly inefficient.
+    // c'est la vie
+    let mut matcher = nucleo_matcher::Matcher::new(nucleo_matcher::Config::DEFAULT);
+    let results = nucleo_matcher::pattern::Pattern::parse(
+        search_term,
+        nucleo_matcher::pattern::CaseMatching::Ignore,
+        nucleo_matcher::pattern::Normalization::Smart,
+    )
+    .match_list(
+        HEARTH_SIM_IDS.values().filter(|d| d.collectible).map(|d| d.name.as_str()),
+        &mut matcher,
+    );
+
+    results.first().map(|d| d.0)
 }

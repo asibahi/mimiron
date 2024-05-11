@@ -277,31 +277,12 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     }
 
     let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
-
-    if res.card_count == 0 {
-        let Some(fuzzy) = fuzzy_search_hearth_sim(search_term).and_then(|fuzzy| {
-            AGENT
-                .get("https://us.api.blizzard.com/hearthstone/cards")
-                .query("locale", &opts.locale.to_string())
-                .query("textFilter", fuzzy)
-                .query("access_token", &get_access_token())
-                .call()
-                .ok()?
-                .into_json::<CardSearchResponse<Card>>()
-                .ok()
-                .filter(|r| r.card_count > 0)
-        }) else {
-            anyhow::bail!("No constructed card found with text {search_term}. Check your spelling.")
-        };
-
-        return Ok(fuzzy
-            .cards
-            .into_iter()
-            .filter(|c| c.card_set != 17)
-            .unique_by(|c| opts.reprints.either(c.id, c.text_elements()))
-            .sorted()
-            .peekable());
-    }
+    anyhow::ensure!(
+        res.card_count > 0,
+        "No constructed card found with name or text {search_term}. {}",
+        fuzzy_search_hearth_sim(search_term)
+            .map_or("Check your spelling".to_owned(), |s| format!("Did you mean \"{s}\"?"))
+    );
 
     let mut cards = res
         .cards

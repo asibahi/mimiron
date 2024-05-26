@@ -3,10 +3,20 @@ resolver = "2"
 members = ["mimiron", "mimiron_cli", "mimiron_bot"]
 default-members = ["mimiron", "mimiron_cli"]
 
+[workspace.dependencies]
+anyhow = "1"
+itertools = "0.13.0"
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "rayon",
+] }
+once_cell = "1.19"
+
 [workspace.lints.clippy]
 pedantic = "warn"
 module_name_repetitions = "allow"
 
 # no real reason unless officially released
-missing_errors_doc = "allow" 
+missing_errors_doc = "allow"
 missing_panics_doc = "allow"

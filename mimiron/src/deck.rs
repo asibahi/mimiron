@@ -323,7 +323,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             sideboard_cards: raw_data
                 .sideboard_cards
                 .iter()
-                .group_by(|(_, sb_card)| sb_card)
+                .chunk_by(|(_, sb_card)| sb_card)
                 .into_iter()
                 .map(|(&sb_card, sb)| Sideboard {
                     sideboard_card: card::Card::dummy(sb_card),

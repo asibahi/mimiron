@@ -85,7 +85,7 @@ pub struct Card {
 }
 impl Card {
     pub(crate) fn dummy(id: usize) -> Self {
-        let data = crate::card_details::get_hearth_sim_details(&id);
+        let data = crate::card_details::get_hearth_sim_details(id);
 
         Self {
             id,

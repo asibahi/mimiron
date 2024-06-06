@@ -500,8 +500,8 @@ pub(crate) fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
         .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
 }
 
-pub(crate) fn get_hearth_sim_details(id: &usize) -> Option<(&str, u8, Rarity)> {
-    HEARTH_SIM_IDS.get(id).map(|c| {
+pub(crate) fn get_hearth_sim_details<'h>(id: usize) -> Option<(&'h str, u8, Rarity)> {
+    HEARTH_SIM_IDS.get(&id).map(|c| {
         let rarity = match c.rarity.as_str() {
             "LEGENDARY" => Rarity::Legendary,
             "EPIC" => Rarity::Epic,

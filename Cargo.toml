@@ -13,6 +13,9 @@ image = { version = "0.25", default-features = false, features = [
 ] }
 once_cell = "1.19"
 
+[workspace.lints.rust]
+refining_impl_trait_internal = "allow"
+
 [workspace.lints.clippy]
 pedantic = "warn"
 module_name_repetitions = "allow"

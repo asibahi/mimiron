@@ -402,6 +402,10 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     let decoded = ENGINE.decode(code)?;
     let mut buffer = Cursor::new(&decoded);
 
+    // while let Ok(n) = buffer.read_varint::<usize>() {
+    //     println!("{n}");
+    // }
+
     let mut raw_data = RawCodeData::default();
 
     // Format is the third number.

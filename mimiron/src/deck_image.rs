@@ -288,7 +288,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     assert!(count > 0);
 
     let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
-        matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(&card.id))
+        matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(card.id))
     {
         (name, cost, rarity)
     } else {

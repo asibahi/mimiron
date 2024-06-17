@@ -108,7 +108,7 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }
         | bg::BGCardType::Reward { text }
-        | bg::BGCardType::Anomaly { text } => (text.to_markdown(), vec![(" ", lct, true)]),
+        | bg::BGCardType::Anomaly { text } => (text.to_markdown(), vec![(" ".into(), lct, true)]),
         bg::BGCardType::HeroPower { text, .. } => (text.to_markdown(), vec![]),
     };
 
@@ -118,15 +118,15 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
             match &assoc_card.card_type {
                 bg::BGCardType::Minion { text, .. } => {
                     let title = match card.card_type {
-                        bg::BGCardType::Minion { .. } => "Triple",
-                        bg::BGCardType::Hero { .. } => "Buddy",
-                        _ => " ",
+                        bg::BGCardType::Hero { .. } => assoc_card.name,
+                        bg::BGCardType::Minion { .. } => format!("3x {}", assoc_card.name),
+                        _ => " ".into(),
                     };
 
                     Some((title, format!("{}: {}", lct, text.to_markdown()), false))
                 }
                 bg::BGCardType::HeroPower { text, .. } => {
-                    Some((" ", format!("{}: {}", lct, text.to_markdown()), false))
+                    Some((assoc_card.name, format!("{}: {}", lct, text.to_markdown()), false))
                 }
                 _ => None,
             }

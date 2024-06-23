@@ -23,6 +23,44 @@ pub enum Locale {
     zhCN,
     zhTW,
 }
+impl Locale {
+    // Inner Functions that note global terms that might be used in multiple places
+    pub(crate) fn battlegrounds(self) -> &'static str {
+        match self {
+            Locale::deDE => "Schlachtfeld",
+            Locale::frFR => "Champs de bataille",
+            Locale::itIT => "Battaglia",
+            Locale::jaJP => "バトルグラウンド",
+            Locale::koKR => "전장",
+            Locale::plPL => "Ustawka",
+            Locale::ptBR => "Campos de Batalha",
+            Locale::ruRU => "Поля сражений",
+            Locale::enUS
+            | Locale::esES
+            | Locale::esMX
+            | Locale::thTH
+            | Locale::zhCN
+            | Locale::zhTW => "Battlegrounds",
+        }
+    }
+
+    pub(crate) fn quest(self) -> &'static str {
+        match self {
+            Locale::deDE | Locale::enUS => "Quest",
+            Locale::esES | Locale::esMX => "Misión",
+            Locale::frFR => "Quête",
+            Locale::itIT => "Missione",
+            Locale::jaJP => "クエスト",
+            Locale::koKR => "퀘스트",
+            Locale::plPL => "Zadanie",
+            Locale::ptBR => "Missão",
+            Locale::ruRU => "Задача",
+            Locale::thTH => "เควสต์",
+            Locale::zhCN => "任务",
+            Locale::zhTW => "任務",
+        }
+    }
+}
 impl Display for Locale {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {

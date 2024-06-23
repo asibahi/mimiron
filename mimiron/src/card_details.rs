@@ -139,7 +139,16 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
         .sets
         .iter()
         .find(|s| s.id == id || s.alias_set_ids.iter().flatten().contains(&id))
-        .map_or_else(|| format!("Set {id}"), |s| s.in_locale(locale).to_string())
+        .map_or_else(
+            || match id {
+                // maybe force a refresh for METADATA for unknown numbers?
+                1453 => locale.battlegrounds().into(),
+                7 => "Hero Portraits".into(), // Should localize this
+                1586 => "Mercenaries".into(), // and this.
+                _ => format!("Set {id}"),
+            },
+            |s| s.in_locale(locale).to_string(),
+        )
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]

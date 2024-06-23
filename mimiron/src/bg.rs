@@ -114,22 +114,7 @@ impl Localize for BGCardType {
                         .name(self.1)
                 };
 
-                let (battlegrounds, quest) = match self.1 {
-                    // only use for these strings in the code base (so far?)
-                    Locale::deDE => ("Schlachtfeld", "Quest"),
-                    Locale::enUS => ("Battlegrounds", "Quest"),
-                    Locale::esES | Locale::esMX => ("Battlegrounds", "Misión"),
-                    Locale::frFR => ("Champs de bataille", "Quête"),
-                    Locale::itIT => ("Battaglia", "Missione"),
-                    Locale::jaJP => ("バトルグラウンド", "クエスト"),
-                    Locale::koKR => ("전장", "퀘스트"),
-                    Locale::plPL => ("Ustawka", "Zadanie"),
-                    Locale::ptBR => ("Campos de Batalha", "Missão"),
-                    Locale::ruRU => ("Поля сражений", "Задача"),
-                    Locale::thTH => ("Battlegrounds", "เควสต์"),
-                    Locale::zhCN => ("Battlegrounds", "任务"),
-                    Locale::zhTW => ("Battlegrounds", "任務"),
-                };
+                let battlegrounds = self.1.battlegrounds();
 
                 match self.0 {
                     BGCardType::Hero { armor, .. } => {
@@ -148,7 +133,7 @@ impl Localize for BGCardType {
                         inner(text, f)
                     }
                     BGCardType::Quest { text } => {
-                        write!(f, "{battlegrounds} {quest}")?;
+                        write!(f, "{battlegrounds} {}", self.1.quest())?;
                         inner(text, f)
                     }
                     BGCardType::Reward { text } => {

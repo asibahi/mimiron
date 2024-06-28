@@ -124,7 +124,7 @@ mod prettify_tests {
     #[test]
     fn test_climactic_necrotic_explosion() -> Result<(), String> {
         let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
-        let case = to_text_tree(dbg!(input))?;
+        let case = to_text_tree(input)?;
         let expected = TT::Seq(vec![
             TT::in_bold(TT::from_string("Lifesteal")),
             TT::from_string(". Deal damage. Summon / Souls. "),
@@ -135,14 +135,14 @@ mod prettify_tests {
             ])),
         ]);
 
-        assert_eq!(dbg!(case), expected);
+        assert_eq!((case), expected);
         Ok(())
     }
 
     #[test]
     fn test_eternal_summoner() -> Result<(), String> {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
-        let case = to_text_tree(dbg!(input))?;
+        let case = to_text_tree(input)?;
         let expected = TT::Seq(vec![
             TT::in_bold(TT::Seq(vec![
                 TT::in_bold(TT::from_string("Reborn")),
@@ -153,21 +153,21 @@ mod prettify_tests {
             TT::from_string(" Summon 1 Eternal Knight."),
         ]);
 
-        assert_eq!(dbg!(case), expected);
+        assert_eq!((case), expected);
         Ok(())
     }
 
     #[test]
     fn test_illidans_gift() -> Result<(), String> {
         let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
-        let case = to_text_tree(dbg!(input))?;
+        let case = to_text_tree(input)?;
         let expected = TT::Seq(vec![
             TT::in_bold(TT::from_string("Discover")),
             TT::from_string(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova."),
             TT::in_bold(TT::Empty), // This is silly. It should cancel the surrounding tag.
         ]);
 
-        assert_eq!(dbg!(case), expected);
+        assert_eq!((case), expected);
         Ok(())
     }
 }
@@ -266,7 +266,7 @@ mod traverse_tests {
     #[test]
     fn test_eternal_summoner() -> Result<(), String> {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
-        let tree = to_text_tree(dbg!(input))?;
+        let tree = to_text_tree(input)?;
         let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
 
         let expected = vec![
@@ -280,14 +280,14 @@ mod traverse_tests {
             TP::new("Knight.", TS::Plain),
         ];
 
-        assert_eq!(dbg!(traversal), expected);
+        assert_eq!((traversal), expected);
         Ok(())
     }
 
     #[test]
     fn test_climactic_necrotic_explosion() -> Result<(), String> {
         let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
-        let tree = to_text_tree(dbg!(input))?;
+        let tree = to_text_tree(input)?;
         let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
 
         let expected = vec![
@@ -307,7 +307,31 @@ mod traverse_tests {
             TP::new("spent)", TS::Italic),
         ];
 
-        assert_eq!(dbg!(traversal), expected);
+        assert_eq!(traversal, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_illidans_gift() -> Result<(), String> {
+        let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
+        let tree = to_text_tree(input)?;
+        let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
+
+        let expected = vec![
+            TP::new("Discover", TS::Bold),
+            TP::new(" ", TS::Plain),
+            TP::new("a ", TS::Plain),
+            TP::new("temporary ", TS::Plain),
+            TP::new("Fel ", TS::Plain),
+            TP::new("Barrage, ", TS::Plain),
+            TP::new("Chaos ", TS::Plain),
+            TP::new("Strike, ", TS::Plain),
+            TP::new("or ", TS::Plain),
+            TP::new("Chaos ", TS::Plain),
+            TP::new("Nova.", TS::Plain),
+        ];
+
+        assert_eq!(traversal, expected);
         Ok(())
     }
 }

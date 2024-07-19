@@ -17,7 +17,7 @@ pub struct BGArgs {
     #[arg(short, long, group = "search", value_parser = clap::value_parser!(u8).range(1..=7))]
     tier: Option<u8>,
 
-    // Search by Minion type
+    /// Search by Minion type
     #[arg(short = 'T', long = "type", group = "search", value_parser = str::parse::<MinionType>)]
     minion_type: Option<MinionType>,
 

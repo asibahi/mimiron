@@ -11,6 +11,7 @@ use serde::Deserialize;
 use std::{
     collections::HashSet,
     fmt::{self, Display},
+    str::FromStr,
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -42,14 +43,45 @@ struct CardData {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::struct_excessive_bools)]
 struct BGData {
     hero: bool,
     quest: bool,
     reward: bool,
     companion_id: Option<usize>,
+    duos_only: bool,
+    solos_only: bool, // Are _any_ minions or heroes Solos only?
     image: String,
     tier: Option<u8>,
     upgrade_id: Option<usize>,
+}
+
+/// Which BG pool this card is in.
+///
+/// On card data, this tells you where the card is legal.
+/// As a search option, this tells you how to restrict the search. (So Solos would return both `Solos` AND `All` minions)
+#[derive(Clone, Copy, Default)]
+pub enum Pool {
+    #[default]
+    All,
+    Duos,
+    Solos,
+}
+impl FromStr for Pool {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let s = s.to_ascii_lowercase();
+        if s.starts_with('s') {
+            Ok(Pool::Solos)
+        } else if s.starts_with('d') {
+            Ok(Pool::Duos)
+        } else if s.starts_with('a') {
+            Ok(Pool::All)
+        } else {
+            anyhow::bail!("Unknown Battlegrounds pool")
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -165,6 +197,7 @@ pub struct Card {
     pub name: String,
     pub image: String,
     pub card_type: BGCardType,
+    pub pool: Pool,
 }
 impl Localize for Card {
     fn in_locale(&self, locale: Locale) -> impl Display {
@@ -226,11 +259,20 @@ impl From<CardData> for Card {
             _ => BGCardType::Spell { tier: 0, cost: c.mana_cost, text: c.text },
         };
 
+        let pool = c
+            .battlegrounds
+            .as_ref()
+            .and_then(|bg| {
+                bg.duos_only.then_some(Pool::Duos).or(bg.solos_only.then_some(Pool::Solos))
+            })
+            .unwrap_or_default();
+
         Self {
             id: c.id,
             name: c.name,
             image: c.battlegrounds.map_or(c.image, |bg| bg.image),
             card_type,
+            pool,
         }
     }
 }
@@ -239,6 +281,7 @@ pub struct SearchOptions {
     search_term: Option<String>,
     tier: Option<u8>,
     minion_type: Option<MinionType>,
+    pool: Pool,
     with_text: bool,
     locale: Locale,
 }
@@ -246,10 +289,13 @@ pub struct SearchOptions {
 impl SearchOptions {
     #[must_use]
     pub fn empty() -> Self {
+        // The reason we're not just deriving and using Default here
+        // is to make it clear that it is 0 filters.
         Self {
             search_term: None,
             tier: None,
             minion_type: None,
+            pool: Pool::All,
             with_text: false,
             locale: Locale::enUS,
         }
@@ -273,6 +319,10 @@ impl SearchOptions {
     #[must_use]
     pub fn with_locale(self, locale: Locale) -> Self {
         Self { locale, ..self }
+    }
+    #[must_use]
+    pub fn for_pool(self, pool: Pool) -> Self {
+        Self { pool, ..self }
     }
 }
 
@@ -316,6 +366,11 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
                     .search_term
                     .as_ref()
                     .map_or(true, |name| c.name.to_lowercase().contains(&name.to_lowercase()))
+        })
+        .filter(|c| match opts.pool {
+            Pool::All => true,
+            Pool::Duos => matches!(c.pool, Pool::All | Pool::Duos),
+            Pool::Solos => matches!(c.pool, Pool::All | Pool::Solos),
         })
         .sorted_by_key(|c| {
             !c.name

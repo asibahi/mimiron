@@ -57,7 +57,7 @@ pub async fn bgtext(
     paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-/// Search for a battlegrounds card by tier and optionally minion type.
+/// Search for a battlegrounds card by tier and optionally minion type.and Duos/Solos
 #[poise::command(slash_command, category = "Battlegrounds")]
 pub async fn bgtier(
     ctx: Context<'_>,
@@ -67,6 +67,9 @@ pub async fn bgtier(
     #[description = "minion type"]
     #[autocomplete = "autocomplete_type"]
     minion_type: Option<String>,
+    #[description = "pool"]
+    #[autocomplete = "autocomplete_pool"]
+    pool: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
@@ -75,10 +78,20 @@ pub async fn bgtier(
     let opts = bg::SearchOptions::empty()
         .with_tier(Some(tier))
         .with_locale(locale)
-        .with_type(minion_type.map(|s| s.parse()).transpose()?);
+        .with_type(minion_type.and_then(|s| s.parse().ok()))
+        .for_pool(pool.and_then(|p| p.parse().ok()).unwrap_or_default());
+
     let cards = bg::lookup(&opts)?;
 
     paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
+}
+
+#[allow(clippy::unused_async)]
+// Should probably get a list from the library for ome source of truth. Needs streams.
+async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+    ["Solos", "Duos"]
+        .into_iter()
+        .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
 
 #[allow(clippy::unused_async)]

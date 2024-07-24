@@ -17,9 +17,11 @@ itertools.workspace = true
 image.workspace = true
 once_cell.workspace = true
 
-poise = "0.6.1"
-shuttle-serenity = "0.47"
-shuttle-runtime = "0.47"
-tracing = "0.1.40"
-urlencoding = "2.1.3"
-rand = "0.8.5"
+poise.workspace = true
+shuttle-serenity.workspace = true
+shuttle-runtime.workspace = true
+tracing.workspace = true
+urlencoding.workspace = true
+rand.workspace = true
+
+

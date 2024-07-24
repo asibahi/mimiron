@@ -4,6 +4,7 @@ members = ["mimiron", "mimiron_cli", "mimiron_bot"]
 default-members = ["mimiron", "mimiron_cli"]
 
 [workspace.dependencies]
+# global deps
 anyhow = "1"
 itertools = "0.13.0"
 image = { version = "0.25", default-features = false, features = [
@@ -12,6 +13,42 @@ image = { version = "0.25", default-features = false, features = [
     "rayon",
 ] }
 once_cell = "1.19"
+
+# lib deps
+colored = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
+base64 = "0.22"
+dotenvy = "0.15"
+counter = "0.6"
+nom = "7.1.3"
+textwrap = { version = "0.16", default-features = false, features = [
+    "terminal_size",
+] }
+imageproc = "0.25"
+ab_glyph = "0.2"
+rayon = "1"
+eitherable = "0.1.0"
+unicode-width = "0.1"
+cached = "0.53"
+either = { version = "1.12", features = ["serde"] }
+convert_case = "0.6.0"
+integer-encoding = "4.0.0"
+nucleo-matcher = "0.3.1"
+
+# bot deps
+poise = "0.6.1"
+shuttle-serenity = "0.47"
+shuttle-runtime = "0.47"
+tracing = "0.1.40"
+urlencoding = "2.1.3"
+rand = "0.8.5"
+
+# cli deps
+clap = { version = "4", features = ["derive"] }
+directories = "5.0"
+chrono = "0.4"
 
 [workspace.lints.rust]
 refining_impl_trait_internal = "allow"

@@ -12,10 +12,10 @@ workspace = true
 [dependencies]
 mimiron = { path = "../mimiron" }
 anyhow.workspace = true
+clap.workspace = true
+directories.workspace = true
+chrono.workspace = true
 
-clap = { version = "4", features = ["derive"] }
-directories = "5.0"
-chrono = "0.4"
 
 [[bin]]
 name = "mimiron"

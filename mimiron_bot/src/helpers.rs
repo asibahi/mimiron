@@ -3,6 +3,7 @@ use std::{collections::HashMap, iter::Iterator};
 use crate::{Context, Data, Error};
 use itertools::Itertools;
 use mimiron::{
+    bg::Pool,
     card_details::{Class, Rarity},
     localization::Locale,
 };
@@ -88,6 +89,15 @@ impl Emoji for Rarity {
             Self::Rare => "<:rare:1182038164781678674>",
             Self::Noncollectible => "<:artifact:1189986811079045282>",
             Self::Common | Self::Free => "<:common:1182038153767419986>",
+        }
+    }
+}
+impl Emoji for Pool {
+    fn emoji(&self) -> &'static str {
+        match self {
+            Pool::Solos => ":one: ",
+            Pool::Duos => ":two: ",
+            Pool::All => ":one: :two: ",
         }
     }
 }

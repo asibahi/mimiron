@@ -13,7 +13,6 @@ workspace = true
 anyhow.workspace = true
 itertools.workspace = true
 image.workspace = true
-once_cell.workspace = true
 
 colored.workspace = true
 serde.workspace = true

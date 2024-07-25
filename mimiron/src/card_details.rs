@@ -6,12 +6,12 @@ use crate::{
 use colored::Colorize;
 use either::Either::{self, Left, Right};
 use itertools::Itertools;
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Display, Formatter},
     str::FromStr,
+    sync::LazyLock,
 };
 
 #[derive(Deserialize, Default)]
@@ -112,7 +112,7 @@ impl Details {
     }
 }
 
-pub(crate) static METADATA: Lazy<Metadata> = Lazy::new(|| {
+pub(crate) static METADATA: LazyLock<Metadata> = LazyLock::new(|| {
     AGENT
         .get("https://us.api.blizzard.com/hearthstone/metadata")
         .query("access_token", &get_access_token())
@@ -475,7 +475,7 @@ impl Localize for CardType {
 // Hearthstone Json unofficial (from HearthSim)
 // Uses https://hearthstonejson.com data for back up if needed.
 
-static HEARTH_SIM_IDS: Lazy<HashMap<usize, HearthSimData>> = Lazy::new(|| {
+static HEARTH_SIM_IDS: LazyLock<HashMap<usize, HearthSimData>> = LazyLock::new(|| {
     AGENT
         .get("https://api.hearthstonejson.com/v1/latest/enUS/cards.json")
         .call()

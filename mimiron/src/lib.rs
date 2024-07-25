@@ -1,4 +1,4 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 mod authorization;
 pub mod bg;
@@ -13,7 +13,7 @@ mod text_utils;
 pub use authorization::get_access_token;
 pub use text_utils::CardTextDisplay;
 
-pub(crate) static AGENT: Lazy<ureq::Agent> = Lazy::new(|| {
+pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
     ureq::AgentBuilder::new()
         .timeout_connect(std::time::Duration::from_secs(2))
         .user_agent("mimiron cli https://github.com/asibahi/mimiron")

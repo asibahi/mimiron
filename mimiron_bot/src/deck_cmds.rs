@@ -9,10 +9,9 @@ use mimiron::{
     localization::Localize,
     meta,
 };
-use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
 use rand::random;
-use std::{collections::HashMap, io::Cursor};
+use std::{cell::LazyCell, collections::HashMap, io::Cursor};
 
 /// Get deck cards from code
 #[poise::command(slash_command, category = "Deck")]
@@ -233,7 +232,7 @@ pub async fn metasnap(
 
     let replies = decks
         .iter()
-        .map(|(_, deck)| Lazy::new(|| create_deck_reply(deck).unwrap_or_default()))
+        .map(|(_, deck)| LazyCell::new(|| create_deck_reply(deck).unwrap_or_default()))
         .collect::<Vec<_>>();
 
     while let Some(choice) = serenity::collector::ComponentInteractionCollector::new(ctx)

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::Iterator};
+use std::{cell::LazyCell, collections::HashMap, iter::Iterator};
 
 use crate::{Context, Data, Error};
 use itertools::Itertools;
@@ -7,7 +7,6 @@ use mimiron::{
     card_details::{Class, Rarity},
     localization::Locale,
 };
-use once_cell::unsync::Lazy;
 use poise::serenity_prelude as serenity;
 
 /// Help Menu
@@ -158,7 +157,7 @@ pub(crate) async fn paginated_card_print<T>(
     // pagination elements
     let embed_chunks = cards
         .take(90)
-        .map(|c| Lazy::new(|| inner_card_embed(c)))
+        .map(|c| LazyCell::new(|| inner_card_embed(c)))
         .chunks(3)
         .into_iter()
         .map(Iterator::collect::<Vec<_>>)
@@ -166,7 +165,7 @@ pub(crate) async fn paginated_card_print<T>(
     let mut current_page = 0;
 
     let mut reply = poise::CreateReply::default();
-    reply.embeds.extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
+    reply.embeds.extend(embed_chunks[current_page].iter().map(LazyCell::force).cloned());
 
     if embed_chunks.len() <= 1 {
         ctx.send(reply).await?;
@@ -212,7 +211,7 @@ pub(crate) async fn paginated_card_print<T>(
             next_button.clone().disabled(current_page == embed_chunks.len() - 1),
         ];
 
-        let content = embed_chunks[current_page].iter().map(Lazy::force).cloned().collect_vec();
+        let content = embed_chunks[current_page].iter().map(LazyCell::force).cloned().collect_vec();
 
         press
             .create_response(
@@ -233,7 +232,7 @@ pub(crate) async fn paginated_card_print<T>(
             next_button.disabled(true),
         ])]);
 
-    last_reply.embeds.extend(embed_chunks[current_page].iter().map(Lazy::force).cloned());
+    last_reply.embeds.extend(embed_chunks[current_page].iter().map(LazyCell::force).cloned());
 
     msg.edit(ctx, last_reply).await?;
 

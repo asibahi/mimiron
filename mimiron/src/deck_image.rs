@@ -17,9 +17,8 @@ use anyhow::Result;
 use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
-use once_cell::sync::Lazy;
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
 
 // Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -38,23 +37,23 @@ const CROP_IMAGE_OFFSET: u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
 const HEADING_SCALE: f32 = 50.0;
 const CARD_NAME_SCALE: f32 = 40.0;
 
-static FONTS: [(Lazy<FontRef<'_>>, f32); 3] = [
+static FONTS: [(LazyLock<FontRef<'_>>, f32); 3] = [
     // Base font
     (
-        Lazy::new(|| {
+        LazyLock::new(|| {
             FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
         }),
         1.0,
     ),
     // Fallbacks
     (
-        Lazy::new(|| {
+        LazyLock::new(|| {
             FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()
         }),
         1.2, // scaling for Noto CJK
     ),
     (
-        Lazy::new(|| {
+        LazyLock::new(|| {
             FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf"))
                 .unwrap()
         }),

@@ -18,11 +18,21 @@ use std::{cell::LazyCell, collections::HashMap, io::Cursor};
 pub async fn deck(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,
-    #[description = "mode"] format: Option<String>,
+    #[description = "title"] title: Option<String>,
+    #[description = "mode"]
+    #[autocomplete = "autocomplete_mode"]
+    format: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    deck_inner(ctx, code, format).await
+    deck_inner(ctx, code, title, format).await
+}
+
+#[allow(clippy::unused_async)]
+async fn autocomplete_mode<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+    ["Standard", "Wild", "Twist"]
+        .into_iter()
+        .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
 
 /// Get deck cards from by right-clicking a message with a deck code.
@@ -33,19 +43,23 @@ pub async fn deck_context_menu(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    deck_inner(ctx, msg.content, None).await
+    deck_inner(ctx, msg.content, None, None).await
 }
 
 pub async fn deck_inner(
     ctx: Context<'_>,
     code: String,
+    title: Option<String>,
     format: Option<String>,
 ) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
     let opts = LookupOptions::lookup(code).with_locale(locale).with_custom_format(format);
 
-    let deck = deck::lookup(&opts)?;
+    let mut deck = deck::lookup(&opts)?;
+    if let Some(title) = title {
+        deck.title = title;
+    }
 
     send_deck_reply(ctx, deck).await
 }

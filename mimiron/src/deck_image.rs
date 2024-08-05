@@ -25,6 +25,8 @@ const CROP_WIDTH: u32 = 243;
 const CROP_HEIGHT: u32 = 64;
 
 const INFO_WIDTH: u32 = CROP_HEIGHT;
+const COLOR_BAND_WIDTH: u32 = CROP_HEIGHT / 8;
+const MANA_WIDTH: u32 = INFO_WIDTH - COLOR_BAND_WIDTH;
 
 const MARGIN: u32 = 5;
 
@@ -295,20 +297,28 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     };
 
     let r_color = rarity.color();
+    let c_color = card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect_vec();
 
     let indent = match (zone, sb_style) {
         (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
-        (Zone::Sideboard { .. }, SideboardStyle::Indented) => INFO_WIDTH / 2,
+        (Zone::Sideboard { .. }, SideboardStyle::Indented) => INFO_WIDTH / 3,
     };
 
     // main canvas
-    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, _| {
-        if x <= indent.saturating_sub(MARGIN) {
-            [255, 128, 0, 255] // Legendary color for the indent
-        } else if x <= indent {
+    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y| {
+        if x < indent.saturating_sub(MARGIN) {
+            // Legendary color for Sideboard indent
+            [255, 128, 0, 255]
+        } else if x < indent {
+            // gap between Sideboard marker and Mana Square
             [255; 4]
-        } else if x <= indent + INFO_WIDTH {
-            [60, 109, 173, 255] // Mana Square
+        } else if x <= indent + MANA_WIDTH {
+            // Mana Square
+            [54, 98, 156, 255]
+        } else if x <= indent + MANA_WIDTH + COLOR_BAND_WIDTH {
+            // Class color band
+            let idx = y * c_color.len() as u32 / CROP_HEIGHT;
+            c_color[idx as usize]
         } else {
             [10, 10, 10, 255]
         }
@@ -341,7 +351,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     // card cost
     let cost = cost.to_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, [255; 4], indent + (INFO_WIDTH - tw) / 2, 0, CARD_NAME_SCALE, &cost);
+    draw_text(&mut img, [255; 4], indent + (MANA_WIDTH - tw) / 2, 0, CARD_NAME_SCALE, &cost);
 
     // rarity square
     // drawn latest to overlap previous elements.

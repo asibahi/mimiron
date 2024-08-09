@@ -123,7 +123,7 @@ pub(crate) async fn on_error(
     Ok(())
 }
 
-pub(crate) fn on_success(ctx: &Context) {
+pub(crate) fn on_success(ctx: &Context<'_>) {
     let command = ctx.command().name.as_str();
     let guild = ctx.guild().map_or("Direct Messages".into(), |g| g.name.clone());
 

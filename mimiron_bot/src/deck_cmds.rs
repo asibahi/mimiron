@@ -242,7 +242,7 @@ pub async fn metasnap(
         )
         .await?;
 
-    let mut list_handle = None::<poise::ReplyHandle>;
+    let mut list_handle = None::<poise::ReplyHandle<'_>>;
 
     let replies = decks
         .iter()

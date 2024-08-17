@@ -30,7 +30,6 @@ eitherable.workspace = true
 unicode-width.workspace = true
 cached.workspace = true
 either.workspace = true
-convert_case.workspace = true
 integer-encoding.workspace = true
 nucleo-matcher.workspace = true
 

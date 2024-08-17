@@ -5,7 +5,6 @@ use crate::{
     AGENT,
 };
 use anyhow::Result;
-use convert_case::{Case, Casing};
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -75,13 +74,38 @@ pub fn meta_snap(format: &Format, locale: Locale) -> Result<impl Iterator<Item =
     Ok(decks)
 }
 
+fn casify_archetype(at: &str) -> String {
+    at.split('-')
+        .map(|s| {
+            if s.eq_ignore_ascii_case("dk")
+                || s.eq_ignore_ascii_case("dh")
+                || (s.len() == 3
+                    && s.chars().all(|c| {
+                        c.eq_ignore_ascii_case(&'b')
+                            || c.eq_ignore_ascii_case(&'f')
+                            || c.eq_ignore_ascii_case(&'u')
+                    }))
+            {
+                s.to_uppercase()
+            } else {
+                let mut chars = s.chars();
+                if let Some(first) = chars.next() {
+                    first.to_uppercase().chain(chars).collect()
+                } else {
+                    String::new()
+                }
+            }
+        })
+        .join(" ")
+}
+
 fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
     let title = format!(
         "{:.0}% WR {}/{} {}",
         ds.get_winrate() * 100.0,
         ds.total_wins,
         ds.total_games,
-        ds.archetype_name.to_case(Case::Title),
+        casify_archetype(&ds.archetype_name),
     );
 
     let mut deck = lookup(&LookupOptions::lookup(ds.decklist).with_locale(locale)).ok()?;

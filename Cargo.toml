@@ -32,7 +32,6 @@ eitherable = "0.1.0"
 unicode-width = "0.1"
 cached = "0.53"
 either = { version = "1.12", features = ["serde"] }
-convert_case = "0.6.0"
 integer-encoding = "4.0.0"
 nucleo-matcher = "0.3.1"
 

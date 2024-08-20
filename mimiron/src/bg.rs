@@ -24,6 +24,7 @@ struct CardData {
     name: String,
     text: String,
     card_type_id: u8,
+    spell_school_id: Option<u8>, // useful for Trinkets
 
     // Stats
     attack: Option<u8>,
@@ -104,6 +105,10 @@ pub enum BGCardType {
         cost: u8,
         text: String,
     },
+    HeroPower {
+        cost: u8,
+        text: String,
+    },
     Quest {
         text: String,
     },
@@ -113,9 +118,10 @@ pub enum BGCardType {
     Anomaly {
         text: String,
     },
-    HeroPower {
-        cost: u8,
+    Trinket {
         text: String,
+        cost: u8,
+        is_greater: bool,
     },
 }
 impl Localize for BGCardType {
@@ -164,6 +170,11 @@ impl Localize for BGCardType {
                         write!(f, "T-{tier}, ({cost}) {spell}")?;
                         inner(text, f)
                     }
+                    BGCardType::HeroPower { cost, text } => {
+                        let heropower = get_type(10); // 10 for Hero Power.
+                        write!(f, "({cost}) {heropower}")?;
+                        inner(text, f)
+                    }
                     BGCardType::Quest { text } => {
                         write!(f, "{battlegrounds} {}", self.1.quest())?;
                         inner(text, f)
@@ -177,9 +188,12 @@ impl Localize for BGCardType {
                         write!(f, "{battlegrounds} Anomaly")?; // couldnt find localization
                         inner(text, f)
                     }
-                    BGCardType::HeroPower { cost, text } => {
-                        let heropower = get_type(10); // 10 for Hero Power.
-                        write!(f, "({cost}) {heropower}")?;
+                    BGCardType::Trinket { text, cost, is_greater } => {
+                        let mut trinket = get_type(44); // 44 for Trinket
+                        if *is_greater {
+                            trinket = trinket.to_uppercase(); // couldn't find localizations for Greater and Lesser
+                        }
+                        write!(f, "{trinket} ({cost})")?;
                         inner(text, f)
                     }
                 }
@@ -255,6 +269,12 @@ impl From<CardData> for Card {
 
             _ if c.card_type_id == 43 => BGCardType::Anomaly { text: c.text },
             _ if c.card_type_id == 10 => BGCardType::HeroPower { text: c.text, cost: c.mana_cost },
+
+            _ if c.card_type_id == 44 => BGCardType::Trinket {
+                text: c.text,
+                cost: c.mana_cost,
+                is_greater: c.spell_school_id == Some(12), // 11 is Lesser. 12 is Greater. 9 is Tavern. WHAT IS 10
+            },
 
             _ => BGCardType::Spell { tier: 0, cost: c.mana_cost, text: c.text },
         };

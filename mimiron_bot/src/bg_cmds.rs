@@ -122,12 +122,14 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }
         | bg::BGCardType::Reward { text }
-        | bg::BGCardType::Anomaly { text } => {
+        | bg::BGCardType::Anomaly { text }
+        | bg::BGCardType::Trinket { text, .. } => {
             (text.to_markdown(), vec![(" ".into(), lct, true), (" ".into(), emoji, true)])
         }
         bg::BGCardType::HeroPower { text, .. } => (text.to_markdown(), vec![]),
     };
 
+    // Buddies, Golden Minions, and Hero Powers.
     fields.extend(bg::get_and_print_associated_cards(card, locale).into_iter().filter_map(
         |assoc_card| {
             let lct = assoc_card.card_type.in_locale(locale);

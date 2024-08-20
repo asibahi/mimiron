@@ -86,6 +86,8 @@ impl FromStr for Pool {
 }
 
 #[derive(Clone)]
+// Remember to update `impl From<CardData> for Card` when adding a new type
+// no clippy lint for dead public code
 pub enum BGCardType {
     Hero {
         armor: u8,

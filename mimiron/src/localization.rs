@@ -60,6 +60,24 @@ impl Locale {
             Locale::zhTW => "任務",
         }
     }
+
+    #[must_use]
+    // fucking stupid that this is pub
+    pub fn golden(self) -> &'static str {
+        match self {
+            Locale::deDE | Locale::enUS | Locale::zhCN => "Golden",
+            Locale::esES | Locale::esMX => "Dorada",
+            Locale::frFR => "Dorée",
+            Locale::itIT => "Dorato",
+            Locale::jaJP => "ゴールデン",
+            Locale::koKR => "황금",
+            Locale::plPL => "Złote",
+            Locale::ptBR => "Dourado",
+            Locale::ruRU => "Золотая карта",
+            Locale::thTH => "สีทอง",
+            Locale::zhTW => "金卡",
+        }
+    }
 }
 impl Display for Locale {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

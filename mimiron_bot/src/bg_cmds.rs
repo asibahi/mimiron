@@ -137,7 +137,9 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
                 bg::BGCardType::Minion { text, .. } => {
                     let title = match card.card_type {
                         bg::BGCardType::Hero { .. } => assoc_card.name,
-                        bg::BGCardType::Minion { .. } => format!("3x {}", assoc_card.name),
+                        bg::BGCardType::Minion { .. } => {
+                            format!("{}: {}", locale.golden(), assoc_card.name)
+                        }
                         _ => " ".into(),
                     };
 

@@ -464,7 +464,7 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
                 break 'golden;
             };
 
-            let upgraded = format!("\tG: {attack}/{health}").italic().yellow();
+            let upgraded = format!("\t{}: {attack}/{health}", locale.golden()).italic().yellow();
             println!("{upgraded}");
 
             let text = text.to_console().yellow();

@@ -117,7 +117,9 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
     let lct = card.card_type.in_locale(locale).to_string();
     let emoji = card.pool.emoji().to_owned();
     let (description, mut fields) = match &card.card_type {
-        bg::BGCardType::Hero { .. } => (lct, vec![(" ".into(), emoji, true)]),
+        bg::BGCardType::Hero { .. } => {
+            (String::new(), vec![(" ".into(), lct, true), (" ".into(), emoji, true)])
+        }
         bg::BGCardType::Minion { text, .. }
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }

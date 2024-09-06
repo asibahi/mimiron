@@ -378,16 +378,17 @@ fn specific_card_adjustments(deck: &mut Deck) {
                     let (a, h) = c.stats();
                     (acc_c + c.cost, acc_a + a.unwrap_or_default(), acc_h + h.unwrap_or_default())
                 });
-            deck.cards.iter_mut().find(|c| c.id == ZILLIAX_DELUXE_3000_ID).map(|c| {
-                let CardType::Minion { ref mut attack, ref mut health, .. } = c.card_type else {
-                    unreachable!("Zilliax Deluxe 3000 is a minion.")
-                };
-                c.cost = zilliax_cost;
+
+            if let Some(Card {
+                ref mut cost,
+                card_type: CardType::Minion { ref mut attack, ref mut health, .. },
+                ..
+            }) = deck.cards.iter_mut().find(|c| c.id == ZILLIAX_DELUXE_3000_ID)
+            {
+                *cost = zilliax_cost;
                 *attack = zilliax_attack;
                 *health = zilliax_health;
-
-                c
-            });
+            }
         }
     }
 }

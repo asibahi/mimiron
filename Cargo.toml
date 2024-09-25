@@ -31,8 +31,8 @@ rayon = "1"
 eitherable = "0.1.0"
 unicode-width = "0.1"
 cached = "0.53"
-either = { version = "1.12", features = ["serde"] }
-integer-encoding = "4.0.0"
+either = { version = "1.13", features = ["serde"] }
+integer-encoding = "4.0.2"
 nucleo-matcher = "0.3.1"
 
 # bot deps

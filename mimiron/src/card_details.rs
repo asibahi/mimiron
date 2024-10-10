@@ -23,6 +23,7 @@ pub(crate) struct Metadata {
     pub classes: Vec<Details>,
     pub minion_types: Vec<Details>,
     pub spell_schools: Vec<Details>,
+    pub arena_ids: Vec<usize>,
 }
 
 #[allow(non_snake_case)]

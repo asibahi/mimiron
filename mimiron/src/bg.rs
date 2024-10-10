@@ -346,8 +346,8 @@ impl SearchOptions {
 pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("access_token", &get_access_token())
-        .query("locale", &opts.locale.to_string())
+        .query("access_token", get_access_token())
+        .query("locale", opts.locale.to_string())
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &opts.search_term {
@@ -357,7 +357,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     if let Some(t) = &opts.minion_type {
         res = res.query(
             "minionType",
-            &t.in_en_us() // Is it always enUS?
+            t.in_en_us() // Is it always enUS?
                 .to_string()
                 .to_lowercase()
                 .replace(' ', ""),
@@ -365,10 +365,10 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     }
 
     if let Some(t) = opts.tier {
-        res = res.query("tier", &t.to_string());
+        res = res.query("tier", t.to_string());
     }
 
-    let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
+    let res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;
 
     anyhow::ensure!(res.card_count > 0, "No Battlegrounds card found. Check your spelling.");
 
@@ -478,11 +478,12 @@ pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> 
 
 fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let res = AGENT
-        .get(&format!("https://us.api.blizzard.com/hearthstone/cards/{id}"))
-        .query("locale", &locale.to_string())
+        .get(format!("https://us.api.blizzard.com/hearthstone/cards/{id}"))
+        .query("locale", locale.to_string())
         .query("gameMode", "battlegrounds")
-        .query("access_token", &get_access_token())
+        .query("access_token", get_access_token())
         .call()?
-        .into_json::<Card>()?;
+        .body_mut()
+        .read_json::<Card>()?;
     Ok(res)
 }

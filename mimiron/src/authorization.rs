@@ -1,6 +1,6 @@
 use crate::AGENT;
 use anyhow::{anyhow, Result};
-use base64::{engine::general_purpose, Engine};
+use base64::prelude::*;
 use serde::Deserialize;
 use std::{
     ops::Add,
@@ -40,14 +40,16 @@ fn internal_get_access_token() -> Result<AccessToken> {
     let secret =
         std::env::var(SECRET_KEY).map_err(|e| anyhow!("Failed to get {SECRET_KEY}: {e}"))?;
 
-    let creds = general_purpose::STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
+    let creds = BASE64_STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 
     let access_token = AGENT
         .post("https://oauth.battle.net/token")
-        .set("Authorization", &format!("Basic {creds}"))
+        .header("Authorization", format!("Basic {creds}"))
         .query("grant_type", "client_credentials")
-        .call()?
-        .into_json::<AccessToken>()?;
+        .send(&[])?
+        .body_mut()
+        .read_json::<AccessToken>()?;
+
     Ok(access_token)
 }
 
@@ -55,13 +57,11 @@ pub fn get_access_token() -> String {
     let current_token = TOKEN.read().unwrap().clone();
     match current_token {
         Some(at) if Instant::now() < at.expiry => at.token,
-        _ => {
-            TOKEN
-                .write()
-                .unwrap()
-                .insert(internal_get_access_token().expect("Failed to get access token"))
-                .clone()
-                .token
-        }
+        _ => TOKEN
+            .write()
+            .unwrap()
+            .insert(internal_get_access_token().expect("Failed to get access token"))
+            .clone()
+            .token
     }
 }

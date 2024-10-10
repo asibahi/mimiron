@@ -51,7 +51,7 @@ impl DeckStat {
     result = true,
 )]
 fn get_firestone_data(link: &'static str) -> Result<FirestoneStats> {
-    let ret = AGENT.get(link).call()?.into_json::<FirestoneStats>()?;
+    let ret = AGENT.get(link).call()?.body_mut().read_json::<FirestoneStats>()?;
     Ok(ret)
 }
 

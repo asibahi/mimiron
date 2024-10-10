@@ -115,9 +115,9 @@ impl Details {
 pub(crate) static METADATA: LazyLock<Metadata> = LazyLock::new(|| {
     AGENT
         .get("https://us.api.blizzard.com/hearthstone/metadata")
-        .query("access_token", &get_access_token())
+        .query("access_token", get_access_token())
         .call()
-        .and_then(|res| Ok(res.into_json::<Metadata>()?))
+        .and_then(|mut res| res.body_mut().read_json::<Metadata>())
         .unwrap_or_default()
 });
 
@@ -479,7 +479,7 @@ static HEARTH_SIM_IDS: LazyLock<HashMap<usize, HearthSimData>> = LazyLock::new(|
     AGENT
         .get("https://api.hearthstonejson.com/v1/latest/enUS/cards.json")
         .call()
-        .and_then(|res| Ok(res.into_json::<Vec<HearthSimData>>()?))
+        .and_then(|mut res| res.body_mut().read_json::<Vec<HearthSimData>>())
         .map(|v| {
             v.into_iter()
                 .filter(|d| d.cost.is_some())

@@ -267,16 +267,16 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
 
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", &opts.locale.to_string())
+        .query("locale", opts.locale.to_string())
         .query("textFilter", search_term)
         .query("pageSize", "500")
-        .query("access_token", &get_access_token());
+        .query("access_token", get_access_token());
 
     if opts.noncollectibles {
         res = res.query("collectible", "0,1");
     }
 
-    let res = res.call()?.into_json::<CardSearchResponse<Card>>()?;
+    let res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;
     anyhow::ensure!(
         res.card_count > 0,
         "No constructed card found with name or text {search_term}. {}",

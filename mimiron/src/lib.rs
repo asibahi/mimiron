@@ -14,10 +14,11 @@ pub use authorization::get_access_token;
 pub use text_utils::CardTextDisplay;
 
 pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
-    ureq::AgentBuilder::new()
-        .timeout_connect(std::time::Duration::from_secs(2))
-        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
-        .build()
+    let mut config = ureq::Config::new();
+    config.timeouts.connect = Some(std::time::Duration::from_secs(2));
+    config.user_agent = Some("mimiron cli https://github.com/asibahi/mimiron".into());
+
+    config.new_agent()
 });
 
 #[derive(serde::Deserialize)]

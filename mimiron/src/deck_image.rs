@@ -427,8 +427,7 @@ fn get_class_icon(class: Class) -> Result<RgbaImage> {
         class.in_en_us().to_string().to_ascii_lowercase().replace(' ', "")
     );
 
-    let mut buf = Vec::new();
-    AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
+    let buf = AGENT.get(link).call()?.body_mut().read_to_vec()?;
 
     Ok(image::load_from_memory(&buf)?.into())
 }
@@ -447,8 +446,7 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
         .or_else(|| crate::card_details::get_hearth_sim_crop_image(card.id))
         .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
-    let mut buf = Vec::new();
-    AGENT.get(&link).call()?.into_reader().read_to_end(&mut buf)?;
+    let buf = AGENT.get(link).call()?.body_mut().read_to_vec()?;
 
     Ok(image::load_from_memory(&buf)?.into())
 }

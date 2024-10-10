@@ -274,11 +274,12 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
     let get_deck_w_code = || -> Result<Deck> {
         let deck = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", &opts.locale.to_string())
+            .query("locale", opts.locale.to_string())
             .query("code", &raw_data.deck_code)
-            .query("access_token", &get_access_token())
+            .query("access_token", get_access_token())
             .call()?
-            .into_json::<Deck>()?;
+            .body_mut()
+            .read_json::<Deck>()?;
 
         anyhow::ensure!(deck.invalid_card_ids.is_none(), "Deck has invalid IDs");
 
@@ -288,14 +289,14 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
     let get_deck_w_cards = || -> Result<Deck> {
         let mut req = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", &opts.locale.to_string())
-            .query("access_token", &get_access_token())
-            .query("ids", &raw_data.cards.iter().join(","));
+            .query("locale", opts.locale.to_string())
+            .query("access_token", get_access_token())
+            .query("ids", raw_data.cards.iter().join(","));
 
         if !raw_data.sideboard_cards.is_empty() {
             req = req.query(
                 "sideboardCards",
-                &raw_data
+                raw_data
                     .sideboard_cards
                     .iter()
                     .map(|(id, sb_id)| format!("{id}:{sb_id}"))
@@ -303,7 +304,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             );
         }
 
-        let deck = req.call()?.into_json::<Deck>()?;
+        let deck = req.call()?.body_mut().read_json::<Deck>()?;
 
         anyhow::ensure!(
             deck.invalid_card_ids.as_ref().map_or(true, |ids| ids.iter().all(|&id| id != 0)),

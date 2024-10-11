@@ -336,20 +336,18 @@ impl From<u8> for SpellSchool {
     }
 }
 
+#[rustfmt::skip]
+// All minion types in the game, including for Mercenaries, are listed.
+// This is to futureproof adding any of them to Standard in the future.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MinionType {
-    Undead,
-    Murloc,
-    Demon,
-    Mech,
-    Elemental,
-    Beast,
-    Totem,
-    Pirate,
-    Dragon,
-    All,
-    Quilboar,
-    Naga,
+    BloodElf, Draenei,   Dwarf,  Gnome,
+    Human,    NightElf,  Orc,    Tauren,
+    Troll,    Undead,    Murloc, Demon,
+    Mech,     Elemental, Beast,  Totem,
+    Pirate,   Dragon,    All,    Quilboar,
+    HalfOrc,  Naga,      OldGod, Pandaren,
+    Gronn, // Gruul is cool.
 }
 impl Localize for MinionType {
     fn in_locale(&self, locale: Locale) -> impl Display {
@@ -365,6 +363,15 @@ impl TryFrom<u8> for MinionType {
     type Error = anyhow::Error;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
+            1 => Self::BloodElf,
+            2 => Self::Draenei,
+            3 => Self::Dwarf,
+            4 => Self::Gnome,
+            6 => Self::Human,
+            7 => Self::NightElf,
+            8 => Self::Orc,
+            9 => Self::Tauren,
+            10 => Self::Troll,
             11 => Self::Undead,
             14 => Self::Murloc,
             15 => Self::Demon,
@@ -376,7 +383,11 @@ impl TryFrom<u8> for MinionType {
             24 => Self::Dragon,
             26 => Self::All,
             43 => Self::Quilboar,
+            88 => Self::HalfOrc,
             92 => Self::Naga,
+            93 => Self::OldGod,
+            94 => Self::Pandaren,
+            95 => Self::Gronn,
             _ => anyhow::bail!("Not a valid minion type ID."),
         })
     }

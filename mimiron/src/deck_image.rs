@@ -86,9 +86,8 @@ pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
         ImageOptions::Adaptable => img_columns_format(deck, None, true),
-        ImageOptions::Regular { columns, inline_sideboard } => {
-            img_columns_format(deck, Some(columns as u32), inline_sideboard)
-        }
+        ImageOptions::Regular { columns, inline_sideboard } =>
+            img_columns_format(deck, Some(columns as u32), inline_sideboard),
     }
 }
 

@@ -89,7 +89,7 @@ pub(crate) struct Details {
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
         match self.name.as_ref() {
-            Left(ln) => {
+            Left(ln) =>
                 ln.deDE.eq_ignore_ascii_case(search_term)
                     || ln.enUS.eq_ignore_ascii_case(search_term)
                     || ln.esES.eq_ignore_ascii_case(search_term)
@@ -103,8 +103,7 @@ impl Details {
                     || ln.ruRU.eq_ignore_ascii_case(search_term)
                     || ln.thTH.eq(search_term)
                     || ln.zhTW.eq(search_term)
-                    || ln.zhCN.as_ref().is_some_and(|s| s.eq(search_term))
-            }
+                    || ln.zhCN.as_ref().is_some_and(|s| s.eq(search_term)),
             Right(s) => s.eq_ignore_ascii_case(search_term),
         }
     }

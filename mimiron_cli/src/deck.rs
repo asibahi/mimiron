@@ -99,15 +99,12 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
         let opts = match args.format {
             ImageFormat::Groups => deck::ImageOptions::Groups,
             ImageFormat::Adapt => deck::ImageOptions::Adaptable,
-            ImageFormat::Single => {
-                deck::ImageOptions::Regular { columns: 1, inline_sideboard: true }
-            }
-            ImageFormat::Square => {
-                deck::ImageOptions::Regular { columns: 2, inline_sideboard: false }
-            }
-            ImageFormat::Wide => {
-                deck::ImageOptions::Regular { columns: 3, inline_sideboard: false }
-            }
+            ImageFormat::Single =>
+                deck::ImageOptions::Regular { columns: 1, inline_sideboard: true },
+            ImageFormat::Square =>
+                deck::ImageOptions::Regular { columns: 2, inline_sideboard: false },
+            ImageFormat::Wide =>
+                deck::ImageOptions::Regular { columns: 3, inline_sideboard: false },
         };
 
         let img = deck.get_image(opts)?;

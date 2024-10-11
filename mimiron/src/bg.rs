@@ -238,9 +238,8 @@ impl Localize for Card {
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         let card_type = match &c.battlegrounds {
-            Some(BGData { tier: Some(tier), .. }) if c.card_type_id == 42 => {
-                BGCardType::Spell { tier: *tier, cost: c.mana_cost, text: c.text }
-            }
+            Some(BGData { tier: Some(tier), .. }) if c.card_type_id == 42 => 
+                BGCardType::Spell { tier: *tier, cost: c.mana_cost, text: c.text },
             Some(BGData { tier: Some(tier), upgrade_id, .. }) => BGCardType::Minion {
                 tier: *tier,
                 attack: c.attack.unwrap_or_default(),

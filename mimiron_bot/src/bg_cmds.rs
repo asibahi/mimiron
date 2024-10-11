@@ -117,17 +117,15 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
     let lct = card.card_type.in_locale(locale).to_string();
     let emoji = card.pool.emoji().to_owned();
     let (description, mut fields) = match &card.card_type {
-        bg::BGCardType::Hero { .. } => {
-            (String::new(), vec![(" ".into(), lct, true), (" ".into(), emoji, true)])
-        }
+        bg::BGCardType::Hero { .. } =>
+            (String::new(), vec![(" ".into(), lct, true), (" ".into(), emoji, true)]),
         bg::BGCardType::Minion { text, .. }
         | bg::BGCardType::Spell { text, .. }
         | bg::BGCardType::Quest { text }
         | bg::BGCardType::Reward { text }
         | bg::BGCardType::Anomaly { text }
-        | bg::BGCardType::Trinket { text, .. } => {
-            (text.to_markdown(), vec![(" ".into(), lct, true), (" ".into(), emoji, true)])
-        }
+        | bg::BGCardType::Trinket { text, .. } =>
+            (text.to_markdown(), vec![(" ".into(), lct, true), (" ".into(), emoji, true)]),
         bg::BGCardType::HeroPower { text, .. } => (text.to_markdown(), vec![]),
     };
 
@@ -139,17 +137,15 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
                 bg::BGCardType::Minion { text, .. } => {
                     let title = match card.card_type {
                         bg::BGCardType::Hero { .. } => assoc_card.name,
-                        bg::BGCardType::Minion { .. } => {
-                            format!("{}: {}", locale.golden(), assoc_card.name)
-                        }
+                        bg::BGCardType::Minion { .. } =>
+                            format!("{}: {}", locale.golden(), assoc_card.name),
                         _ => " ".into(),
                     };
 
                     Some((title, format!("{}: {}", lct, text.to_markdown()), false))
                 }
-                bg::BGCardType::HeroPower { text, .. } => {
-                    Some((assoc_card.name, format!("{}: {}", lct, text.to_markdown()), false))
-                }
+                bg::BGCardType::HeroPower { text, .. } =>
+                    Some((assoc_card.name, format!("{}: {}", lct, text.to_markdown()), false)),
                 _ => None,
             }
         },

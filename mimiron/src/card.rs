@@ -115,9 +115,8 @@ impl Card {
         let (attack, health) = match self.card_type {
             CardType::Minion { attack, health, .. }
             | CardType::Weapon { attack, durability: health } => (Some(attack), Some(health)),
-            CardType::Hero { armor: health } | CardType::Location { durability: health } => {
-                (None, Some(health))
-            }
+            CardType::Hero { armor: health } | CardType::Location { durability: health } =>
+                (None, Some(health)),
             CardType::Spell { .. } | CardType::HeroPower | CardType::Unknown => (None, None),
         };
 

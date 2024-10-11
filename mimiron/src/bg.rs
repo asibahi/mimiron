@@ -123,7 +123,7 @@ pub enum BGCardType {
     Trinket {
         text: String,
         cost: u8,
-        is_greater: bool,
+        trinket_kind: u8,
     },
 }
 impl Localize for BGCardType {
@@ -184,11 +184,15 @@ impl Localize for BGCardType {
                         write!(f, "{battlegrounds} Anomaly")?; // couldnt find localization
                         inner(text, f)
                     }
-                    BGCardType::Trinket { text, cost, is_greater } => {
-                        let mut trinket = get_type(44); // 44 for Trinket
-                        if *is_greater {
-                            trinket = trinket.to_uppercase(); // couldn't find localizations for Greater and Lesser
-                        }
+                    BGCardType::Trinket { text, cost, trinket_kind } => {
+                        let kind = METADATA
+                            .spell_schools
+                            .iter()
+                            .find(|det| det.id == *trinket_kind)
+                            .map_or(String::new(), |det| det.name(self.1));
+
+                        let trinket = format!("{kind} {}", get_type(44)); // 44 for Trinket
+
                         write!(f, "{trinket} ({cost})")?;
                         inner(text, f)
                     }
@@ -268,8 +272,8 @@ impl From<CardData> for Card {
             _ if c.card_type_id == 44 => BGCardType::Trinket {
                 text: c.text,
                 cost: c.mana_cost,
-                // 11 is Lesser. 12 is Greater. 9 is Tavern. WHAT IS 10
-                is_greater: c.spell_school_id == Some(12),
+                // 11 is Lesser. 12 is Greater. 9 is Tavern, 10 is Spellcraft.
+                trinket_kind: c.spell_school_id.unwrap_or(11),
             },
 
             _ => BGCardType::Spell { tier: 0, cost: c.mana_cost, text: c.text },

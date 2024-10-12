@@ -303,13 +303,11 @@ impl Rarity {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SpellSchool {
-    Arcane,
-    Fire,
-    Frost,
-    Nature,
-    Holy,
-    Shadow,
-    Fel,
+    Arcane, Fire,   Frost, Nature,
+    Holy,   Shadow, Fel,
+
+    // BG Schools. Show up in tokens search.
+    Spellcraft, Tavern, Greater, Lesser,
 }
 impl Localize for SpellSchool {
     fn in_locale(&self, locale: Locale) -> impl Display {
@@ -329,13 +327,16 @@ impl From<u8> for SpellSchool {
             4 => Self::Nature,
             5 => Self::Holy,
             6 => Self::Shadow,
-            // No other spell schools in the game (unlike Merc minion types) so not susceptible to Blood Elf bug
-            _ => Self::Fel, // 7.
+            7 => Self::Fel,
+            // what is 8?
+            10 => Self::Spellcraft,
+            11 => Self::Lesser,
+            12 => Self::Greater, 
+            _ => Self::Tavern, // 9
         }
     }
 }
 
-#[rustfmt::skip]
 // All minion types in the game, including for Mercenaries, are listed.
 // This is to futureproof adding any of them to Standard in the future.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]

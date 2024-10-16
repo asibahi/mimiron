@@ -132,14 +132,13 @@ pub(crate) fn on_success(ctx: &Context<'_>) {
     tracing::info!(command, guild, invocation, "Command called successfully.");
 }
 
-#[allow(unused)] // maybe use for later?
-pub(crate) async fn terse_card_print<T>(
+pub(crate) async fn terse_embeds<T>(
     ctx: Context<'_>,
-    cards: impl Iterator<Item = T>,
-    inner_card_embed: impl Fn(T) -> serenity::CreateEmbed,
+    items: impl Iterator<Item = T>,
+    inner_embed: impl Fn(T) -> serenity::CreateEmbed,
 ) -> Result<(), Error> {
-    let cards = cards.take(3);
-    let embeds = cards.map(inner_card_embed);
+    let items = items.take(3);
+    let embeds = items.map(inner_embed);
 
     let mut reply = poise::CreateReply::default();
     reply.embeds.extend(embeds);
@@ -149,15 +148,15 @@ pub(crate) async fn terse_card_print<T>(
     Ok(())
 }
 
-pub(crate) async fn paginated_card_print<T>(
+pub(crate) async fn paginated_embeds<T>(
     ctx: Context<'_>,
-    cards: impl Iterator<Item = T>,
-    inner_card_embed: impl Fn(T) -> serenity::CreateEmbed,
+    items: impl Iterator<Item = T>,
+    inner_embed: impl Fn(T) -> serenity::CreateEmbed,
 ) -> Result<(), Error> {
     // pagination elements
-    let embed_chunks = cards
+    let embed_chunks = items
         .take(90)
-        .map(|c| LazyCell::new(|| inner_card_embed(c)))
+        .map(|c| LazyCell::new(|| inner_embed(c)))
         .chunks(3)
         .into_iter()
         .map(Iterator::collect::<Vec<_>>)

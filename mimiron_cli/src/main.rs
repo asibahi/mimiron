@@ -6,6 +6,7 @@ mod bg;
 mod card;
 mod deck;
 mod meta;
+mod keyword;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -42,6 +43,9 @@ enum Commands {
     // Get a meta deck
     #[clap(hide = true)]
     Meta(meta::MetaArgs),
+
+    #[clap(hide = true)]
+    KW(keyword::KewordArgs)
 }
 
 pub fn run() -> Result<()> {
@@ -54,6 +58,7 @@ pub fn run() -> Result<()> {
         Commands::BG(args) => bg::run(args, locale)?,
         Commands::Token => println!("{}", mimiron::get_access_token()),
         Commands::Meta(args) => meta::run(args, locale)?,
+        Commands::KW(args) => keyword::run(args, locale)?,
     }
 
     Ok(())

@@ -1,5 +1,6 @@
 use crate::{
     get_access_token,
+    keyword::Keyword,
     localization::{Locale, Localize},
     AGENT,
 };
@@ -24,11 +25,12 @@ pub(crate) struct Metadata {
     pub minion_types: Vec<Details>,
     pub spell_schools: Vec<Details>,
     pub arena_ids: Vec<usize>,
+    pub keywords: Vec<Keyword>,
 }
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Clone)]
-struct LocalizedName {
+pub(crate) struct LocalizedName {
     #[serde(rename = "de_DE")]
     deDE: String,
     #[serde(rename = "en_US")]
@@ -57,6 +59,24 @@ struct LocalizedName {
     zhCN: Option<String>,
     #[serde(rename = "zh_TW")]
     zhTW: String,
+}
+impl LocalizedName {
+    pub fn contains(&self, search_term: &str) -> bool {
+        self.deDE.to_lowercase().contains(search_term)
+            || self.enUS.to_lowercase().contains(search_term)
+            || self.esES.to_lowercase().contains(search_term)
+            || self.esMX.to_lowercase().contains(search_term)
+            || self.frFR.to_lowercase().contains(search_term)
+            || self.itIT.to_lowercase().contains(search_term)
+            || self.jaJP.contains(search_term)
+            || self.koKR.contains(search_term)
+            || self.plPL.to_lowercase().contains(search_term)
+            || self.ptBR.to_lowercase().contains(search_term)
+            || self.ruRU.to_lowercase().contains(search_term)
+            || self.thTH.contains(search_term)
+            || self.zhTW.contains(search_term)
+            || self.zhCN.as_ref().is_some_and(|s| s.contains(search_term))
+    }
 }
 impl Localize for LocalizedName {
     fn in_locale(&self, locale: Locale) -> &str {
@@ -331,7 +351,7 @@ impl From<u8> for SpellSchool {
             // what is 8?
             10 => Self::Spellcraft,
             11 => Self::Lesser,
-            12 => Self::Greater, 
+            12 => Self::Greater,
             _ => Self::Tavern, // 9
         }
     }

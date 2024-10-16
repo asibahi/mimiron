@@ -1,5 +1,5 @@
 use crate::{
-    helpers::{get_server_locale, paginated_card_print, Emoji},
+    helpers::{get_server_locale, paginated_embeds, Emoji},
     Context, Error,
 };
 use mimiron::{
@@ -35,7 +35,7 @@ pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error
     let opts = bg::SearchOptions::empty().search_for(Some(search_term)).with_locale(locale);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
+    paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search for a battlegrounds card by text.
@@ -54,7 +54,7 @@ pub async fn bgtext(
         .with_text(true);
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
+    paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 /// Search for a battlegrounds card by tier and optionally minion type.and Duos/Solos
@@ -83,7 +83,7 @@ pub async fn bgtier(
 
     let cards = bg::lookup(&opts)?;
 
-    paginated_card_print(ctx, cards, |c| inner_card_embed(&c, locale)).await
+    paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
 #[allow(clippy::unused_async)]

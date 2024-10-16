@@ -8,6 +8,7 @@ pub mod deck;
 mod deck_image;
 pub mod localization;
 pub mod meta;
+pub mod keyword;
 mod text_utils;
 
 pub use authorization::get_access_token;

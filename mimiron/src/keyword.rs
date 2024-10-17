@@ -33,7 +33,17 @@ impl Localize for Keyword {
 }
 
 pub fn lookup(search_term: &str) -> Result<impl Iterator<Item = Keyword> + '_> {
-    let res = METADATA.keywords.iter().filter(|kw| kw.contains(search_term)).cloned();
+    let mut res = METADATA
+        .keywords
+        .iter()
+        .filter(|kw| kw.contains(search_term))
+        .cloned()
+        .peekable();
+
+    anyhow::ensure!(
+        res.peek().is_some(),
+        "No keyword found with name \"{search_term}\".",
+    );
 
     Ok(res)
 }

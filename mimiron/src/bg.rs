@@ -385,7 +385,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
                 || opts
                     .search_term
                     .as_ref()
-                    .map_or(true, |name| c.name.to_lowercase().contains(&name.to_lowercase()))
+                    .is_none_or(|name| c.name.to_lowercase().contains(&name.to_lowercase()))
         })
         .filter(|c| match opts.pool {
             Pool::All => true,

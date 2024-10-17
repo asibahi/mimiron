@@ -307,7 +307,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
         let deck = req.call()?.body_mut().read_json::<Deck>()?;
 
         anyhow::ensure!(
-            deck.invalid_card_ids.as_ref().map_or(true, |ids| ids.iter().all(|&id| id != 0)),
+            deck.invalid_card_ids.as_ref().is_none_or(|ids| ids.iter().all(|&id| id != 0)),
             "Deck invalid IDs are 0."
         );
 

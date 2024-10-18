@@ -1,7 +1,7 @@
-**/target
 **/.env
 **/.DS_Store
 **/Cargo.lock
 **/.vscode
-**/.shuttle-storage
-**/Secrets*.toml
+/target
+.shuttle*
+Secrets*.toml

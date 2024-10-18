@@ -10,10 +10,9 @@ use itertools::Itertools;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use serde::Deserialize;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     fmt::{Display, Formatter},
     str::FromStr,
-    sync::LazyLock,
     time::{Duration, Instant},
 };
 
@@ -33,34 +32,20 @@ pub(crate) struct Metadata {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Clone)]
 pub(crate) struct LocalizedName {
-    #[serde(rename = "de_DE")]
-    deDE: String,
-    #[serde(rename = "en_US")]
-    enUS: String,
-    #[serde(rename = "es_ES")]
-    esES: String,
-    #[serde(rename = "es_MX")]
-    esMX: String,
-    #[serde(rename = "fr_FR")]
-    frFR: String,
-    #[serde(rename = "it_IT")]
-    itIT: String,
-    #[serde(rename = "ja_JP")]
-    jaJP: String,
-    #[serde(rename = "ko_KR")]
-    koKR: String,
-    #[serde(rename = "pl_PL")]
-    plPL: String,
-    #[serde(rename = "pt_BR")]
-    ptBR: String,
-    #[serde(rename = "ru_RU")]
-    ruRU: String,
-    #[serde(rename = "th_TH")]
-    thTH: String,
-    #[serde(rename = "zh_CN")]
-    zhCN: Option<String>,
-    #[serde(rename = "zh_TW")]
-    zhTW: String,
+    #[serde(rename = "de_DE")] deDE: String,
+    #[serde(rename = "en_US")] enUS: String,
+    #[serde(rename = "es_ES")] esES: String,
+    #[serde(rename = "es_MX")] esMX: String,
+    #[serde(rename = "fr_FR")] frFR: String,
+    #[serde(rename = "it_IT")] itIT: String,
+    #[serde(rename = "ja_JP")] jaJP: String,
+    #[serde(rename = "ko_KR")] koKR: String,
+    #[serde(rename = "pl_PL")] plPL: String,
+    #[serde(rename = "pt_BR")] ptBR: String,
+    #[serde(rename = "ru_RU")] ruRU: String,
+    #[serde(rename = "th_TH")] thTH: String,
+    #[serde(rename = "zh_CN")] zhCN: Option<String>,
+    #[serde(rename = "zh_TW")] zhTW: String,
 }
 impl LocalizedName {
     pub fn contains(&self, search_term: &str) -> bool {
@@ -76,8 +61,8 @@ impl LocalizedName {
             || self.ptBR.to_lowercase().contains(search_term)
             || self.ruRU.to_lowercase().contains(search_term)
             || self.thTH.contains(search_term)
-            || self.zhTW.contains(search_term)
             || self.zhCN.as_ref().is_some_and(|s| s.contains(search_term))
+            || self.zhTW.contains(search_term)
     }
 }
 impl Localize for LocalizedName {
@@ -111,8 +96,7 @@ pub(crate) struct Details {
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
         match self.name.as_ref() {
-            Left(ln) =>
-                ln.deDE.eq_ignore_ascii_case(search_term)
+            Left(ln) => ln.deDE.eq_ignore_ascii_case(search_term)
                     || ln.enUS.eq_ignore_ascii_case(search_term)
                     || ln.esES.eq_ignore_ascii_case(search_term)
                     || ln.esMX.eq_ignore_ascii_case(search_term)
@@ -124,8 +108,8 @@ impl Details {
                     || ln.ptBR.eq_ignore_ascii_case(search_term)
                     || ln.ruRU.eq_ignore_ascii_case(search_term)
                     || ln.thTH.eq(search_term)
-                    || ln.zhTW.eq(search_term)
-                    || ln.zhCN.as_ref().is_some_and(|s| s.eq(search_term)),
+                    || ln.zhCN.as_ref().is_some_and(|s| s.eq(search_term))
+                    || ln.zhTW.eq(search_term),
             Right(s) => s.eq_ignore_ascii_case(search_term),
         }
     }
@@ -135,10 +119,10 @@ impl Details {
 }
 
 static METADATA: RwLock<Option<(Metadata, Instant)>> = RwLock::new(None);
+const REFRESH_RATE: Duration = Duration::from_secs(86400); // a day
 
 fn internal_get_metadata() -> Metadata {
-    AGENT
-        .get("https://us.api.blizzard.com/hearthstone/metadata")
+    AGENT.get("https://us.api.blizzard.com/hearthstone/metadata")
         .query("access_token", get_access_token())
         .call()
         .and_then(|mut res| res.body_mut().read_json::<Metadata>())
@@ -147,7 +131,7 @@ fn internal_get_metadata() -> Metadata {
 
 pub(crate) fn get_metadata() -> MappedRwLockReadGuard<'static, Metadata> {
     let last_update = METADATA.read().as_ref().map(|o| o.1);
-    if last_update.is_none_or(|t| t.elapsed() >= Duration::from_secs(86400)) {
+    if last_update.is_none_or(|t| t.elapsed() >= REFRESH_RATE) {
         _ = METADATA.write().insert((internal_get_metadata(), Instant::now()));
     }
 
@@ -280,14 +264,8 @@ impl Class {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Rarity {
-    Legendary,
-    Epic,
-    Rare,
-    Common,
-    Free,
-    Noncollectible,
-}
+pub enum Rarity { Legendary, Epic, Rare, Common, Free, Noncollectible }
+
 impl Localize for Rarity {
     fn in_locale(&self, locale: Locale) -> impl Display {
         let text: String = get_metadata()
@@ -438,11 +416,8 @@ impl FromStr for MinionType {
 }
 
 #[derive(Clone, Copy, Deserialize)]
-pub struct RuneCost {
-    blood: u8,
-    frost: u8,
-    unholy: u8,
-}
+pub struct RuneCost { blood: u8, frost: u8, unholy: u8 }
+
 impl Display for RuneCost {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         (0..self.blood)
@@ -514,76 +489,4 @@ impl Localize for CardType {
 
         Inner(self, locale)
     }
-}
-
-// Hearthstone Json unofficial (from HearthSim)
-// Uses https://hearthstonejson.com data for back up if needed.
-
-static HEARTH_SIM_IDS: LazyLock<HashMap<usize, HearthSimData>> = LazyLock::new(|| {
-    AGENT
-        .get("https://api.hearthstonejson.com/v1/latest/enUS/cards.json")
-        .call()
-        .and_then(|mut res| res.body_mut().read_json::<Vec<HearthSimData>>())
-        .map(|v| {
-            v.into_iter()
-                .filter(|d| d.cost.is_some())
-                .map(|d| (d.dbf_id, d))
-                .collect::<HashMap<_, _>>()
-        })
-        .unwrap_or_default()
-});
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct HearthSimData {
-    dbf_id: usize,
-    count_as_copy_of_dbf_id: Option<usize>,
-    id: String,
-    name: String,
-    cost: Option<u8>,
-    #[serde(default)]
-    rarity: String,
-    #[serde(default)]
-    collectible: bool,
-}
-
-pub(crate) fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
-    HEARTH_SIM_IDS
-        .get(&id)
-        .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
-}
-
-pub(crate) fn get_hearth_sim_details<'h>(id: usize) -> Option<(&'h str, u8, Rarity)> {
-    HEARTH_SIM_IDS.get(&id).map(|c| {
-        let rarity = match c.rarity.as_str() {
-            "LEGENDARY" => Rarity::Legendary,
-            "EPIC" => Rarity::Epic,
-            "RARE" => Rarity::Rare,
-            "COMMON" => Rarity::Common,
-            "FREE" => Rarity::Free,
-            _ => Rarity::Noncollectible,
-        };
-        (c.name.as_str(), c.cost.unwrap(), rarity)
-    })
-}
-
-pub(crate) fn validate_id(input_id: usize) -> usize {
-    HEARTH_SIM_IDS.get(&input_id).and_then(|c| c.count_as_copy_of_dbf_id).unwrap_or(input_id)
-}
-
-pub(crate) fn fuzzy_search_hearth_sim(search_term: &str) -> Option<&str> {
-    // according to the docs doing these here is apparently horribly inefficient.
-    // c'est la vie
-    let mut matcher = nucleo_matcher::Matcher::new(nucleo_matcher::Config::DEFAULT);
-    let results = nucleo_matcher::pattern::Pattern::parse(
-        search_term,
-        nucleo_matcher::pattern::CaseMatching::Ignore,
-        nucleo_matcher::pattern::Normalization::Smart,
-    )
-    .match_list(
-        HEARTH_SIM_IDS.values().filter(|d| d.collectible).map(|d| d.name.as_str()),
-        &mut matcher,
-    );
-
-    results.first().map(|d| d.0)
 }

@@ -7,8 +7,9 @@
 
 use crate::{
     card::Card,
-    card_details::{get_hearth_sim_details, CardType, Class, Rarity},
+    card_details::{CardType, Class, Rarity},
     deck::Deck,
+    hearht_sim::{get_hearth_sim_details, get_hearth_sim_crop_image},
     localization::Localize,
     AGENT,
 };
@@ -292,7 +293,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     {
         (name, cost, rarity)
     } else {
-        (card.name.as_str(), card.cost, card.rarity)
+        (card.name.clone(), card.cost, card.rarity)
     };
 
     let r_color = rarity.color();
@@ -345,7 +346,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     }
 
     // card name
-    draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, 0, CARD_NAME_SCALE, name);
+    draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, 0, CARD_NAME_SCALE, &name);
 
     // card cost
     let cost = cost.to_string();
@@ -442,7 +443,7 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
     let link = card
         .crop_image
         .clone()
-        .or_else(|| crate::card_details::get_hearth_sim_crop_image(card.id))
+        .or_else(|| get_hearth_sim_crop_image(card.id))
         .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
     let buf = AGENT.get(link).call()?.body_mut().read_to_vec()?;

@@ -1,9 +1,10 @@
 use crate::{
     card_details::{
-        fuzzy_search_hearth_sim, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
+        CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
         get_metadata,
     },
     get_access_token,
+    hearht_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
     localization::{Locale, Localize},
     CardSearchResponse, CardTextDisplay, AGENT,
 };
@@ -87,17 +88,18 @@ pub struct Card {
 }
 impl Card {
     pub(crate) fn dummy(id: usize) -> Self {
-        let data = crate::card_details::get_hearth_sim_details(id);
+        let (name, cost, rarity) = get_hearth_sim_details(id)
+            .unwrap_or_else(|| (format!("Unknown Card ID {id}"), 99, Rarity::Noncollectible));
 
         Self {
             id,
             card_set: 1635,
-            name: data.map_or(format!("Unknown Card ID {id}"), |(name, ..)| name.to_string()),
+            name,
             class: HashSet::from([Class::Neutral]),
-            cost: data.map_or(99, |(_, cost, _)| cost),
+            cost,
             rune_cost: None,
             card_type: CardType::Unknown,
-            rarity: data.map_or(Rarity::Noncollectible, |(.., rarity)| rarity),
+            rarity,
             text: String::new(),
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
             crop_image: None,
@@ -199,8 +201,7 @@ impl From<CardData> for Card {
                 4 => CardType::Minion {
                     attack: c.attack.unwrap_or_default(),
                     health: c.health.unwrap_or_default(),
-                    minion_types: c
-                        .minion_type_id
+                    minion_types: c.minion_type_id
                         .into_iter()
                         .chain(c.multi_type_ids.into_iter().flatten())
                         .filter_map(|id| MinionType::try_from(id).ok())

@@ -76,15 +76,14 @@ pub fn meta_snap(format: &Format, locale: Locale) -> Result<impl Iterator<Item =
 
 fn casify_archetype(at: &str) -> String {
     at.split('-')
-        .map(|s| {
-            if s.eq_ignore_ascii_case("dk")
+        .map(|s| if s.eq_ignore_ascii_case("dk")
                 || s.eq_ignore_ascii_case("dh")
                 || (s.len() == 3
-                    && s.chars().all(|c| {
+                    && s.chars().all(|c|
                         c.eq_ignore_ascii_case(&'b')
                             || c.eq_ignore_ascii_case(&'f')
                             || c.eq_ignore_ascii_case(&'u')
-                    }))
+                    ))
             {
                 s.to_uppercase()
             } else {
@@ -95,7 +94,7 @@ fn casify_archetype(at: &str) -> String {
                     String::new()
                 }
             }
-        })
+        )
         .join(" ")
 }
 
@@ -122,9 +121,8 @@ fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::In
         _ => anyhow::bail!("Meta decks for this format are not available"),
     };
 
-    let filter_decks = |s: &DeckStat| {
-        s.total_games > min_count && (class.is_none() || class.is_some_and(|c| c == s.player_class))
-    };
+    let filter_decks = |s: &DeckStat|
+        s.total_games > min_count && (class.is_none() || class.is_some_and(|c| c == s.player_class));
 
     let first_try = get_firestone_data(d_l)?;
     let mut decks = first_try.deck_stats.into_iter().filter(filter_decks).peekable();
@@ -136,11 +134,11 @@ fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::In
 
     anyhow::ensure!(decks.peek().is_some(), "No decks found with more than {min_count} games.");
 
-    let decks = decks.sorted_by(|s1, s2| {
+    let decks = decks.sorted_by(|s1, s2|
         (s2.total_games.ilog2().min(min_log))
             .cmp(&s1.total_games.ilog2().min(min_log))
             .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
-    });
+    );
 
     Ok(decks)
 }

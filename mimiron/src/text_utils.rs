@@ -236,9 +236,9 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
 
     traverse_inner(tree, visit);
 
-    collector.into_iter().flat_map(|tp| {
+    collector.into_iter().flat_map(|tp|
         tp.text.split_inclusive(' ').map(|t| TextPiece::new(t, tp.style)).collect::<Vec<_>>()
-    })
+    )
 }
 
 fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> {
@@ -247,13 +247,13 @@ fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> {
         Err(text) => TextTree::String(text.to_owned()),
     };
 
-    traverse_text_tree(tree).coalesce(|x, y| {
+    traverse_text_tree(tree).coalesce(|x, y|
         if x.style == y.style {
             Ok(TextPiece { text: format!("{}{}", x.text, y.text), style: x.style })
         } else {
             Err((x, y))
         }
-    })
+    )
 }
 
 #[cfg(test)]

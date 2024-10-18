@@ -118,13 +118,13 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
 
         let save_file = args
             .output
-            .unwrap_or_else(|| {
+            .unwrap_or_else(||
                 directories::UserDirs::new()
                     .expect("couldn't get user directories")
                     .download_dir()
                     .expect("couldn't get downloads directory")
                     .to_path_buf()
-            })
+            )
             .join(file_name);
 
         img.save(save_file)?;

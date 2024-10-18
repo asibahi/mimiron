@@ -48,26 +48,24 @@ async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> Shuttle
                 deck_cmds::metasnap(),
                 helpers::help(),
             ],
-            on_error: |error| {
+            on_error: |error|
                 Box::pin(async move {
                     if let Err(e) = helpers::on_error(error).await {
                         tracing::error!("Error while handling error: {}", e);
                     }
-                })
-            },
-            post_command: |ctx| {
+                }),
+            post_command: |ctx|
                 Box::pin(async move {
                     helpers::on_success(&ctx);
-                })
-            },
+                }),
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
+        .setup(|ctx, _ready, framework|
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {})
             })
-        })
+        )
         .build();
 
     let client =

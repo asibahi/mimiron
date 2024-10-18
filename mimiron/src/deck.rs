@@ -20,6 +20,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Display, Write},
     io::Cursor,
+    ops::Not,
     str::FromStr,
 };
 
@@ -294,7 +295,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             .query("access_token", get_access_token())
             .query("ids", raw_data.cards.iter().join(","));
 
-        if !raw_data.sideboard_cards.is_empty() {
+        if raw_data.sideboard_cards.is_empty().not() {
             req = req.query(
                 "sideboardCards",
                 raw_data
@@ -333,7 +334,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
                 })
                 .map(Some)
                 .collect::<Option<Vec<_>>>()
-                .filter(|v| !v.is_empty()),
+                .filter(|v| v.is_empty().not()),
             invalid_card_ids: None,
         }
     };
@@ -372,7 +373,7 @@ fn specific_card_adjustments(deck: &mut Deck) {
     '_zilliax_deluxe_3000: for sb in deck.sideboard_cards.iter_mut().flatten() {
         // removes cosmetic cards from all sideboards.
         // Currently only has an effect on Zilliax Cosmetic Modules
-        sb.cards_in_sideboard.retain(|c| !c.cosmetic);
+        sb.cards_in_sideboard.retain(|c| c.cosmetic.not());
 
         if sb.sideboard_card.id == ZILLIAX_DELUXE_3000_ID {
             let (zilliax_cost, zilliax_attack, zilliax_health) =
@@ -491,13 +492,13 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
 
     let band_ids = band
         .into_iter()
-        .map(|name| {
+        .map(|name|
             card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| (c.id, ETC_ID))
                 .next()
                 .ok_or_else(|| anyhow!("Band found brown M&M's."))
-        })
+        )
         .collect::<Result<Vec<(_, _)>>>()?;
 
     raw_data.sideboard_cards.extend(band_ids);

@@ -8,6 +8,7 @@ use mimiron::{
     CardTextDisplay,
 };
 use poise::serenity_prelude as serenity;
+use std::ops::Not;
 
 /// Search for a constructed card by name. Be precise!
 #[poise::command(slash_command, category = "Constructed")]
@@ -90,7 +91,7 @@ fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed 
         fields.push((" ", "<:arena:1293955150918189067>".into(), true));
     }
 
-    if !card.flavor_text.is_empty() {
+    if card.flavor_text.is_empty().not() {
         fields.push(("Flavor Text", card.flavor_text.to_markdown(), false));
     }
 

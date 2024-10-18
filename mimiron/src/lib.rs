@@ -15,13 +15,13 @@ mod text_utils;
 pub use authorization::get_access_token;
 pub use text_utils::CardTextDisplay;
 
-pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
+pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(||
     ureq::Agent::config_builder()
         .timeout_connect(Some(std::time::Duration::from_secs(2)))
         .user_agent(Some(String::from("mimiron cli https://github.com/asibahi/mimiron")))
         .build()
         .into()
-});
+);
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

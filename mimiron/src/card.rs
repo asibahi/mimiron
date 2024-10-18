@@ -18,6 +18,7 @@ use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
+    ops::Not,
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -291,17 +292,17 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     let mut cards = res
         .cards
         .into_iter()
-        .filter(|c| {
+        .filter(|c|
             // Filtering out hero portraits if not searching for incollectibles
             (opts.noncollectibles || c.card_set != 17)
             // Depending on opts.with_text, whether to restrict searches to card names 
             // or expand to search boxes.
                 && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
-        })
+        )
         // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)
         .unique_by(|c| opts.reprints.either(c.id, c.text_elements()))
         // when searching for Ragnaros guarantee that Ragnaros is the first result.
-        .sorted_by_key(|c| !c.name.to_lowercase().starts_with(&search_term.to_lowercase()))
+        .sorted_by_key(|c| c.name.to_lowercase().starts_with(&search_term.to_lowercase()).not())
         .peekable();
 
     anyhow::ensure!(

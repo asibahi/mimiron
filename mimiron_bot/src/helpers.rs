@@ -1,5 +1,3 @@
-use std::{cell::LazyCell, collections::HashMap, iter::Iterator};
-
 use crate::{Context, Data, Error};
 use itertools::Itertools;
 use mimiron::{
@@ -8,6 +6,7 @@ use mimiron::{
     localization::Locale,
 };
 use poise::serenity_prelude as serenity;
+use std::{cell::LazyCell, collections::HashMap, iter::Iterator, ops::Not};
 
 /// Help Menu
 #[poise::command(slash_command, hide_in_help)]
@@ -26,10 +25,10 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     let fields =
-        categories.into_iter().filter(|(_, cmds)| !cmds.is_empty()).map(|(category, cmds)| {
+        categories.into_iter().filter(|(_, cmds)| cmds.is_empty().not()).map(|(category, cmds)| {
             let cmds = cmds
                 .into_iter()
-                .filter(|cmd| !cmd.hide_in_help)
+                .filter(|cmd| cmd.hide_in_help.not())
                 // get context menu commands at the bottom.
                 .sorted_by_key(|cmd| cmd.slash_action.is_none())
                 .map(|cmd| {

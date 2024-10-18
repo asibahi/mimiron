@@ -100,7 +100,7 @@ pub async fn deckcomp(
     let deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale))?;
     let deckcomp = deck1.compare_with(&deck2);
 
-    let sort_and_set = |map: HashMap<card::Card, usize>| {
+    let sort_and_set = |map: HashMap<card::Card, usize>|
         map.into_iter()
             .sorted()
             .map(|(card, count)| {
@@ -109,8 +109,7 @@ pub async fn deckcomp(
 
                 format!("{} {}{}", square, count, card.name)
             })
-            .join("\n")
-    };
+            .join("\n");
 
     let uniques_1 = sort_and_set(deckcomp.deck1_uniques);
     let uniques_2 = sort_and_set(deckcomp.deck2_uniques);
@@ -290,12 +289,12 @@ pub async fn metasnap(
 
 async fn parse_format(ctx: Context<'_>, format: Option<String>) -> mimiron::deck::Format {
     format
-        .or(ctx.guild_channel().await.map(|c| c.name).filter(|n| {
+        .or(ctx.guild_channel().await.map(|c| c.name).filter(|n|
             n.eq_ignore_ascii_case("standard")
                 || n.eq_ignore_ascii_case("std")
                 || n.eq_ignore_ascii_case("wild")
                 || n.eq_ignore_ascii_case("twist")
-        })) // clever stuff !! too clever?
+        )) // clever stuff !! too clever?
         .and_then(|s| s.parse().ok())
         .unwrap_or_default()
 }

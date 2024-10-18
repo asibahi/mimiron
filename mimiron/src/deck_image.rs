@@ -19,7 +19,7 @@ use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
 use rayon::prelude::*;
-use std::{collections::HashMap, sync::LazyLock};
+use std::{collections::HashMap, ops::Not, sync::LazyLock};
 
 // Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -43,23 +43,22 @@ const CARD_NAME_SCALE: f32 = 40.0;
 static FONTS: [(LazyLock<FontRef<'_>>, f32); 3] = [
     // Base font
     (
-        LazyLock::new(|| {
+        LazyLock::new(||
             FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
-        }),
+        ),
         1.0,
     ),
     // Fallbacks
     (
-        LazyLock::new(|| {
+        LazyLock::new(||
             FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()
-        }),
+        ),
         1.2, // scaling for Noto CJK
     ),
     (
-        LazyLock::new(|| {
-            FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf"))
-                .unwrap()
-        }),
+        LazyLock::new(||
+            FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()
+        ),
         1.3, // scaling for Noto Thai
     ),
 ];
@@ -167,7 +166,7 @@ fn img_columns_format(
         }
     }
 
-    if !inline_sideboard {
+    if inline_sideboard.not() {
         for sb in deck.sideboard_cards.iter().flatten() {
             let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
             img.copy_from(
@@ -178,9 +177,9 @@ fn img_columns_format(
             cursor += 1;
 
             for slug in
-                sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
+                sb.cards_in_sideboard.iter().sorted().dedup().map(|c|
                     &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
-                })
+                )
             {
                 let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
@@ -199,7 +198,7 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
 
     let class_cards = ordered_main_deck
         .clone()
-        .filter(|&c| !c.class.contains(&Class::Neutral))
+        .filter(|&c| c.class.contains(&Class::Neutral).not())
         .map(|c| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
@@ -213,7 +212,7 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
     let mut img = {
         // assumes decks will always have class cards
         let mut columns = 1;
-        if !neutral_cards.is_empty() {
+        if neutral_cards.is_empty().not() {
             columns += 1;
         }
         if deck.sideboard_cards.is_some() {
@@ -260,9 +259,9 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
             sb_cursor += 1;
 
             for slug in
-                sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
+                sb.cards_in_sideboard.iter().sorted().dedup().map(|c|
                     &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
-                })
+                )
             {
                 img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
                 sb_cursor += 1;
@@ -305,7 +304,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     };
 
     // main canvas
-    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y| {
+    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y|
         if x < indent.saturating_sub(MARGIN) {
             // Legendary color for Sideboard indent
             [255, 128, 0, 255]
@@ -323,7 +322,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
             [10, 10, 10, 255]
         }
         .into()
-    });
+    );
 
     match get_crop_image(card).and_then(|crop| Ok(img.copy_from(&crop, CROP_IMAGE_OFFSET, 0)?)) {
         Ok(()) => {
@@ -379,13 +378,13 @@ fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zon
         .sorted()
         .dedup_with_count()
         .map(|(count, card)| (card, count, Zone::MainDeck))
-        .chain(deck.sideboard_cards.iter().flat_map(|sbs| {
-            sbs.iter().flat_map(|sb| {
-                sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(|(count, card)| {
+        .chain(deck.sideboard_cards.iter().flat_map(|sbs|
+            sbs.iter().flat_map(|sb|
+                sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(|(count, card)|
                     (card, count, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })
-                })
-            })
-        }))
+                )
+            )
+        ))
         .collect::<Vec<_>>()
         .into_par_iter()
         .map(|(card, count, zone)| {

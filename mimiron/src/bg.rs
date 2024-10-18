@@ -11,7 +11,8 @@ use serde::Deserialize;
 use std::{
     collections::HashSet,
     fmt::{self, Display},
-    str::FromStr,
+    ops::Not,
+    str::FromStr
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -282,9 +283,9 @@ impl From<CardData> for Card {
         let pool = c
             .battlegrounds
             .as_ref()
-            .and_then(|bg| {
+            .and_then(|bg| 
                 bg.duos_only.then_some(Pool::Duos).or(bg.solos_only.then_some(Pool::Solos))
-            })
+            )
             .unwrap_or_default();
 
         Self {
@@ -380,23 +381,22 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         .into_iter()
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
-        .filter(|c| {
-            opts.with_text
+        .filter(|c| opts.with_text
                 || opts
                     .search_term
                     .as_ref()
                     .is_none_or(|name| c.name.to_lowercase().contains(&name.to_lowercase()))
-        })
+        )
         .filter(|c| match opts.pool {
             Pool::All => true,
             Pool::Duos => matches!(c.pool, Pool::All | Pool::Duos),
             Pool::Solos => matches!(c.pool, Pool::All | Pool::Solos),
         })
-        .sorted_by_key(|c| {
-            !c.name
+        .sorted_by_key(|c| c.name
                 .to_lowercase()
                 .starts_with(&opts.search_term.as_deref().unwrap_or_default().to_lowercase())
-        })
+                .not()
+        )
         .peekable();
 
     anyhow::ensure!(

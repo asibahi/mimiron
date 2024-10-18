@@ -46,7 +46,7 @@ fn internal_get_access_token() -> Result<AccessToken> {
         .post("https://oauth.battle.net/token")
         .header("Authorization", format!("Basic {creds}"))
         .query("grant_type", "client_credentials")
-        .send(&[])?
+        .send_empty()?
         .body_mut()
         .read_json::<AccessToken>()?;
 

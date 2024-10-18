@@ -1,5 +1,5 @@
 use crate::{
-    card_details::{MinionType, METADATA},
+    card_details::{MinionType, get_metadata},
     get_access_token,
     localization::{Locale, Localize},
     CardSearchResponse, CardTextDisplay, AGENT,
@@ -146,7 +146,7 @@ impl Localize for BGCardType {
                 }
 
                 let get_type =
-                    |i: u8| METADATA.types.iter().find(|det| det.id == i).unwrap().name(self.1);
+                    |i: u8| get_metadata().types.iter().find(|det| det.id == i).unwrap().name(self.1);
 
                 let battlegrounds = self.1.battlegrounds();
 
@@ -185,7 +185,7 @@ impl Localize for BGCardType {
                         inner(text, f)
                     }
                     BGCardType::Trinket { text, cost, trinket_kind } => {
-                        let kind = METADATA
+                        let kind = get_metadata()
                             .spell_schools
                             .iter()
                             .find(|det| det.id == *trinket_kind)

@@ -7,12 +7,14 @@ use crate::{
 use colored::Colorize;
 use either::Either::{self, Left, Right};
 use itertools::Itertools;
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use serde::Deserialize;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Display, Formatter},
     str::FromStr,
     sync::LazyLock,
+    time::{Duration, Instant},
 };
 
 #[derive(Deserialize, Default)]
@@ -132,14 +134,25 @@ impl Details {
     }
 }
 
-pub(crate) static METADATA: LazyLock<Metadata> = LazyLock::new(|| {
+static METADATA: RwLock<Option<(Metadata, Instant)>> = RwLock::new(None);
+
+fn internal_get_metadata() -> Metadata {
     AGENT
         .get("https://us.api.blizzard.com/hearthstone/metadata")
         .query("access_token", get_access_token())
         .call()
         .and_then(|mut res| res.body_mut().read_json::<Metadata>())
         .unwrap_or_default()
-});
+}
+
+pub(crate) fn get_metadata() -> MappedRwLockReadGuard<'static, Metadata> {
+    let last_update = METADATA.read().as_ref().map(|o| o.1);
+    if last_update.is_none_or(|t| t.elapsed() >= Duration::from_secs(86400)) {
+        _ = METADATA.write().insert((internal_get_metadata(), Instant::now()));
+    }
+
+    RwLockReadGuard::map(METADATA.read(), |c| &c.as_ref().unwrap().0)
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -155,13 +168,12 @@ impl Localize for Set {
 }
 
 pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
-    METADATA
+    get_metadata()
         .sets
         .iter()
         .find(|s| s.id == id || s.alias_set_ids.iter().flatten().contains(&id))
         .map_or_else(
             || match id {
-                // maybe force a refresh for METADATA for unknown numbers?
                 1453 => locale.battlegrounds().into(),
                 7 => "Hero Portraits".into(), // Should localize this
                 1586 => "Mercenaries".into(), // and this.
@@ -192,7 +204,7 @@ pub enum Class {
 }
 impl Localize for Class {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        METADATA
+        get_metadata()
             .classes
             .iter()
             .find(|det| *self == Self::from(det.id))
@@ -237,7 +249,7 @@ impl FromStr for Class {
             "SH" | "Sh" | "sh" => Ok(Self::Shaman),
             "WL" | "Wl" | "wl" | "WK" | "Wk" | "wk" => Ok(Self::Warlock),
             "WR" | "Wr" | "wr" => Ok(Self::Warrior),
-            _ => METADATA
+            _ => get_metadata()
                 .classes
                 .iter()
                 .find(|det| det.contains(s))
@@ -278,7 +290,7 @@ pub enum Rarity {
 }
 impl Localize for Rarity {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        let text: String = METADATA
+        let text: String = get_metadata()
             .rarities
             .iter()
             .find(|det| *self == Self::from(det.id))
@@ -331,7 +343,7 @@ pub enum SpellSchool {
 }
 impl Localize for SpellSchool {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        METADATA
+        get_metadata()
             .spell_schools
             .iter()
             .find(|det| *self == Self::from(det.id))
@@ -371,7 +383,7 @@ pub enum MinionType {
 }
 impl Localize for MinionType {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        METADATA
+        get_metadata()
             .minion_types
             .iter()
             // fucking Blood Elfs. They're first, so they return with `_ => Naga` below
@@ -416,7 +428,7 @@ impl FromStr for MinionType {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        METADATA
+        get_metadata()
             .minion_types
             .iter()
             .find(|det| det.contains(s))
@@ -463,7 +475,7 @@ impl Localize for CardType {
                 let colon = if f.alternate() { ":" } else { "" };
 
                 let get_type =
-                    |i| METADATA.types.iter().find(|det| det.id == i).unwrap().name(self.1);
+                    |i| get_metadata().types.iter().find(|det| det.id == i).unwrap().name(self.1);
 
                 match self.0 {
                     CardType::Hero { armor } => {

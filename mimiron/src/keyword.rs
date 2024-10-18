@@ -1,5 +1,5 @@
 use crate::{
-        card_details::{LocalizedName, METADATA},
+        card_details::{LocalizedName, get_metadata},
         localization::{Locale, Localize},
 };
 use anyhow::Result;
@@ -33,11 +33,11 @@ impl Localize for Keyword {
 }
 
 pub fn lookup(search_term: &str) -> Result<impl Iterator<Item = Keyword> + '_> {
-    let mut res = METADATA
+    let mut res = get_metadata()
         .keywords
-        .iter()
+        .clone()
+        .into_iter()
         .filter(|kw| kw.contains(search_term))
-        .cloned()
         .peekable();
 
     anyhow::ensure!(

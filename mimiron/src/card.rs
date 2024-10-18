@@ -1,7 +1,7 @@
 use crate::{
     card_details::{
         fuzzy_search_hearth_sim, CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
-        METADATA,
+        get_metadata,
     },
     get_access_token,
     localization::{Locale, Localize},
@@ -222,7 +222,7 @@ impl From<CardData> for Card {
             crop_image: c.crop_image,
             flavor_text: c.flavor_text,
 
-            in_arena: METADATA.arena_ids.contains(&c.id),
+            in_arena: get_metadata().arena_ids.contains(&c.id),
             cosmetic: c.is_zilliax_cosmetic_module,
         }
     }

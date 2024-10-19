@@ -120,7 +120,7 @@ pub async fn keyword(
         serenity::CreateEmbed::default()
             .title(kw.name(locale))
             .description(kw.text(locale))
-            .color(0xDEAD)
+            .color(0x_DEAD/*GAME*/) 
     )
     .await
 }

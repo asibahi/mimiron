@@ -87,9 +87,10 @@ fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed 
         (" ", format!("{} {}", rarity, card.card_set(locale)), true),
     ];
 
-    if card.in_arena {
-        fields.push((" ", "<:arena:1293955150918189067>".into(), true));
-    }
+    // Blizzard data is wrong here. Scrubbed that part from the crate.
+    // if card.in_arena {
+    //     fields.push((" ", "<:arena:1293955150918189067>".into(), true));
+    // }
 
     if card.flavor_text.is_empty().not() {
         fields.push(("Flavor Text", card.flavor_text.to_markdown(), false));

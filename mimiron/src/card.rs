@@ -1,7 +1,6 @@
 use crate::{
     card_details::{
         CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
-        get_metadata,
     },
     get_access_token,
     hearht_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
@@ -84,7 +83,6 @@ pub struct Card {
     pub crop_image: Option<String>,
     pub flavor_text: String,
 
-    pub in_arena: bool,
     pub cosmetic: bool,
 }
 impl Card {
@@ -105,7 +103,6 @@ impl Card {
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
             crop_image: None,
             flavor_text: String::new(),
-            in_arena: false,
             cosmetic: false,
         }
     }
@@ -224,7 +221,6 @@ impl From<CardData> for Card {
             crop_image: c.crop_image,
             flavor_text: c.flavor_text,
 
-            in_arena: get_metadata().arena_ids.contains(&c.id),
             cosmetic: c.is_zilliax_cosmetic_module,
         }
     }

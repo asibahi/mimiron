@@ -2,7 +2,7 @@ use crate::{
     card::{self, Card},
     card_details::{CardType, Class, Details},
     get_access_token,
-    hearht_sim::validate_id,
+    hearth_sim::validate_id,
     localization::{Locale, Localize},
     AGENT,
 };

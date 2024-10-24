@@ -6,7 +6,7 @@ pub mod card;
 pub mod card_details;
 pub mod deck;
 mod deck_image;
-mod hearht_sim;
+mod hearth_sim;
 pub mod keyword;
 pub mod localization;
 pub mod meta;

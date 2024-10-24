@@ -3,7 +3,7 @@ use crate::{
         CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
     },
     get_access_token,
-    hearht_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
+    hearth_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
     localization::{Locale, Localize},
     CardSearchResponse, CardTextDisplay, AGENT,
 };

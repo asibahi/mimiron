@@ -9,7 +9,7 @@ use crate::{
     card::Card,
     card_details::{CardType, Class, Rarity},
     deck::Deck,
-    hearht_sim::{get_hearth_sim_details, get_hearth_sim_crop_image},
+    hearth_sim::{get_hearth_sim_details, get_hearth_sim_crop_image},
     localization::Localize,
     AGENT,
 };

@@ -79,8 +79,8 @@ fn casify_archetype(at: &str) -> String {
         .map(|s| if s.eq_ignore_ascii_case("dk")
                 || s.eq_ignore_ascii_case("dh")
                 || (s.len() == 3
-                    && s.chars().all(|c|
-                        c.eq_ignore_ascii_case(&'b')
+                    && s.chars().all(
+                        |c| c.eq_ignore_ascii_case(&'b')
                             || c.eq_ignore_ascii_case(&'f')
                             || c.eq_ignore_ascii_case(&'u')
                     ))

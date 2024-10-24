@@ -1,5 +1,5 @@
 use crate::{
-    card_details::{MinionType, get_metadata},
+    card_details::{get_metadata, MinionType},
     get_access_token,
     localization::{Locale, Localize},
     CardSearchResponse, CardTextDisplay, AGENT,
@@ -12,7 +12,7 @@ use std::{
     collections::HashSet,
     fmt::{self, Display},
     ops::Not,
-    str::FromStr
+    str::FromStr,
 };
 use unicode_width::UnicodeWidthStr;
 

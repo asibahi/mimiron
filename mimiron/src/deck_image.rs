@@ -9,7 +9,7 @@ use crate::{
     card::Card,
     card_details::{CardType, Class, Rarity},
     deck::Deck,
-    hearth_sim::{get_hearth_sim_details, get_hearth_sim_crop_image},
+    hearth_sim::{get_hearth_sim_crop_image, get_hearth_sim_details},
     localization::Localize,
     AGENT,
 };
@@ -378,10 +378,10 @@ fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zon
         .sorted()
         .dedup_with_count()
         .map(|(count, card)| (card, count, Zone::MainDeck))
-        .chain(deck.sideboard_cards.iter().flat_map(|sbs|
-            sbs.iter().flat_map(|sb|
-                sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(|(count, card)|
-                    (card, count, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })
+        .chain(deck.sideboard_cards.iter().flat_map(
+            |sbs| sbs.iter().flat_map(
+                |sb| sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(
+                    |(count, card)| (card, count, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })
                 )
             )
         ))

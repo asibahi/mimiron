@@ -5,8 +5,8 @@ use mimiron::localization::Locale;
 mod bg;
 mod card;
 mod deck;
-mod meta;
 mod keyword;
+mod meta;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -45,7 +45,7 @@ enum Commands {
     Meta(meta::MetaArgs),
 
     #[clap(hide = true)]
-    KW(keyword::KewordArgs)
+    KW(keyword::KewordArgs),
 }
 
 pub fn run() -> Result<()> {

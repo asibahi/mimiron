@@ -54,10 +54,7 @@ async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> Shuttle
                         tracing::error!("Error while handling error: {}", e);
                     }
                 }),
-            post_command: |ctx|
-                Box::pin(async move {
-                    helpers::on_success(&ctx);
-                }),
+            post_command: |ctx| Box::pin(async move { helpers::on_success(&ctx); }),
             ..Default::default()
         })
         .setup(|ctx, _ready, framework|

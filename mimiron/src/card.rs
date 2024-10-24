@@ -1,7 +1,5 @@
 use crate::{
-    card_details::{
-        CardType, Class, MinionType, Rarity, RuneCost, SpellSchool,
-    },
+    card_details::{CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     hearth_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
     localization::{Locale, Localize},

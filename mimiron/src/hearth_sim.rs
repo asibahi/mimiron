@@ -1,7 +1,4 @@
-use crate::{
-    card_details::Rarity,
-    AGENT,
-};
+use crate::{card_details::Rarity, AGENT};
 use nucleo_matcher::{
     pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,

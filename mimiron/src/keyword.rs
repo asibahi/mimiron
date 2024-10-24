@@ -1,6 +1,6 @@
 use crate::{
-        card_details::{LocalizedName, get_metadata},
-        localization::{Locale, Localize},
+    card_details::{get_metadata, LocalizedName},
+    localization::{Locale, Localize},
 };
 use anyhow::Result;
 use serde::Deserialize;
@@ -40,10 +40,7 @@ pub fn lookup(search_term: &str) -> Result<impl Iterator<Item = Keyword> + '_> {
         .filter(|kw| kw.contains(search_term))
         .peekable();
 
-    anyhow::ensure!(
-        res.peek().is_some(),
-        "No keyword found with name \"{search_term}\".",
-    );
+    anyhow::ensure!(res.peek().is_some(), "No keyword found with name \"{search_term}\".",);
 
     Ok(res)
 }

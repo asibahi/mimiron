@@ -12,7 +12,7 @@ pub mod localization;
 pub mod meta;
 mod text_utils;
 
-pub use authorization::get_access_token;
+pub use authorization::{get_access_token, set_blizzard_client_auth};
 pub use text_utils::CardTextDisplay;
 
 pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(||

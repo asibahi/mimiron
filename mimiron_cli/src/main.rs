@@ -1,11 +1,10 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use mimiron::localization::Locale;
+use mimiron::localization::{Locale, Localize};
 
 mod bg;
 mod card;
 mod deck;
-mod keyword;
 mod meta;
 
 #[derive(Parser)]
@@ -45,7 +44,7 @@ enum Commands {
     Meta(meta::MetaArgs),
 
     #[clap(hide = true)]
-    KW(keyword::KewordArgs),
+    KW { input: String },
 }
 
 pub fn run() -> Result<()> {
@@ -56,9 +55,10 @@ pub fn run() -> Result<()> {
         Commands::Card(args) => card::run(args, locale)?,
         Commands::Deck(args) => deck::run(args, locale)?,
         Commands::BG(args) => bg::run(args, locale)?,
-        Commands::Token => println!("{}", mimiron::get_access_token()),
         Commands::Meta(args) => meta::run(args, locale)?,
-        Commands::KW(args) => keyword::run(args, locale)?,
+        Commands::Token => println!("{}", mimiron::get_access_token()),
+        Commands::KW { input } => mimiron::keyword::lookup(&input)?
+            .for_each(|kw| println!("{}", kw.in_locale(locale))),
     }
 
     Ok(())

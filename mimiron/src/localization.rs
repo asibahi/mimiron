@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-#[allow(non_camel_case_types, dead_code)]
+#[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Default)]
 pub enum Locale {
     deDE,

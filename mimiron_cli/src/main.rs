@@ -13,6 +13,12 @@ struct Cli {
     #[arg(short, long, global = true, default_value("enUS"), value_parser(str::parse::<Locale>))]
     locale: Locale,
 
+    #[arg(env("BLIZZARD_CLIENT_ID"))]
+    id: String,
+
+    #[arg(env("BLIZZARD_CLIENT_SECRET"))]
+    secret: String,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -44,18 +50,24 @@ enum Commands {
     Meta(meta::MetaArgs),
 
     #[clap(hide = true)]
+    #[command(alias("keyword"))]
     KW { input: String },
 }
 
 pub fn run() -> Result<()> {
+    dotenvy::dotenv().ok();
+
     let args = Cli::parse();
     let locale = args.locale;
+
+    mimiron::set_blizzard_client_auth(args.id, args.secret);
 
     match args.command {
         Commands::Card(args) => card::run(args, locale)?,
         Commands::Deck(args) => deck::run(args, locale)?,
         Commands::BG(args) => bg::run(args, locale)?,
         Commands::Meta(args) => meta::run(args, locale)?,
+
         Commands::Token => println!("{}", mimiron::get_access_token()),
         Commands::KW { input } => mimiron::keyword::lookup(&input)?
             .for_each(|kw| println!("{}", kw.in_locale(locale))),

@@ -1,5 +1,5 @@
 use crate::AGENT;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use base64::prelude::*;
 use parking_lot::RwLock;
 use serde::Deserialize;
@@ -36,20 +36,11 @@ pub fn set_blizzard_client_auth(id: String, secret: String) {
     _ = BLIZZARD_CLIENT_AUTH.write().insert((id, secret));
 }
 
-const ID_KEY: &str = "BLIZZARD_CLIENT_ID";
-const SECRET_KEY: &str = "BLIZZARD_CLIENT_SECRET";
-
 fn internal_get_access_token() -> Result<AccessToken> {
-    dotenvy::dotenv().ok();
-
     let (id, secret) = BLIZZARD_CLIENT_AUTH
         .read()
         .clone()
-        .or_else(|| {
-            let id = std::env::var(ID_KEY).ok()?;
-            std::env::var(SECRET_KEY).ok().map(|sc| (id, sc))
-        })
-        .ok_or_else(|| anyhow!("Failed to get {ID_KEY} or {SECRET_KEY}. Set environment keys or use set_blizzard_client_auth"))?;
+        .expect("Failed to get BLIZZARD_CLIENT_ID or BLIZZARD_CLIENT_SECRET. Set values with set_blizzard_client_auth");
 
     let creds = BASE64_STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 

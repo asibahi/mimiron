@@ -1,6 +1,6 @@
 [package]
 name = "mimiron"
-version = "1.0.5"
+version = "1.1.0"
 edition = "2021"
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
 description = "A library to query Blizzard Hearthstone API"
@@ -19,7 +19,6 @@ serde.workspace = true
 serde_json.workspace = true
 ureq.workspace = true
 base64.workspace = true
-dotenvy.workspace = true
 counter.workspace = true
 nom.workspace = true
 textwrap.workspace = true

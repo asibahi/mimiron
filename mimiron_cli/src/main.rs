@@ -13,10 +13,10 @@ struct Cli {
     #[arg(short, long, global = true, default_value("enUS"), value_parser(str::parse::<Locale>))]
     locale: Locale,
 
-    #[arg(env("BLIZZARD_CLIENT_ID"))]
+    #[arg(env("BLIZZARD_CLIENT__ID"), hide_env_values(true))]
     id: String,
 
-    #[arg(env("BLIZZARD_CLIENT_SECRET"))]
+    #[arg(env("BLIZZARD_CLIENT__SECRET"), hide_env_values(true))]
     secret: String,
 
     #[command(subcommand)]
@@ -55,8 +55,6 @@ enum Commands {
 }
 
 pub fn run() -> Result<()> {
-    dotenvy::dotenv().ok();
-
     let args = Cli::parse();
     let locale = args.locale;
 

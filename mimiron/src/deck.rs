@@ -278,7 +278,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", opts.locale.to_string())
             .query("code", &raw_data.deck_code)
-            .query("access_token", get_access_token())
+            .header("Authorization", format!("Bearer {}", get_access_token()))
             .call()?
             .body_mut()
             .read_json::<Deck>()?;
@@ -292,7 +292,7 @@ fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<S
         let mut req = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", opts.locale.to_string())
-            .query("access_token", get_access_token())
+            .header("Authorization", format!("Bearer {}", get_access_token()))
             .query("ids", raw_data.cards.iter().join(","));
 
         if raw_data.sideboard_cards.is_empty().not() {

@@ -122,7 +122,7 @@ const REFRESH_RATE: Duration = Duration::from_secs(86400); // a day
 
 fn internal_get_metadata() -> Metadata {
     AGENT.get("https://us.api.blizzard.com/hearthstone/metadata")
-        .query("access_token", get_access_token())
+        .header("Authorization", format!("Bearer {}", get_access_token()))
         .call()
         .and_then(|mut res| res.body_mut().read_json::<Metadata>())
         .unwrap_or_default()

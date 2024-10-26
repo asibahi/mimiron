@@ -1,6 +1,6 @@
 [package]
 name = "mimiron_cli"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
 description = "A CLI application to query Blizzard Hearthstone API"

@@ -40,7 +40,11 @@ fn internal_get_access_token() -> Result<AccessToken> {
     let (id, secret) = BLIZZARD_CLIENT_AUTH
         .read()
         .clone()
-        .expect("Failed to get BLIZZARD_CLIENT_ID or BLIZZARD_CLIENT_SECRET. Set values with set_blizzard_client_auth");
+        .unwrap_or_else(|| panic!(
+            "Failed to get {} or {}. Set values with set_blizzard_client_auth",
+            super::BLIZZARD_CLIENT_ID,
+            super::BLIZZARD_CLIENT_SECRET,
+        ));
 
     let creds = BASE64_STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 

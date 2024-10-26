@@ -17,15 +17,15 @@ async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> Shuttle
     let discord_token =
         secret_store
             .get("DISCORD_TEST_TOKEN")
-            .context("'DISCORD_TOKEN' was not found")?;
+            .context("DISCORD_TOKEN was not found")?;
 
     mimiron::set_blizzard_client_auth(
         secret_store
-            .get("BLIZZARD_CLIENT_ID")
-            .context("'BLIZZARD_CLIENT_ID' was not found")?,
+            .get(mimiron::BLIZZARD_CLIENT_ID)
+            .with_context(|| format!("{} was not found", mimiron::BLIZZARD_CLIENT_ID))?,
         secret_store
-            .get("BLIZZARD_CLIENT_SECRET")
-            .context("'BLIZZARD_CLIENT_SECRET' was not found")?,
+            .get(mimiron::BLIZZARD_CLIENT_SECRET)
+            .with_context(|| format!("{} was not found", mimiron::BLIZZARD_CLIENT_SECRET))?,
     );
 
     let framework = poise::Framework::builder()

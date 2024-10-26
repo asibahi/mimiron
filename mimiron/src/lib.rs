@@ -15,6 +15,9 @@ mod text_utils;
 pub use authorization::{get_access_token, set_blizzard_client_auth};
 pub use text_utils::CardTextDisplay;
 
+pub const BLIZZARD_CLIENT_ID: &str = "BLIZZARD_CLIENT_ID";
+pub const BLIZZARD_CLIENT_SECRET: &str = "BLIZZARD_CLIENT_SECRET";
+
 pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(||
     ureq::Agent::config_builder()
         .timeout_connect(Some(std::time::Duration::from_secs(2)))

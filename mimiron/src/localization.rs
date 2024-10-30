@@ -7,21 +7,9 @@ use std::{
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Default)]
 pub enum Locale {
-    deDE,
-    #[default]
-    enUS,
-    esES,
-    esMX,
-    frFR,
-    itIT,
-    jaJP,
-    koKR,
-    plPL,
-    ptBR,
-    ruRU,
-    thTH,
-    zhCN,
-    zhTW,
+    deDE,  #[default] enUS, esES, esMX,
+    frFR, itIT, jaJP, koKR, plPL, ptBR,
+    ruRU, thTH, zhCN, zhTW,
 }
 impl Locale {
     // Inner Functions that note global terms that might be used in multiple places

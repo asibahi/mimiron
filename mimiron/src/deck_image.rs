@@ -279,10 +279,7 @@ enum Zone {
 }
 
 #[derive(Clone, Copy)]
-enum SideboardStyle {
-    EndOfDeck,
-    Indented,
-}
+enum SideboardStyle { EndOfDeck, Indented }
 
 fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyle) -> RgbaImage {
     assert!(count > 0);

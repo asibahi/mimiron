@@ -63,12 +63,8 @@ struct BGData {
 /// On card data, this tells you where the card is legal.
 /// As a search option, this tells you how to restrict the search. (So Solos would return both `Solos` AND `All` minions)
 #[derive(Clone, Copy, Default)]
-pub enum Pool {
-    #[default]
-    All,
-    Duos,
-    Solos,
-}
+pub enum Pool { #[default] All, Duos, Solos }
+
 impl FromStr for Pool {
     type Err = anyhow::Error;
 

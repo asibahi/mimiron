@@ -51,13 +51,7 @@ pub struct DeckArgs {
 }
 
 #[derive(Clone, ValueEnum)]
-enum ImageFormat {
-    Groups,
-    Single,
-    Square,
-    Wide,
-    Adapt,
-}
+enum ImageFormat { Groups, Single, Square, Wide, Adapt }
 
 pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
     if args.batch {

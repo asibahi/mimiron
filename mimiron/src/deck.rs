@@ -28,14 +28,8 @@ pub use crate::deck_image::ImageOptions;
 
 #[derive(Clone, Default, Deserialize)]
 #[serde(from = "String")]
-pub enum Format {
-    #[default]
-    Standard,
-    Wild,
-    Classic,
-    Twist,
-    Custom(String),
-}
+pub enum Format { #[default] Standard, Wild, Classic, Twist, Custom(String) }
+
 impl Display for Format {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

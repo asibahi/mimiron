@@ -1,6 +1,6 @@
 use crate::{
     card_details::{get_metadata, LocalizedName},
-    localization::{Locale, Localize},
+    localization::{Locale, Localize}, CardTextDisplay,
 };
 use anyhow::Result;
 use serde::Deserialize;
@@ -28,7 +28,7 @@ impl Keyword {
 }
 impl Localize for Keyword {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        format!("{}\n\t{}", self.name(locale), self.text(locale))
+        format!("{}\n{}", self.name(locale), self.text(locale).to_console())
     }
 }
 

@@ -71,22 +71,22 @@ impl CardTextDisplay for str {
 // Parser from HTML tags to TextTree
 // ====================
 
-fn parse_bold<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
+fn parse_bold(i: &str) -> IResult<&str, TextTree<'_>> {
     let marks = delimited(tag("<b>"), parse_body, tag("</b>"));
     map(marks, |c| TextTree::Bold(Box::new(c)))(i)
 }
 
-fn parse_italic<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
+fn parse_italic(i: &str) -> IResult<&str, TextTree<'_>> {
     let marks = delimited(tag("<i>"), parse_body, tag("</i>"));
     map(marks, |c| TextTree::Italic(Box::new(c)))(i)
 }
 
-fn parse_plain<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
+fn parse_plain(i: &str) -> IResult<&str, TextTree<'_>> {
     let body = take_till1(|c| c == '<');
-    map(body, |c: &str| TextTree::String(c))(i)
+    map(body, TextTree::String)(i)
 }
 
-fn parse_body<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
+fn parse_body(i: &str) -> IResult<&str, TextTree<'_>> {
     let apply_parsers = alt((parse_bold, parse_italic, parse_plain));
     map(many0(apply_parsers), |inner| match inner.len() {
         0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
@@ -112,60 +112,53 @@ mod prettify_tests {
         fn in_italic(input: Self) -> Self {
             Self::Italic(Box::new(input))
         }
-
-        fn from_string(input: &'s str) -> Self {
-            Self::String(input)
-        }
     }
 
     #[test]
-    fn test_climactic_necrotic_explosion() -> Result<(), String> {
+    fn test_climactic_necrotic_explosion() {
         let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
-        let case = to_text_tree(input)?;
+        let case = to_text_tree(input).unwrap();
         let expected = TT::Seq(vec![
-            TT::in_bold(TT::from_string("Lifesteal")),
-            TT::from_string(". Deal damage. Summon / Souls. "),
+            TT::in_bold(TT::String("Lifesteal")),
+            TT::String(". Deal damage. Summon / Souls. "),
             TT::in_italic(TT::Seq(vec![
-                TT::from_string("(Randomly improved by "),
-                TT::in_bold(TT::from_string("Corpses")),
-                TT::from_string(" you've spent)"),
+                TT::String("(Randomly improved by "),
+                TT::in_bold(TT::String("Corpses")),
+                TT::String(" you've spent)"),
             ])),
         ]);
 
         assert_eq!((case), expected);
-        Ok(())
     }
 
     #[test]
-    fn test_eternal_summoner() -> Result<(), String> {
+    fn test_eternal_summoner() {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
-        let case = to_text_tree(input)?;
+        let case = to_text_tree(input).unwrap();
         let expected = TT::Seq(vec![
             TT::in_bold(TT::Seq(vec![
-                TT::in_bold(TT::from_string("Reborn")),
-                TT::from_string("."),
+                TT::in_bold(TT::String("Reborn")),
+                TT::String("."),
             ])),
-            TT::from_string(" "),
-            TT::in_bold(TT::from_string("Deathrattle:")),
-            TT::from_string(" Summon 1 Eternal Knight."),
+            TT::String(" "),
+            TT::in_bold(TT::String("Deathrattle:")),
+            TT::String(" Summon 1 Eternal Knight."),
         ]);
 
         assert_eq!((case), expected);
-        Ok(())
     }
 
     #[test]
-    fn test_illidans_gift() -> Result<(), String> {
+    fn test_illidans_gift() {
         let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
-        let case = to_text_tree(input)?;
+        let case = to_text_tree(input).unwrap();
         let expected = TT::Seq(vec![
-            TT::in_bold(TT::from_string("Discover")),
-            TT::from_string(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova."),
+            TT::in_bold(TT::String("Discover")),
+            TT::String(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova."),
             TT::in_bold(TT::Empty), // This is silly. It should cancel the surrounding tag.
         ]);
 
         assert_eq!((case), expected);
-        Ok(())
     }
 }
 
@@ -249,7 +242,7 @@ mod traverse_tests {
     use TextStyle as TS;
 
     #[test]
-    fn test_eternal_summoner() -> Result<(), String> {
+    fn test_eternal_summoner() {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
         let case = get_text_boxes(input);
 
@@ -259,11 +252,10 @@ mod traverse_tests {
         ];
 
         assert!(case.eq(expected));
-        Ok(())
     }
 
     #[test]
-    fn test_climactic_necrotic_explosion() -> Result<(), String> {
+    fn test_climactic_necrotic_explosion() {
         let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
         let case = get_text_boxes(input);
 
@@ -276,11 +268,10 @@ mod traverse_tests {
         ];
 
         assert!(case.eq(expected));
-        Ok(())
     }
 
     #[test]
-    fn test_illidans_gift() -> Result<(), String> {
+    fn test_illidans_gift() {
         let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
         let case = get_text_boxes(input);
 
@@ -290,6 +281,5 @@ mod traverse_tests {
         ];
 
         assert!(case.eq(expected));
-        Ok(())
     }
 }

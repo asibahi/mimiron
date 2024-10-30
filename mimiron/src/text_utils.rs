@@ -2,8 +2,8 @@ use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1},
-    combinator::{all_consuming, map, opt},
-    multi::many1,
+    combinator::{all_consuming, map},
+    multi::many0,
     sequence::delimited,
     IResult,
 };
@@ -89,13 +89,11 @@ fn parse_plain(i: &str) -> IResult<&str, TextTree> {
 
 fn parse_body(i: &str) -> IResult<&str, TextTree> {
     let apply_parsers = alt((parse_bold, parse_italic, parse_plain));
-    let parse_fn = map(many1(apply_parsers), |inner| match inner.len() {
+    map(many0(apply_parsers), |inner| match inner.len() {
+        0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
         1 => inner.into_iter().next().unwrap(),
         _ => TextTree::Seq(inner),
-    });
-
-    // to deal with empty tags: i.e. <b></b>
-    map(opt(parse_fn), |c| c.unwrap_or(TextTree::Empty))(i)
+    })(i)
 }
 
 fn to_text_tree(i: &str) -> Result<TextTree, &str> {

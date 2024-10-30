@@ -9,12 +9,12 @@ use nom::{
 use std::fmt::Write;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum TextTree {
+enum TextTree<'s> {
     Empty,
-    String(String),
-    Bold(Box<TextTree>),
-    Italic(Box<TextTree>),
-    Seq(Vec<TextTree>),
+    String(&'s str),
+    Bold(Box<TextTree<'s>>),
+    Italic(Box<TextTree<'s>>),
+    Seq(Vec<TextTree<'s>>),
 }
 
 pub trait CardTextDisplay {
@@ -71,22 +71,22 @@ impl CardTextDisplay for str {
 // Parser from HTML tags to TextTree
 // ====================
 
-fn parse_bold(i: &str) -> IResult<&str, TextTree> {
+fn parse_bold<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
     let marks = delimited(tag("<b>"), parse_body, tag("</b>"));
     map(marks, |c| TextTree::Bold(Box::new(c)))(i)
 }
 
-fn parse_italic(i: &str) -> IResult<&str, TextTree> {
+fn parse_italic<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
     let marks = delimited(tag("<i>"), parse_body, tag("</i>"));
     map(marks, |c| TextTree::Italic(Box::new(c)))(i)
 }
 
-fn parse_plain(i: &str) -> IResult<&str, TextTree> {
+fn parse_plain<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
     let body = take_till1(|c| c == '<');
-    map(body, |c: &str| TextTree::String(c.to_owned()))(i)
+    map(body, |c: &str| TextTree::String(c))(i)
 }
 
-fn parse_body(i: &str) -> IResult<&str, TextTree> {
+fn parse_body<'s>(i: &'s str) -> IResult<&'s str, TextTree<'s>> {
     let apply_parsers = alt((parse_bold, parse_italic, parse_plain));
     map(many0(apply_parsers), |inner| match inner.len() {
         0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
@@ -95,7 +95,7 @@ fn parse_body(i: &str) -> IResult<&str, TextTree> {
     })(i)
 }
 
-fn to_text_tree(i: &str) -> Result<TextTree, &str> {
+fn to_text_tree(i: &str) -> Result<TextTree<'_>, &str> {
     all_consuming(parse_body)(i).map(|(_, s)| s).map_err(|_| i)
 }
 
@@ -104,7 +104,7 @@ mod prettify_tests {
     use super::*;
     use TextTree as TT;
 
-    impl TextTree {
+    impl<'s> TextTree<'s> {
         fn in_bold(input: Self) -> Self {
             Self::Bold(Box::new(input))
         }
@@ -113,8 +113,8 @@ mod prettify_tests {
             Self::Italic(Box::new(input))
         }
 
-        fn from_string(input: &str) -> Self {
-            Self::String(input.to_owned())
+        fn from_string(input: &'s str) -> Self {
+            Self::String(input)
         }
     }
 
@@ -186,17 +186,12 @@ impl TextPiece {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum TextStyle {
-    Plain,
-    Bold,
-    Italic,
-    BoldItalic,
-}
+enum TextStyle { Plain, Bold, Italic, BoldItalic }
 
-fn traverse_inner(tree: TextTree, visit: &mut dyn FnMut(TextPiece)) {
+fn traverse_inner(tree: TextTree<'_>, visit: &mut dyn FnMut(TextPiece)) {
     match tree {
         TextTree::Empty => {}
-        TextTree::String(text) => visit(TextPiece::new(&text, TextStyle::Plain)),
+        TextTree::String(text) => visit(TextPiece::new(text, TextStyle::Plain)),
         TextTree::Bold(inner) => traverse_inner(*inner, &mut |tp| {
             let emboldened = TextPiece {
                 style: match tp.style {
@@ -223,7 +218,7 @@ fn traverse_inner(tree: TextTree, visit: &mut dyn FnMut(TextPiece)) {
     }
 }
 
-fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
+fn traverse_text_tree(tree: TextTree<'_>) -> impl Iterator<Item = TextPiece> + use<>{
     let mut collector: Vec<TextPiece> = vec![];
 
     let visit = &mut |tp: TextPiece| match collector.last_mut() {
@@ -240,7 +235,7 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
 fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> + use<> {
     let tree = match to_text_tree(i) {
         Ok(inner) => inner,
-        Err(text) => TextTree::String(text.to_owned()),
+        Err(text) => TextTree::String(text),
     };
 
     traverse_text_tree(tree)

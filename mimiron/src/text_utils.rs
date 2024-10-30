@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1},
@@ -228,15 +227,14 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
     let mut collector: Vec<TextPiece> = vec![];
 
     let visit = &mut |tp: TextPiece| match collector.last_mut() {
-        Some(last) if last.style == tp.style => last.text.push_str(&tp.text),
+        Some(last) if last.style == tp.style || tp.text.trim().is_empty() =>
+            last.text.push_str(&tp.text),
         _ => collector.push(tp),
     };
 
     traverse_inner(tree, visit);
 
-    collector.into_iter().flat_map(|tp|
-        tp.text.split_inclusive(' ').map(|t| TextPiece::new(t, tp.style)).collect::<Vec<_>>()
-    )
+    collector.into_iter()
 }
 
 fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> + use<> {
@@ -245,13 +243,7 @@ fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> + use<> {
         Err(text) => TextTree::String(text.to_owned()),
     };
 
-    traverse_text_tree(tree).coalesce(|x, y|
-        if x.style == y.style {
-            Ok(TextPiece { text: format!("{}{}", x.text, y.text), style: x.style })
-        } else {
-            Err((x, y))
-        }
-    )
+    traverse_text_tree(tree)
 }
 
 #[cfg(test)]
@@ -268,14 +260,8 @@ mod traverse_tests {
         let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
 
         let expected = vec![
-            TP::new("Reborn.", TS::Bold),
-            TP::new(" ", TS::Plain),
-            TP::new("Deathrattle:", TS::Bold),
-            TP::new(" ", TS::Plain),
-            TP::new("Summon ", TS::Plain),
-            TP::new("1 ", TS::Plain),
-            TP::new("Eternal ", TS::Plain),
-            TP::new("Knight.", TS::Plain),
+            TP::new("Reborn. Deathrattle:", TS::Bold),
+            TP::new(" Summon 1 Eternal Knight.", TS::Plain),
         ];
 
         assert_eq!((traversal), expected);
@@ -290,19 +276,10 @@ mod traverse_tests {
 
         let expected = vec![
             TP::new("Lifesteal", TS::Bold),
-            TP::new(". ", TS::Plain),
-            TP::new("Deal ", TS::Plain),
-            TP::new("damage. ", TS::Plain),
-            TP::new("Summon ", TS::Plain),
-            TP::new("/ ", TS::Plain),
-            TP::new("Souls. ", TS::Plain),
-            TP::new("(Randomly ", TS::Italic),
-            TP::new("improved ", TS::Italic),
-            TP::new("by ", TS::Italic),
+            TP::new(". Deal damage. Summon / Souls. ", TS::Plain),
+            TP::new("(Randomly improved by ", TS::Italic),
             TP::new("Corpses", TS::BoldItalic),
-            TP::new(" ", TS::Italic),
-            TP::new("you've ", TS::Italic),
-            TP::new("spent)", TS::Italic),
+            TP::new(" you've spent)", TS::Italic),
         ];
 
         assert_eq!(traversal, expected);
@@ -317,16 +294,7 @@ mod traverse_tests {
 
         let expected = vec![
             TP::new("Discover", TS::Bold),
-            TP::new(" ", TS::Plain),
-            TP::new("a ", TS::Plain),
-            TP::new("temporary ", TS::Plain),
-            TP::new("Fel ", TS::Plain),
-            TP::new("Barrage, ", TS::Plain),
-            TP::new("Chaos ", TS::Plain),
-            TP::new("Strike, ", TS::Plain),
-            TP::new("or ", TS::Plain),
-            TP::new("Chaos ", TS::Plain),
-            TP::new("Nova.", TS::Plain),
+            TP::new(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova.", TS::Plain),
         ];
 
         assert_eq!(traversal, expected);

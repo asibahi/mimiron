@@ -241,7 +241,7 @@ fn traverse_text_tree(tree: TextTree) -> impl Iterator<Item = TextPiece> {
     )
 }
 
-fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> {
+fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> + use<> {
     let tree = match to_text_tree(i) {
         Ok(inner) => inner,
         Err(text) => TextTree::String(text.to_owned()),

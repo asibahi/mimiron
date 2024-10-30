@@ -6,7 +6,7 @@ use nom::{
     sequence::delimited,
     IResult,
 };
-use std::fmt::Write;
+use std::{borrow::Cow, fmt::Write};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum TextTree<'s> {
@@ -174,13 +174,13 @@ mod prettify_tests {
 // ====================
 
 #[derive(Debug, PartialEq, Eq)]
-struct TextPiece {
-    text: String,
+struct TextPiece<'s> {
+    text: Cow<'s, str>,
     style: TextStyle,
 }
 
-impl TextPiece {
-    fn new(text: &str, style: TextStyle) -> Self {
+impl<'s> TextPiece<'s> {
+    fn new(text: &'s str, style: TextStyle) -> Self {
         Self { text: text.into(), style }
     }
 }
@@ -188,7 +188,7 @@ impl TextPiece {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum TextStyle { Plain, Bold, Italic, BoldItalic }
 
-fn traverse_inner(tree: TextTree<'_>, visit: &mut dyn FnMut(TextPiece)) {
+fn traverse_inner<'s>(tree: TextTree<'s>, visit: &mut dyn FnMut(TextPiece<'s>)) {
     match tree {
         TextTree::Empty => {}
         TextTree::String(text) => visit(TextPiece::new(text, TextStyle::Plain)),
@@ -218,21 +218,21 @@ fn traverse_inner(tree: TextTree<'_>, visit: &mut dyn FnMut(TextPiece)) {
     }
 }
 
-fn traverse_text_tree(tree: TextTree<'_>) -> impl Iterator<Item = TextPiece> + use<>{
-    let mut collector: Vec<TextPiece> = vec![];
+fn traverse_text_tree<'s>(tree: TextTree<'s>) -> impl Iterator<Item = TextPiece<'s>> {
+    let mut collector: Vec<TextPiece<'s>> = vec![];
 
-    let visit = &mut |tp: TextPiece| match collector.last_mut() {
+    let mut visit = |tp: TextPiece<'s>| match collector.last_mut() {
         Some(last) if last.style == tp.style || tp.text.trim().is_empty() =>
-            last.text.push_str(&tp.text),
+            last.text.to_mut().push_str(&tp.text),
         _ => collector.push(tp),
     };
 
-    traverse_inner(tree, visit);
+    traverse_inner(tree, &mut visit);
 
     collector.into_iter()
 }
 
-fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece> + use<> {
+fn get_text_boxes(i: &str) -> impl Iterator<Item = TextPiece<'_>> {
     let tree = match to_text_tree(i) {
         Ok(inner) => inner,
         Err(text) => TextTree::String(text),
@@ -251,23 +251,21 @@ mod traverse_tests {
     #[test]
     fn test_eternal_summoner() -> Result<(), String> {
         let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
-        let tree = to_text_tree(input)?;
-        let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
+        let case = get_text_boxes(input);
 
         let expected = vec![
             TP::new("Reborn. Deathrattle:", TS::Bold),
             TP::new(" Summon 1 Eternal Knight.", TS::Plain),
         ];
 
-        assert_eq!((traversal), expected);
+        assert!(case.eq(expected));
         Ok(())
     }
 
     #[test]
     fn test_climactic_necrotic_explosion() -> Result<(), String> {
         let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
-        let tree = to_text_tree(input)?;
-        let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
+        let case = get_text_boxes(input);
 
         let expected = vec![
             TP::new("Lifesteal", TS::Bold),
@@ -277,22 +275,21 @@ mod traverse_tests {
             TP::new(" you've spent)", TS::Italic),
         ];
 
-        assert_eq!(traversal, expected);
+        assert!(case.eq(expected));
         Ok(())
     }
 
     #[test]
     fn test_illidans_gift() -> Result<(), String> {
         let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
-        let tree = to_text_tree(input)?;
-        let traversal = traverse_text_tree(tree).collect::<Vec<_>>();
+        let case = get_text_boxes(input);
 
         let expected = vec![
             TP::new("Discover", TS::Bold),
             TP::new(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova.", TS::Plain),
         ];
 
-        assert_eq!(traversal, expected);
+        assert!(case.eq(expected));
         Ok(())
     }
 }

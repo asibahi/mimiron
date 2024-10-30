@@ -32,4 +32,5 @@ either.workspace = true
 integer-encoding.workspace = true
 nucleo-matcher.workspace = true
 parking_lot.workspace = true
+urlencoding.workspace = true
 

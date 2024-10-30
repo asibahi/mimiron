@@ -160,7 +160,7 @@ fn create_deck_reply(deck: &Deck) -> Result<poise::CreateReply, Error> {
         .title(&deck.title)
         .url(format!(
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
-            urlencoding::encode(&deck.deck_code)
+            urlencoding::Encoded(&deck.deck_code)
         ))
         .description(&deck.deck_code)
         .color(deck.class.color())

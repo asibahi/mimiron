@@ -260,8 +260,17 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
      */
 
     let raw_data = code
+        // if it is a long code pasted from game or tracker
         .split_ascii_whitespace()
         .find_map(|s| decode_deck_code(s).ok())
+
+        // if it is a url from the official deck builder
+        .or_else(|| code
+            .split_terminator(&['=', '?'])
+            .find_map(|s| urlencoding::decode(s).ok()
+                .and_then(|d| decode_deck_code(&d).ok())
+            )
+        )
         .ok_or(anyhow!("Unable to parse deck code. Code may be invalid."))?;
 
     let title = code

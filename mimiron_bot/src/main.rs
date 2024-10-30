@@ -16,7 +16,7 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
     let discord_token =
         secret_store
-            .get("DISCORD_TEST_TOKEN")
+            .get("DISCORD_TOKEN")
             .context("DISCORD_TOKEN was not found")?;
 
     mimiron::set_blizzard_client_auth(

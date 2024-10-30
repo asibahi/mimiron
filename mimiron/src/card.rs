@@ -109,7 +109,7 @@ impl Card {
         crate::card_details::get_set_by_id(self.card_set, locale)
     }
 
-    pub(crate) fn stats(&self) -> (Option<u8>, Option<u8>) {
+    pub(crate) const fn stats(&self) -> (Option<u8>, Option<u8>) {
         let (attack, health) = match self.card_type {
             CardType::Minion { attack, health, .. }
             | CardType::Weapon { attack, durability: health } => (Some(attack), Some(health)),
@@ -234,7 +234,7 @@ pub struct SearchOptions {
 
 impl SearchOptions {
     #[must_use]
-    pub fn search_for(search_term: String) -> Self {
+    pub const fn search_for(search_term: String) -> Self {
         Self {
             search_term,
             with_text: false,

@@ -37,14 +37,13 @@ pub fn set_blizzard_client_auth(id: String, secret: String) {
 }
 
 fn internal_get_access_token() -> Result<AccessToken> {
-    let (id, secret) = BLIZZARD_CLIENT_AUTH
-        .read()
-        .clone()
-        .unwrap_or_else(|| panic!(
+    let (id, secret) = BLIZZARD_CLIENT_AUTH.read().clone().unwrap_or_else(||
+        panic!(
             "Failed to get {} or {}. Set values with set_blizzard_client_auth",
             super::BLIZZARD_CLIENT_ID,
             super::BLIZZARD_CLIENT_SECRET,
-        ));
+        )
+    );
 
     let creds = BASE64_STANDARD_NO_PAD.encode(format!("{id}:{secret}").as_bytes());
 
@@ -64,9 +63,9 @@ pub fn get_access_token() -> String {
     match current_token {
         Some(at) if Instant::now() < at.expiry => at.token,
         _ => TOKEN
-            .write()
-            .insert(internal_get_access_token().expect("Failed to get access token"))
-            .clone()
-            .token
+                .write()
+                .insert(internal_get_access_token().expect("Failed to get access token"))
+                .clone()
+                .token
     }
 }

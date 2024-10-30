@@ -71,11 +71,11 @@ impl FromStr for Pool {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let s = s.to_ascii_lowercase();
         if s.starts_with('s') {
-            Ok(Pool::Solos)
+            Ok(Self::Solos)
         } else if s.starts_with('d') {
-            Ok(Pool::Duos)
+            Ok(Self::Duos)
         } else if s.starts_with('a') {
-            Ok(Pool::All)
+            Ok(Self::All)
         } else {
             anyhow::bail!("Unknown Battlegrounds pool")
         }
@@ -142,8 +142,7 @@ impl Localize for BGCardType {
                     Ok(())
                 }
 
-                let get_type =
-                    |i: u8| get_metadata().types.iter().find(|det| det.id == i).unwrap().name(self.1);
+                let get_type = |i: u8| get_metadata().types.iter().find(|det| det.id == i).unwrap().name(self.1);
 
                 let battlegrounds = self.1.battlegrounds();
 
@@ -280,7 +279,7 @@ impl From<CardData> for Card {
             .battlegrounds
             .as_ref()
             .and_then(|bg| 
-                bg.duos_only.then_some(Pool::Duos).or(bg.solos_only.then_some(Pool::Solos))
+                bg.duos_only.then_some(Pool::Duos).or_else(|| bg.solos_only.then_some(Pool::Solos))
             )
             .unwrap_or_default();
 
@@ -305,7 +304,7 @@ pub struct SearchOptions {
 
 impl SearchOptions {
     #[must_use]
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         // The reason we're not just deriving and using Default here
         // is to make it clear that it is 0 filters.
         Self {

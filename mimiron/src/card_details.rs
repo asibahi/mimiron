@@ -243,7 +243,7 @@ impl FromStr for Class {
 }
 impl Class {
     #[must_use]
-    pub fn color(&self) -> (u8, u8, u8) {
+    pub const fn color(&self) -> (u8, u8, u8) {
         match self {
             // colors from d0nkey.top
             Self::DeathKnight => (108, 105, 154),
@@ -298,7 +298,7 @@ impl From<u8> for Rarity {
 }
 impl Rarity {
     #[must_use]
-    pub fn color(&self) -> (u8, u8, u8) {
+    pub const fn color(&self) -> (u8, u8, u8) {
         // colors from https://wowpedia.fandom.com/wiki/Quality
         match self {
             Self::Legendary => (255, 128, 0),

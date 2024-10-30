@@ -13,16 +13,16 @@ pub enum Locale {
 }
 impl Locale {
     // Inner Functions that note global terms that might be used in multiple places
-    pub(crate) fn battlegrounds(self) -> &'static str {
+    pub(crate) const fn battlegrounds(self) -> &'static str {
         match self {
-            Locale::deDE => "Schlachtfeld",
-            Locale::frFR => "Champs de bataille",
-            Locale::itIT => "Battaglia",
-            Locale::jaJP => "バトルグラウンド",
-            Locale::koKR => "전장",
-            Locale::plPL => "Ustawka",
-            Locale::ptBR => "Campos de Batalha",
-            Locale::ruRU => "Поля сражений",
+            Self::deDE => "Schlachtfeld",
+            Self::frFR => "Champs de bataille",
+            Self::itIT => "Battaglia",
+            Self::jaJP => "バトルグラウンド",
+            Self::koKR => "전장",
+            Self::plPL => "Ustawka",
+            Self::ptBR => "Campos de Batalha",
+            Self::ruRU => "Поля сражений",
             Locale::enUS
             | Locale::esES
             | Locale::esMX
@@ -32,38 +32,38 @@ impl Locale {
         }
     }
 
-    pub(crate) fn quest(self) -> &'static str {
+    pub(crate) const fn quest(self) -> &'static str {
         match self {
-            Locale::deDE | Locale::enUS => "Quest",
-            Locale::esES | Locale::esMX => "Misión",
-            Locale::frFR => "Quête",
-            Locale::itIT => "Missione",
-            Locale::jaJP => "クエスト",
-            Locale::koKR => "퀘스트",
-            Locale::plPL => "Zadanie",
-            Locale::ptBR => "Missão",
-            Locale::ruRU => "Задача",
-            Locale::thTH => "เควสต์",
-            Locale::zhCN => "任务",
-            Locale::zhTW => "任務",
+            Self::deDE | Self::enUS => "Quest",
+            Self::esES | Self::esMX => "Misión",
+            Self::frFR => "Quête",
+            Self::itIT => "Missione",
+            Self::jaJP => "クエスト",
+            Self::koKR => "퀘스트",
+            Self::plPL => "Zadanie",
+            Self::ptBR => "Missão",
+            Self::ruRU => "Задача",
+            Self::thTH => "เควสต์",
+            Self::zhCN => "任务",
+            Self::zhTW => "任務",
         }
     }
 
     #[must_use]
     // fucking stupid that this is pub
-    pub fn golden(self) -> &'static str {
+    pub const fn golden(self) -> &'static str {
         match self {
-            Locale::deDE | Locale::enUS | Locale::zhCN => "Golden",
-            Locale::esES | Locale::esMX => "Dorada",
-            Locale::frFR => "Dorée",
-            Locale::itIT => "Dorato",
-            Locale::jaJP => "ゴールデン",
-            Locale::koKR => "황금",
-            Locale::plPL => "Złote",
-            Locale::ptBR => "Dourado",
-            Locale::ruRU => "Золотая карта",
-            Locale::thTH => "สีทอง",
-            Locale::zhTW => "金卡",
+            Self::deDE | Self::enUS | Self::zhCN => "Golden",
+            Self::esES | Self::esMX => "Dorada",
+            Self::frFR => "Dorée",
+            Self::itIT => "Dorato",
+            Self::jaJP => "ゴールデン",
+            Self::koKR => "황금",
+            Self::plPL => "Złote",
+            Self::ptBR => "Dourado",
+            Self::ruRU => "Золотая карта",
+            Self::thTH => "สีทอง",
+            Self::zhTW => "金卡",
         }
     }
 }

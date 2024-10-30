@@ -42,7 +42,7 @@ struct DeckStat {
 }
 impl DeckStat {
     fn get_winrate(&self) -> f64 {
-        self.winrate.unwrap_or(f64::from(self.total_wins) / f64::from(self.total_games))
+        self.winrate.unwrap_or_else(|| f64::from(self.total_wins) / f64::from(self.total_games))
     }
 }
 
@@ -88,11 +88,7 @@ fn casify_archetype(at: &str) -> String {
                 s.to_uppercase()
             } else {
                 let mut chars = s.chars();
-                if let Some(first) = chars.next() {
-                    first.to_uppercase().chain(chars).collect()
-                } else {
-                    String::new()
-                }
+                chars.next().map_or_else(String::new, |first| first.to_uppercase().chain(chars).collect())
             }
         )
         .join(" ")

@@ -398,7 +398,7 @@ fn draw_heading_slug(heading: &str) -> RgbaImage {
 }
 
 fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
-    let offset = if let Ok(class_img) = get_class_icon(deck.class) {
+    let offset = get_class_icon(deck.class).map_or(MARGIN, |class_img| {
         let mut class_img =
             imageops::resize(&class_img, INFO_WIDTH, CROP_HEIGHT, imageops::FilterType::Gaussian);
         if vertical {
@@ -407,9 +407,7 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
         img.copy_from(&class_img, MARGIN, MARGIN)
             .expect("class thumbnail can't be larger than image!!");
         MARGIN + INFO_WIDTH + 10
-    } else {
-        MARGIN
-    };
+    });
 
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
 }
@@ -440,7 +438,7 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
         .crop_image
         .clone()
         .or_else(|| get_hearth_sim_crop_image(card.id))
-        .unwrap_or("https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
+        .unwrap_or_else(|| "https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
     let buf = AGENT.get(link).call()?.body_mut().read_to_vec()?;
 

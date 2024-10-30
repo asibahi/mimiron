@@ -33,11 +33,11 @@ pub enum Format { #[default] Standard, Wild, Classic, Twist, Custom(String) }
 impl Display for Format {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Format::Standard => write!(f, "Standard"),
-            Format::Wild => write!(f, "Wild"),
-            Format::Classic => write!(f, "Classic"),
-            Format::Twist => write!(f, "Twist"),
-            Format::Custom(fmt) => write!(f, "{fmt}"),
+            Self::Standard => write!(f, "Standard"),
+            Self::Wild => write!(f, "Wild"),
+            Self::Classic => write!(f, "Classic"),
+            Self::Twist => write!(f, "Twist"),
+            Self::Custom(fmt) => write!(f, "{fmt}"),
         }
     }
 }
@@ -52,11 +52,11 @@ impl From<String> for Format {
     fn from(mut value: String) -> Self {
         value.make_ascii_lowercase();
         match value.as_str() {
-            "wild" | "wld" | "w" => Format::Wild,
-            "standard" | "std" | "s" => Format::Standard,
-            "twist" | "t" => Format::Twist,
-            "classic" | "c" => Format::Classic,
-            _ => Format::Custom(value),
+            "wild" | "wld" | "w" => Self::Wild,
+            "standard" | "std" | "s" => Self::Standard,
+            "twist" | "t" => Self::Twist,
+            "classic" | "c" => Self::Classic,
+            _ => Self::Custom(value),
         }
     }
 }
@@ -126,7 +126,7 @@ impl Deck {
 }
 impl From<DeckData> for Deck {
     fn from(value: DeckData) -> Self {
-        Deck {
+        Self {
             title: format!("{} - {}", value.hero.name, value.format.to_string().to_uppercase()),
             deck_code: value.deck_code,
             format: value.format,
@@ -220,7 +220,7 @@ pub struct LookupOptions {
 
 impl LookupOptions {
     #[must_use]
-    pub fn lookup(code: String) -> Self {
+    pub const fn lookup(code: String) -> Self {
         Self { code, locale: Locale::enUS, format: None }
     }
     #[must_use]
@@ -259,13 +259,11 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
         .find_map(|s| decode_deck_code(s).ok())
 
         // if it is a url from the official deck builder
-        .or_else(|| code
-            .split_terminator(&['=', '?'])
-            .find_map(|s| urlencoding::decode(s).ok()
-                .and_then(|d| decode_deck_code(&d).ok())
-            )
+        .or_else(||
+            code.split_terminator(&['=', '?'])
+                .find_map(|s| urlencoding::decode(s).ok().and_then(|d| decode_deck_code(&d).ok()))
         )
-        .ok_or(anyhow!("Unable to parse deck code. Code may be invalid."))?;
+        .ok_or_else(|| anyhow!("Unable to parse deck code. Code may be invalid."))?;
 
     let title = code
         .split_once("###")

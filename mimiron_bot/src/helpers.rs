@@ -93,14 +93,14 @@ impl Emoji for Rarity {
 impl Emoji for Pool {
     fn emoji(&self) -> &'static str {
         match self {
-            Pool::Solos => ":one: ",
-            Pool::Duos => ":two: ",
-            Pool::All => ":one: :two: ",
+            Self::Solos => ":one: ",
+            Self::Duos => ":two: ",
+            Self::All => ":one: :two: ",
         }
     }
 }
 
-pub(crate) async fn on_error(
+pub async fn on_error(
     error: poise::FrameworkError<'_, Data, Error>,
 ) -> Result<(), serenity::Error> {
     match error {
@@ -122,7 +122,7 @@ pub(crate) async fn on_error(
     Ok(())
 }
 
-pub(crate) fn on_success(ctx: &Context<'_>) {
+pub fn on_success(ctx: &Context<'_>) {
     let command = ctx.command().name.as_str();
     let guild = ctx.guild().map_or("Direct Messages".into(), |g| g.name.clone());
 
@@ -131,10 +131,10 @@ pub(crate) fn on_success(ctx: &Context<'_>) {
     tracing::info!(command, guild, invocation, "Command called successfully.");
 }
 
-pub(crate) async fn terse_embeds<T>(
+pub async fn terse_embeds<T>(
     ctx: Context<'_>,
-    items: impl Iterator<Item = T>,
-    inner_embed: impl Fn(T) -> serenity::CreateEmbed,
+    items: impl Iterator<Item = T> + Send,
+    inner_embed: impl Fn(T) -> serenity::CreateEmbed + Send,
 ) -> Result<(), Error> {
     let items = items.take(3);
     let embeds = items.map(inner_embed);
@@ -147,10 +147,10 @@ pub(crate) async fn terse_embeds<T>(
     Ok(())
 }
 
-pub(crate) async fn paginated_embeds<T>(
+pub async fn paginated_embeds<T: Send>(
     ctx: Context<'_>,
-    items: impl Iterator<Item = T>,
-    inner_embed: impl Fn(T) -> serenity::CreateEmbed,
+    items: impl Iterator<Item = T> + Send,
+    inner_embed: impl Fn(T) -> serenity::CreateEmbed + Send + Sync,
 ) -> Result<(), Error> {
     // pagination elements
     let embed_chunks = items
@@ -237,7 +237,7 @@ pub(crate) async fn paginated_embeds<T>(
     Ok(())
 }
 
-pub(crate) fn get_server_locale(ctx: &Context<'_>) -> Locale {
+pub fn get_server_locale(ctx: &Context<'_>) -> Locale {
     match (ctx.guild(), ctx.locale()) {
         (Some(g), _) => g.preferred_locale.parse().unwrap_or_default(),
         (_, Some(l)) => l.parse().unwrap_or_default(),

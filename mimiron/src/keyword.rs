@@ -1,6 +1,7 @@
 use crate::{
     card_details::{get_metadata, LocalizedName},
-    localization::{Locale, Localize}, CardTextDisplay,
+    localization::{Locale, Localize},
+    CardTextDisplay,
 };
 use anyhow::Result;
 use serde::Deserialize;

@@ -19,7 +19,7 @@ use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
 use rayon::prelude::*;
-use std::{collections::HashMap, ops::Not, sync::LazyLock};
+use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock};
 
 // Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;
@@ -42,25 +42,11 @@ const CARD_NAME_SCALE: f32 = 40.0;
 
 static FONTS: [(LazyLock<FontRef<'_>>, f32); 3] = [
     // Base font
-    (
-        LazyLock::new(||
-            FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()
-        ),
-        1.0,
-    ),
+    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()), 1.0 ),
+    
     // Fallbacks
-    (
-        LazyLock::new(||
-            FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()
-        ),
-        1.2, // scaling for Noto CJK
-    ),
-    (
-        LazyLock::new(||
-            FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()
-        ),
-        1.3, // scaling for Noto Thai
-    ),
+    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()), 1.2 ), 
+    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()), 1.3 ),
 ];
 
 #[derive(Clone, Copy)]
@@ -87,18 +73,18 @@ pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
         ImageOptions::Groups => img_groups_format(deck),
         ImageOptions::Adaptable => img_columns_format(deck, None, true),
         ImageOptions::Regular { columns, inline_sideboard } =>
-            img_columns_format(deck, Some(columns as u32), inline_sideboard),
+            img_columns_format(deck, NonZeroU32::new(columns as u32), inline_sideboard),
     }
 }
 
 fn img_columns_format(
     deck: &Deck,
-    col_count: Option<u32>,
+    col_count: Option<NonZeroU32>,
     inline_sideboard: bool,
 ) -> Result<RgbaImage> {
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
 
-    let (mut img, cards_in_col, title_offset) = {
+    let (mut img, pos_in_img) = {
         let main_deck_length = ordered_main_deck.clone().count();
 
         let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
@@ -108,10 +94,12 @@ fn img_columns_format(
 
         let length = (main_deck_length + sideboards_length) as u32;
 
-        let col_count = col_count.unwrap_or_else(|| (length / 15 + 1).max(2));
+        let col_count = col_count.map_or_else(|| (length / 15 + 1).max(2), u32::from);
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
-        let mut img = if col_count == 1 {
+        let vertical_title = col_count == 1;
+
+        let mut img = if vertical_title {
             RgbaImage::from_pixel(
                 ROW_HEIGHT * cards_in_col + MARGIN,
                 COLUMN_WIDTH + ROW_HEIGHT + MARGIN,
@@ -125,12 +113,12 @@ fn img_columns_format(
             )
         };
 
-        draw_deck_title(&mut img, deck, col_count == 1);
-        if col_count == 1 {
+        draw_deck_title(&mut img, deck, vertical_title);
+        if vertical_title {
             img = imageops::rotate90(&img);
         }
-
-        (img, cards_in_col, (col_count != 1) as u32)
+ 
+        (img, move |c| (c / cards_in_col, c % cards_in_col + (!vertical_title) as u32))
     };
 
     let slug_map = get_cards_slugs(
@@ -143,7 +131,7 @@ fn img_columns_format(
     for card in ordered_main_deck {
         let slug = &slug_map[&(card.id, Zone::MainDeck)];
 
-        let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
+        let (col, row) = pos_in_img(cursor);
 
         img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
@@ -158,7 +146,7 @@ fn img_columns_format(
                 .flat_map(|sb| sb.cards_in_sideboard.iter().sorted().dedup())
                 .map(|c| &slug_map[&(c.id, Zone::Sideboard { sb_card_id: card.id })])
             {
-                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
+                let (col, row) = pos_in_img(cursor);
 
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
                 cursor += 1;
@@ -168,7 +156,7 @@ fn img_columns_format(
 
     if inline_sideboard.not() {
         for sb in deck.sideboard_cards.iter().flatten() {
-            let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
+            let (col, row) = pos_in_img(cursor);
             img.copy_from(
                 &draw_heading_slug(&format!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
@@ -181,7 +169,7 @@ fn img_columns_format(
                     &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
                 )
             {
-                let (col, row) = (cursor / cards_in_col, cursor % cards_in_col + title_offset);
+                let (col, row) = pos_in_img(cursor);
                 img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
 
                 cursor += 1;
@@ -293,7 +281,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     };
 
     let r_color = rarity.color();
-    let c_color = card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect_vec();
+    let c_color = card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect::<Vec<_>>();
 
     let indent = match (zone, sb_style) {
         (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
@@ -302,21 +290,22 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
 
     // main canvas
     let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y|
-        if x < indent.saturating_sub(MARGIN) {
+        match x {
             // Legendary color for Sideboard indent
-            [255, 128, 0, 255]
-        } else if x < indent {
+            _ if x < indent.saturating_sub(MARGIN) => [255, 128, 0, 255],
+
             // gap between Sideboard marker and Mana Square
-            [255; 4]
-        } else if x <= indent + MANA_WIDTH {
+            _ if x < indent => [255; 4],
+
             // Mana Square
-            [54, 98, 156, 255]
-        } else if x <= indent + MANA_WIDTH + COLOR_BAND_WIDTH {
+            _ if x <= indent + MANA_WIDTH => [54, 98, 156, 255],
+
             // Class color band
-            let idx = y * c_color.len() as u32 / CROP_HEIGHT;
-            c_color[idx as usize]
-        } else {
-            [10, 10, 10, 255]
+            _ if x <= indent + MANA_WIDTH + COLOR_BAND_WIDTH => {
+                let idx = y * c_color.len() as u32 / CROP_HEIGHT;
+                c_color[idx as usize]
+            }
+            _ => [10, 10, 10, 255]
         }
         .into()
     );
@@ -347,7 +336,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     // card cost
     let cost = cost.to_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, [255; 4], indent + (MANA_WIDTH - tw) / 2, 0, CARD_NAME_SCALE, &cost);
+    draw_text(&mut img, [255; 4], indent + (MANA_WIDTH.saturating_sub(tw)) / 2, 0, CARD_NAME_SCALE, &cost);
 
     // rarity square
     // drawn latest to overlap previous elements.

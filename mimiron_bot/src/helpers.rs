@@ -8,14 +8,27 @@ use mimiron::{
 use poise::serenity_prelude as serenity;
 use std::{cell::LazyCell, collections::HashMap, iter::Iterator, ops::Not};
 
+const FOOTER: &str = "This bot uses the Blizzard API, which mirrors the official card library, \
+                      with supplemental data from HearthSim and Firestone. Code is available at \
+                      https://github.com/asibahi/mimiron/ . If you have requests or suggestions, \
+                      raise a GitHub Issue or ping @mimirons_head in the Mimiron Bot server. The bot \
+                      is hosted on the free tier of http://shuttle.rs .";
+
 /// Help Menu
 #[poise::command(slash_command, hide_in_help)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
-    let footer = "This bot uses the Blizzard API, which mirrors the official card library, \
-                  with supplemental data from HearthSim and Firestone. Code is available at \
-                  https://github.com/asibahi/mimiron/ . If you have requests or suggestions, \
-                  raise a GitHub Issue or ping @mimirons_head in the Mimiron Bot server. The bot \
-                  is hosted on the free tier of http://shuttle.rs .";
+
+    // ego inflation
+    if ctx.guild().is_none() && ctx.framework().options().owners.contains(&ctx.author().id) {
+        let guilds =
+            ctx.cache().guilds().into_iter().filter_map(|g| g.name(ctx.cache())).join("\n'");
+
+        let reply = poise::CreateReply::default().content(guilds).ephemeral(true);
+
+        ctx.send(reply).await?;
+
+        return Ok(());
+    }
 
     // funny new ordering every call.
     let mut categories = HashMap::new();
@@ -49,7 +62,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let embed = serenity::CreateEmbed::new()
         .title("Help")
         .fields(fields)
-        .footer(serenity::CreateEmbedFooter::new(footer));
+        .footer(serenity::CreateEmbedFooter::new(FOOTER));
 
     let reply = poise::CreateReply::default().embed(embed).ephemeral(true);
 

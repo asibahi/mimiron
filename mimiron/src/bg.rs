@@ -402,76 +402,80 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
     Ok(cards)
 }
 
-#[must_use]
-pub fn get_and_print_associated_cards(card: &Card, locale: Locale) -> Vec<Card> {
-    let mut cards = vec![];
+#[derive(Clone, Copy)]
+pub enum Association {
+    Buddy,
+    HeroPower,
+    Golden,
+}
+
+pub fn get_associated_cards(
+    card: &Card,
+    locale: Locale,
+) -> impl Iterator<Item = (Card, Association)> + use<> {
+    let mut cards = Vec::with_capacity(3);
 
     match &card.card_type {
         BGCardType::Hero { buddy_id, child_ids, .. } => {
-            'heropower: {
-                // Getting the starting hero power only. API sometimes has outdated HPs.
-                // The smallest ChildID Hero Power is (usually) the correct hero power.
-                // Hope we don't get rate limited ...
-                let Some(res) = child_ids
-                    .iter()
-                    .sorted()
-                    .filter_map(|id| get_card_by_id(*id, locale).ok())
-                    .find(|c| matches!(c.card_type, BGCardType::HeroPower { .. }))
-                else {
-                    break 'heropower;
-                };
+            // Getting the starting hero power only. API sometimes has outdated HPs.
+            // The smallest ChildID Hero Power is (usually) the correct hero power.
+            // Hope we don't get rate limited ...
+            if let Some(res) = child_ids
+                .iter()
+                .sorted()
+                .filter_map(|id| get_card_by_id(*id, locale).ok())
+                .find(|c| matches!(c.card_type, BGCardType::HeroPower { .. }))
+            {
+                cards.push((res, Association::HeroPower));
+            };
 
-                let text = textwrap::fill(
-                    &format!("{:+}", res.in_locale(locale)),
-                    textwrap::Options::new(textwrap::termwidth() - 10)
-                        .initial_indent("\t")
-                        .subsequent_indent(&format!("\t{:<20} ", " ")),
-                )
-                .blue();
-                println!("{text}");
-
-                cards.push(res);
-            }
-
-            'buddy: {
-                let Some(res) = buddy_id.and_then(|id| get_card_by_id(id, locale).ok()) else {
-                    break 'buddy;
-                };
-
-                let text = textwrap::fill(
-                    &format!("{:+}", res.in_locale(locale)),
-                    textwrap::Options::new(textwrap::termwidth() - 10)
-                        .initial_indent("\t")
-                        .subsequent_indent(&format!("\t{:<20} ", " ")),
-                )
-                .green();
-                println!("{text}");
-
-                cards.push(res);
+            if let Some(res) = buddy_id.and_then(|id| get_card_by_id(id, locale).ok()) {
+                cards.push((res, Association::Buddy));
             }
         }
-        BGCardType::Minion { upgrade_id: Some(id), .. } => 'golden: {
-            let Ok(res) = get_card_by_id(*id, locale) else {
-                break 'golden;
-            };
+        BGCardType::Minion { upgrade_id: Some(id), .. } =>
+            if let Ok(res @ Card { card_type: BGCardType::Minion { .. }, .. }) =
+                get_card_by_id(*id, locale)
+            {
+                cards.push((res, Association::Golden));
+            },
+        _ => (),
+    }
 
-            let BGCardType::Minion { attack, health, text, .. } = &res.card_type else {
-                break 'golden;
-            };
+    cards.into_iter()
+}
 
+pub fn print_assoc_card(card: &Card, locale: Locale, assoc: Association) {
+    match (assoc, &card.card_type) {
+        (Association::Buddy, _) => {
+            let text = textwrap::fill(
+                &format!("{:+}", card.in_locale(locale)),
+                textwrap::Options::new(textwrap::termwidth() - 10)
+                    .initial_indent("\t")
+                    .subsequent_indent(&format!("\t{:<20} ", " ")),
+            )
+            .green();
+            println!("{text}");
+        }
+        (Association::HeroPower, _) => {
+            let text = textwrap::fill(
+                &format!("{:+}", card.in_locale(locale)),
+                textwrap::Options::new(textwrap::termwidth() - 10)
+                    .initial_indent("\t")
+                    .subsequent_indent(&format!("\t{:<20} ", " ")),
+            )
+            .blue();
+            println!("{text}");
+        }
+        (Association::Golden, BGCardType::Minion { attack, health, text, .. }) => {
             let upgraded = format!("\t{}: {attack}/{health}", locale.golden()).italic().yellow();
             println!("{upgraded}");
 
             let text = text.to_console().yellow();
             println!("{text}");
-
-            cards.push(res);
         }
-
-        _ => (),
+        _ => unreachable!("In Battlegrounds only Minions can be Golden."),
     }
-
-    cards
 }
 
 fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {

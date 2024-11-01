@@ -130,24 +130,19 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
     };
 
     // Buddies, Golden Minions, and Hero Powers.
-    fields.extend(bg::get_and_print_associated_cards(card, locale).into_iter().filter_map(
-        |assoc_card| {
-            let lct = assoc_card.card_type.in_locale(locale);
-            match &assoc_card.card_type {
-                bg::BGCardType::Minion { text, .. } => {
-                    let title = match card.card_type {
-                        bg::BGCardType::Hero { .. } => assoc_card.name,
-                        bg::BGCardType::Minion { .. } =>
-                            format!("{}: {}", locale.golden(), assoc_card.name),
-                        _ => " ".into(),
-                    };
-
-                    Some((title, format!("{}: {}", lct, text.to_markdown()), false))
-                }
-                bg::BGCardType::HeroPower { text, .. } =>
-                    Some((assoc_card.name, format!("{}: {}", lct, text.to_markdown()), false)),
-                _ => None,
-            }
+    fields.extend(bg::get_associated_cards(card, locale).filter_map(
+        |(assoc_card, assoc)| {
+            let (bg::BGCardType::Minion { ref text, .. }
+            | bg::BGCardType::HeroPower { ref text, .. }) = assoc_card.card_type
+            else {
+                return None;
+            };
+            let title = match assoc {
+                bg::Association::Buddy | bg::Association::Golden => assoc_card.name,
+                bg::Association::HeroPower =>
+                    format!("{}: {}", locale.golden(), assoc_card.name),
+            };
+            Some((title, format!("{}: {}", assoc_card.card_type.in_locale(locale), text.to_markdown()), false))
         },
     ));
 

@@ -96,30 +96,37 @@ pub async fn deckcomp(
     // Needs more specific localized strings
     let locale = get_server_locale(&ctx);
 
-    let deck1 = deck::lookup(&LookupOptions::lookup(code1).with_locale(locale))?;
-    let deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale))?;
+    let mut deck1 = deck::lookup(&LookupOptions::lookup(code1).with_locale(locale))?;
+    let mut deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale))?;
+
+    if deck1.title == deck2.title {
+        deck1.title = String::from("Deck 1");
+        deck2.title = String::from("Deck 2");
+    }
+
     let deckcomp = deck1.compare_with(&deck2);
 
-    let sort_and_set = |map: HashMap<card::Card, usize>|
-        map.into_iter()
-            .sorted()
-            .map(|(card, count)| {
-                let square = card.rarity.emoji();
-                let count = (count > 1).then(|| format!("_{count}x_ ")).unwrap_or_default();
+    let sort_and_set = |map: HashMap<card::Card, usize>| {
+        let mut map = map.into_iter().sorted().map(|(card, count)| {
+            let square = card.rarity.emoji();
+            let count = (count > 1).then(|| format!("_{count}x_ ")).unwrap_or_default();
 
-                format!("{} {}{}", square, count, card.name)
-            })
-            .join("\n");
+            format!("{} {}{}", square, count, card.name)
+        });
+        let ret = map.join("\n");
+        if ret.len() > 1024 {
+            return String::from("List longer than Discord limits.");
+        }
+        ret
+    };
 
     let uniques_1 = sort_and_set(deckcomp.deck1_uniques);
     let uniques_2 = sort_and_set(deckcomp.deck2_uniques);
     let shared = sort_and_set(deckcomp.shared_cards);
 
     let fields = vec![
-        ("Code 1", deck1.deck_code, false),
-        ("Code 2", deck2.deck_code, false),
-        ("Deck 1", uniques_1, true),
-        ("Deck 2", uniques_2, true),
+        (deck1.title.as_str(), uniques_1, true),
+        (deck2.title.as_str(), uniques_2, true),
         ("Shared", shared, true),
     ];
 
@@ -128,11 +135,7 @@ pub async fn deckcomp(
         .color(deck1.class.color())
         .fields(fields);
 
-    let reply = poise::CreateReply::default().embed(embed);
-
-    ctx.send(reply).await?;
-
-    Ok(())
+    create_deck_dropdown(ctx, embed, &[(0, deck1), (1, deck2)]).await
 }
 
 async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
@@ -206,8 +209,6 @@ pub async fn metasnap(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let ctx_id = ctx.id();
-
     let locale = get_server_locale(&ctx);
     let format = parse_format(ctx, format).await;
     let decks = meta::meta_snap(&format, locale)?.enumerate().take(10).collect::<Vec<_>>();
@@ -221,6 +222,16 @@ pub async fn metasnap(
             "Best performing deck of each archetype.\n\
             Data is from the past 3 days, Diamond to Legend (usually).",
         ));
+
+    create_deck_dropdown(ctx, embed, &decks).await
+}
+
+async fn create_deck_dropdown(
+    ctx: Context<'_>,
+    embed: serenity::CreateEmbed,
+    decks: &[(usize, Deck)],
+) -> Result<(), Error> {
+    let ctx_id = ctx.id();
 
     let select_menu = serenity::CreateSelectMenu::new(
         format!("{ctx_id}_select_menu"),

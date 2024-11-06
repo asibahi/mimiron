@@ -54,9 +54,9 @@ pub async fn deck_inner(
 ) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let opts = LookupOptions::lookup(code).with_locale(locale).with_custom_format(format);
+    let opts = LookupOptions::lookup(&code).with_locale(locale).with_custom_format(format.as_deref());
 
-    let mut deck = deck::lookup(&opts)?;
+    let mut deck = deck::lookup(opts)?;
     if let Some(title) = title {
         deck.title = title.into();
     }
@@ -77,9 +77,9 @@ pub async fn addband(
 
     let locale = get_server_locale(&ctx);
 
-    let opts = LookupOptions::lookup(code).with_locale(locale);
+    let opts = LookupOptions::lookup(&code).with_locale(locale);
 
-    let deck = deck::add_band(&opts, vec![member1, member2, member3])?;
+    let deck = deck::add_band(opts, vec![member1, member2, member3])?;
 
     send_deck_reply(ctx, deck).await
 }
@@ -96,8 +96,8 @@ pub async fn deckcomp(
     // Needs more specific localized strings
     let locale = get_server_locale(&ctx);
 
-    let mut deck1 = deck::lookup(&LookupOptions::lookup(code1).with_locale(locale))?;
-    let mut deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale))?;
+    let mut deck1 = deck::lookup(LookupOptions::lookup(&code1).with_locale(locale))?;
+    let mut deck2 = deck::lookup(LookupOptions::lookup(&code2).with_locale(locale))?;
 
     if deck1.title == deck2.title {
         deck1.title = "Deck 1".into();

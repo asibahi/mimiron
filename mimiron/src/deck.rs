@@ -213,15 +213,15 @@ impl Localize for DeckDifference {
     }
 }
 
-pub struct LookupOptions {
-    code: String,
+pub struct LookupOptions<'s> {
+    code: &'s str,
     locale: Locale,
-    format: Option<String>,
+    format: Option<&'s str>,
 }
 
-impl LookupOptions {
+impl<'s> LookupOptions<'s> {
     #[must_use]
-    pub const fn lookup(code: String) -> Self {
+    pub const fn lookup(code: &'s str) -> Self {
         Self { code, locale: Locale::enUS, format: None }
     }
     #[must_use]
@@ -229,7 +229,7 @@ impl LookupOptions {
         Self { locale, ..self }
     }
     #[must_use]
-    pub fn with_custom_format(self, format: Option<String>) -> Self {
+    pub fn with_custom_format(self, format: Option<&'s str>) -> Self {
         Self { format, ..self }
     }
 }
@@ -243,7 +243,7 @@ struct RawCodeData {
     deck_code: CompactString,
 }
 
-pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
+pub fn lookup(opts: LookupOptions<'_>) -> Result<Deck> {
     let code = &opts.code;
     /* For when someone pastes something like this:
      * ### Custom Shaman
@@ -274,7 +274,7 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     Ok(raw_data_to_deck(opts, raw_data, title))
 }
 
-fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<CompactString>) -> Deck {
+fn raw_data_to_deck(opts: LookupOptions<'_>, raw_data: RawCodeData, title: Option<CompactString>) -> Deck {
     let get_deck_w_code = || -> Result<Deck> {
         let deck = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
@@ -473,14 +473,14 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     Ok(raw_data)
 }
 
-pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
+pub fn add_band(opts: LookupOptions<'_>, band: Vec<String>) -> Result<Deck> {
     // Function WILL need to be updated if new sideboard cards are printed.
 
     // Constants that might change should ETC be added to core.
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    let mut raw_data = decode_deck_code(&opts.code)?;
+    let mut raw_data = decode_deck_code(opts.code)?;
 
     anyhow::ensure!(
         raw_data.cards.iter().any(|&id| id == ETC_ID),

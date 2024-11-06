@@ -104,7 +104,7 @@ fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
         casify_archetype(&ds.archetype_name),
     );
 
-    let mut deck = lookup(&LookupOptions::lookup(ds.decklist).with_locale(locale)).ok()?;
+    let mut deck = lookup(LookupOptions::lookup(&ds.decklist).with_locale(locale)).ok()?;
     deck.title = title;
 
     Some(deck)

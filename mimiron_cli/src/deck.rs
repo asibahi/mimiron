@@ -71,18 +71,18 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 }
 
 pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
-    let opts = LookupOptions::lookup(args.input).with_locale(locale).with_custom_format(args.mode);
+    let opts = LookupOptions::lookup(&args.input).with_locale(locale).with_custom_format(args.mode.as_deref());
 
     let deck = if let Some(band) = args.band {
         // Add Band resolution.
-        deck::add_band(&opts, band)?
+        deck::add_band(opts, band)?
     } else {
-        deck::lookup(&opts)?
+        deck::lookup(opts)?
     };
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {
-        let deck2 = deck::lookup(&LookupOptions::lookup(code).with_locale(locale))?;
+        let deck2 = deck::lookup(LookupOptions::lookup(&code).with_locale(locale))?;
         let deck_diff = deck.compare_with(&deck2);
         println!("{}", deck_diff.in_locale(locale));
     } else {

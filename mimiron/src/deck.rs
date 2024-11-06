@@ -12,6 +12,7 @@ use base64::{
     engine::{DecodePaddingMode, Engine as _, GeneralPurpose, GeneralPurposeConfig},
 };
 use colored::Colorize;
+use compact_str::{format_compact, CompactString, ToCompactString};
 use counter::Counter;
 use integer_encoding::VarIntReader;
 use itertools::Itertools;
@@ -83,7 +84,7 @@ pub struct Sideboard {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct DeckData {
-    deck_code: String,
+    deck_code: CompactString,
     format: Format,
     hero: Card,
     class: Details,
@@ -95,8 +96,8 @@ struct DeckData {
 #[derive(Clone, Deserialize)]
 #[serde(from = "DeckData")]
 pub struct Deck {
-    pub title: String,
-    pub deck_code: String,
+    pub title: CompactString,
+    pub deck_code: CompactString,
     pub format: Format,
     pub class: Class,
     pub cards: Vec<Card>,
@@ -127,7 +128,7 @@ impl Deck {
 impl From<DeckData> for Deck {
     fn from(value: DeckData) -> Self {
         Self {
-            title: format!("{} - {}", value.hero.name, value.format.to_string().to_uppercase()),
+            title: format_compact!("{} - {}", value.hero.name, value.format.to_compact_string().to_uppercase()),
             deck_code: value.deck_code,
             format: value.format,
             class: value.class.id.into(),
@@ -182,10 +183,10 @@ impl Localize for Deck {
 pub struct DeckDifference {
     pub shared_cards: HashMap<Card, usize>,
 
-    pub deck1_code: String,
+    pub deck1_code: CompactString,
     pub deck1_uniques: HashMap<Card, usize>,
 
-    pub deck2_code: String,
+    pub deck2_code: CompactString,
     pub deck2_uniques: HashMap<Card, usize>,
 }
 impl Localize for DeckDifference {
@@ -239,7 +240,7 @@ struct RawCodeData {
     hero: usize,
     cards: Vec<usize>,
     sideboard_cards: Vec<(usize, usize)>,
-    deck_code: String,
+    deck_code: CompactString,
 }
 
 pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
@@ -268,12 +269,12 @@ pub fn lookup(opts: &LookupOptions) -> Result<Deck> {
     let title = code
         .split_once("###")
         .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
-        .map(|(s, _)| s.trim().to_owned());
+        .map(|(s, _)| s.trim().to_compact_string());
 
     Ok(raw_data_to_deck(opts, raw_data, title))
 }
 
-fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<String>) -> Deck {
+fn raw_data_to_deck(opts: &LookupOptions, raw_data: RawCodeData, title: Option<CompactString>) -> Deck {
     let get_deck_w_code = || -> Result<Deck> {
         let deck = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
@@ -467,7 +468,7 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
         }
     }
 
-    raw_data.deck_code = ENGINE.encode(decoded); // Hearthstone requires base64 padding
+    raw_data.deck_code = ENGINE.encode(decoded).into(); // Hearthstone requires base64 padding
 
     Ok(raw_data)
 }

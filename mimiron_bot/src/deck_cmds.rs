@@ -58,7 +58,7 @@ pub async fn deck_inner(
 
     let mut deck = deck::lookup(&opts)?;
     if let Some(title) = title {
-        deck.title = title;
+        deck.title = title.into();
     }
 
     send_deck_reply(ctx, deck).await
@@ -100,8 +100,8 @@ pub async fn deckcomp(
     let mut deck2 = deck::lookup(&LookupOptions::lookup(code2).with_locale(locale))?;
 
     if deck1.title == deck2.title {
-        deck1.title = String::from("Deck 1");
-        deck2.title = String::from("Deck 2");
+        deck1.title = "Deck 1".into();
+        deck2.title = "Deck 2".into();
     }
 
     let deckcomp = deck1.compare_with(&deck2);
@@ -160,12 +160,12 @@ fn create_deck_reply(deck: &Deck) -> Result<poise::CreateReply, Error> {
     };
 
     let mut embed = serenity::CreateEmbed::new()
-        .title(&deck.title)
+        .title(&*deck.title)
         .url(format!(
             "https://hearthstone.blizzard.com/deckbuilder?deckcode={}",
             urlencoding::Encoded(&deck.deck_code)
         ))
-        .description(&deck.deck_code)
+        .description(&*deck.deck_code)
         .color(deck.class.color())
         .attachment(attachment_name);
 
@@ -238,7 +238,7 @@ async fn create_deck_dropdown(
         serenity::CreateSelectMenuKind::String {
             options: decks
                 .iter()
-                .map(|(i, d)| serenity::CreateSelectMenuOption::new(&d.title, i.to_string()))
+                .map(|(i, d)| serenity::CreateSelectMenuOption::new(&*d.title, i.to_string()))
                 .collect::<Vec<_>>(),
         },
     )

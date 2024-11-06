@@ -5,6 +5,7 @@ use crate::{
     AGENT,
 };
 use anyhow::Result;
+use compact_str::format_compact;
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -95,7 +96,7 @@ fn casify_archetype(at: &str) -> String {
 }
 
 fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
-    let title = format!(
+    let title = format_compact!(
         "{:.0}% WR {}/{} {}",
         ds.get_winrate() * 100.0,
         ds.total_wins,

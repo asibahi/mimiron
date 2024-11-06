@@ -33,5 +33,4 @@ integer-encoding.workspace = true
 nucleo-matcher.workspace = true
 parking_lot.workspace = true
 urlencoding.workspace = true
-
-compact_str = {version = "0.8", features = ["serde"]}
+compact_str.workspace = true

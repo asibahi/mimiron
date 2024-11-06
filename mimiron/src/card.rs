@@ -7,7 +7,7 @@ use crate::{
 };
 use anyhow::Result;
 use colored::Colorize;
-use compact_str::{format_compact, CompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use eitherable::Eitherable;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -160,10 +160,20 @@ impl Localize for Card {
                 let name = self.0.name.bold();
                 let cost = self.0.cost;
 
-                let runes = self.0.rune_cost.as_ref().map_or_else(String::new, |r| format!("{r} "));
+                let runes = self.0.rune_cost.as_ref().map_or_else(
+                    CompactString::default, 
+                    |r| format_compact!("{r} ")
+                );
 
                 let rarity = self.0.rarity.in_locale(self.1);
-                let class = self.0.class.iter().map(|c| c.in_locale(self.1)).join("/");
+                let class = self.0.class.iter().map(|c| c.in_locale(self.1)).fold(
+                    CompactString::default(), 
+                    |acc, t| if acc.is_empty() {
+                            t.to_compact_string()
+                        } else {
+                            format_compact!("{}/{}", acc, t)
+                        }
+                    );
                 let card_info = self.0.card_type.in_locale(self.1);
 
                 write!(f, "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.", "")?;

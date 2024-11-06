@@ -15,7 +15,7 @@ use crate::{
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::Result;
-use compact_str::{CompactString, ToCompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
@@ -159,7 +159,7 @@ fn img_columns_format(
         for sb in deck.sideboard_cards.iter().flatten() {
             let (col, row) = pos_in_img(cursor);
             img.copy_from(
-                &draw_heading_slug(&format!("> {}", sb.sideboard_card.name)),
+                &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
             )?;
@@ -241,7 +241,7 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
 
         for sb in sideboards {
             img.copy_from(
-                &draw_heading_slug(&format!("> {}", sb.sideboard_card.name)),
+                &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),
                 sb_col,
                 sb_cursor * ROW_HEIGHT + MARGIN,
             )?;

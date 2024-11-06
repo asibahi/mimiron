@@ -5,7 +5,7 @@ use crate::{
     AGENT,
 };
 use anyhow::Result;
-use compact_str::{format_compact, CompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -75,7 +75,7 @@ pub fn meta_snap(format: &Format, locale: Locale) -> Result<impl Iterator<Item =
     Ok(decks)
 }
 
-fn casify_archetype(at: &str) -> String {
+fn casify_archetype(at: &str) -> CompactString {
     at.split('-')
         .map(|s| if s.eq_ignore_ascii_case("dk")
                 || s.eq_ignore_ascii_case("dh")
@@ -86,13 +86,19 @@ fn casify_archetype(at: &str) -> String {
                             || c.eq_ignore_ascii_case(&'u')
                     ))
             {
-                s.to_uppercase()
+                s.to_compact_string().to_uppercase()
             } else {
                 let mut chars = s.chars();
-                chars.next().map_or_else(String::new, |first| first.to_uppercase().chain(chars).collect())
+                chars.next().map_or_else(CompactString::default, |first| first.to_uppercase().chain(chars).collect())
             }
         )
-        .join(" ")
+        .fold(CompactString::default(), |acc, t|
+            if acc.is_empty() {
+                t.to_compact_string()
+            } else {
+                format_compact!("{} {}", acc, t)
+            }
+        )
 }
 
 fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {

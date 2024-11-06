@@ -4,6 +4,7 @@ use crate::{
     CardTextDisplay,
 };
 use anyhow::Result;
+use compact_str::{CompactString, ToCompactString};
 use serde::Deserialize;
 use std::fmt::Display;
 
@@ -19,12 +20,12 @@ impl Keyword {
         self.name.contains(search_term)
     }
     #[must_use]
-    pub fn name(&self, locale: Locale) -> String {
-        self.name.in_locale(locale).to_string()
+    pub fn name(&self, locale: Locale) -> CompactString {
+        self.name.in_locale(locale).to_compact_string()
     }
     #[must_use]
-    pub fn text(&self, locale: Locale) -> String {
-        self.ref_text.in_locale(locale).to_string()
+    pub fn text(&self, locale: Locale) -> CompactString {
+        self.ref_text.in_locale(locale).to_compact_string()
     }
 }
 impl Localize for Keyword {

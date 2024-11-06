@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::Result;
 use colored::Colorize;
-use compact_str::{CompactString, ToCompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -159,8 +159,13 @@ impl Localize for BGCardType {
                             minion_types
                                 .iter()
                                 .map(|t| t.in_locale(self.1))
-                                .join("/")
-                                .to_compact_string()
+                                .fold(CompactString::default(), |acc, t|
+                                    if acc.is_empty() {
+                                        t.to_compact_string()
+                                    } else {
+                                        format_compact!("{}/{}", acc, t)
+                                    }
+                                )
                         };
 
                         write!(f, "T-{tier} {attack}/{health} {blurp}")?;
@@ -196,7 +201,7 @@ impl Localize for BGCardType {
                             .find(|det| det.id == *trinket_kind)
                             .map_or(CompactString::default(), |det| det.name(self.1));
 
-                        let trinket = format!("{kind} {}", get_type(44)); // 44 for Trinket
+                        let trinket = format_compact!("{kind} {}", get_type(44)); // 44 for Trinket
 
                         write!(f, "{trinket} ({cost})")?;
                         inner(text, f)

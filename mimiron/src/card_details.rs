@@ -464,8 +464,13 @@ impl Localize for CardType {
                             minion_types
                                 .iter()
                                 .map(|t| t.in_locale(self.1))
-                                .join("/")
-                                .to_compact_string()
+                                .fold(CompactString::default(), |acc, t|
+                                    if acc.is_empty() {
+                                        t.to_compact_string()
+                                    } else {
+                                        format_compact!("{}/{}", acc, t)
+                                    }
+                                )
                         };
 
                         write!(f, "{attack}/{health} {blurp}{colon}")

@@ -307,7 +307,7 @@ fn raw_data_to_deck(
                 raw_data
                     .sideboard_cards
                     .iter()
-                    .map(|(id, sb_id)| format!("{id}:{sb_id}"))
+                    .map(|(id, sb_id)| format_compact!("{id}:{sb_id}"))
                     .join(","),
             );
         }
@@ -512,6 +512,6 @@ pub fn add_band(opts: LookupOptions<'_>, band: Vec<String>) -> Result<Deck> {
     Ok(raw_data_to_deck(opts, raw_data, None))
 }
 
-fn format_count(count: usize) -> String {
-    (count > 1).then(|| format!("{count}x")).unwrap_or_default()
+fn format_count(count: usize) -> CompactString {
+    (count > 1).then(|| format_compact!("{count}x")).unwrap_or_default()
 }

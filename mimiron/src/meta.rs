@@ -5,7 +5,7 @@ use crate::{
     AGENT,
 };
 use anyhow::Result;
-use compact_str::format_compact;
+use compact_str::{format_compact, CompactString};
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -33,13 +33,13 @@ struct FirestoneStats {
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct DeckStat {
-    decklist: String,
+    decklist: CompactString,
     // last_update: String, // If I care about it, how can I use it?
     player_class: Class, // Useful for quick filtering
     total_games: u32,
     total_wins: u32,
     winrate: Option<f64>,
-    archetype_name: String,
+    archetype_name: CompactString,
 }
 impl DeckStat {
     fn get_winrate(&self) -> f64 {

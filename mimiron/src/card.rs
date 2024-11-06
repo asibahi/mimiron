@@ -292,8 +292,7 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
             (opts.noncollectibles || c.card_set != 17)
             // Depending on opts.with_text, whether to restrict searches to card names 
             // or expand to search boxes.
-                && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase()))
-        )
+                && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())))
         // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)
         .unique_by(|c| opts.reprints.either(c.id, c.text_elements()))
         // when searching for Ragnaros guarantee that Ragnaros is the first result.

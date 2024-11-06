@@ -15,6 +15,7 @@ use crate::{
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::Result;
+use compact_str::{CompactString, ToCompactString};
 use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
@@ -117,7 +118,7 @@ fn img_columns_format(
         if vertical_title {
             img = imageops::rotate90(&img);
         }
- 
+
         (img, move |c| (c / cards_in_col, c % cards_in_col + (!vertical_title) as u32))
     };
 
@@ -305,7 +306,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
                 let idx = y * c_color.len() as u32 / CROP_HEIGHT;
                 c_color[idx as usize]
             }
-            _ => [10, 10, 10, 255]
+            _ => [10, 10, 10, 255],
         }
         .into()
     );
@@ -348,9 +349,9 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
 
     // card count
     let count = match (count, rarity) {
-        (1, Rarity::Noncollectible) => String::from("!"),
-        (1, Rarity::Legendary) => String::new(),
-        _ => count.to_string(),
+        (1, Rarity::Noncollectible) => CompactString::from("!"),
+        (1, Rarity::Legendary) => CompactString::default(),
+        _ => count.to_compact_string(),
     };
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
     draw_text(&mut img, [255; 4], SLUG_WIDTH - (INFO_WIDTH + tw) / 2, 0, CARD_NAME_SCALE, &count);

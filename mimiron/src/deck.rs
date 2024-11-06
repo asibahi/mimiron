@@ -274,7 +274,11 @@ pub fn lookup(opts: LookupOptions<'_>) -> Result<Deck> {
     Ok(raw_data_to_deck(opts, raw_data, title))
 }
 
-fn raw_data_to_deck(opts: LookupOptions<'_>, raw_data: RawCodeData, title: Option<CompactString>) -> Deck {
+fn raw_data_to_deck(
+    opts: LookupOptions<'_>,
+    raw_data: RawCodeData,
+    title: Option<CompactString>,
+) -> Deck {
     let get_deck_w_code = || -> Result<Deck> {
         let deck = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")

@@ -140,16 +140,16 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
             let title = match assoc {
                 bg::Association::Buddy | bg::Association::Golden => assoc_card.name,
                 bg::Association::HeroPower =>
-                    format!("{}: {}", locale.golden(), assoc_card.name),
+                    format!("{}: {}", locale.golden(), assoc_card.name).into(),
             };
             Some((title, format!("{}: {}", assoc_card.card_type.in_locale(locale), text.to_markdown()), false))
         },
     ));
 
     serenity::CreateEmbed::default()
-        .title(&card.name)
+        .title(&*card.name)
         .url(format!("https://hearthstone.blizzard.com/en-us/battlegrounds/{}", card.id))
-        .thumbnail(&card.image)
+        .thumbnail(&*card.image)
         .description(description)
         .fields(fields)
 }

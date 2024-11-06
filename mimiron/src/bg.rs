@@ -23,8 +23,8 @@ struct CardData {
     id: usize,
 
     // basic info
-    name: String,
-    text: String,
+    name: CompactString,
+    text: CompactString,
     card_type_id: u8,
     spell_school_id: Option<u8>, // useful for Trinkets
 
@@ -41,7 +41,7 @@ struct CardData {
     child_ids: Option<Vec<usize>>,
 
     // Flavor
-    image: String,
+    image: CompactString,
 }
 
 #[derive(Deserialize)]
@@ -54,7 +54,7 @@ struct BGData {
     companion_id: Option<usize>,
     duos_only: bool,
     solos_only: bool, // Are _any_ minions or heroes Solos only?
-    image: String,
+    image: CompactString,
     tier: Option<u8>,
     upgrade_id: Option<usize>,
 }
@@ -96,30 +96,30 @@ pub enum BGCardType {
         tier: u8,
         attack: u8,
         health: u8,
-        text: String,
+        text: CompactString,
         minion_types: HashSet<MinionType>,
         upgrade_id: Option<usize>,
     },
     Spell {
         tier: u8,
         cost: u8,
-        text: String,
+        text: CompactString,
     },
     HeroPower {
         cost: u8,
-        text: String,
+        text: CompactString,
     },
     Quest {
-        text: String,
+        text: CompactString,
     },
     Reward {
-        text: String,
+        text: CompactString,
     },
     Anomaly {
-        text: String,
+        text: CompactString,
     },
     Trinket {
-        text: String,
+        text: CompactString,
         cost: u8,
         trinket_kind: u8,
     },
@@ -213,8 +213,8 @@ impl Localize for BGCardType {
 #[serde(from = "CardData")]
 pub struct Card {
     pub id: usize,
-    pub name: String,
-    pub image: String,
+    pub name: CompactString,
+    pub image: CompactString,
     pub card_type: BGCardType,
     pub pool: Pool,
 }

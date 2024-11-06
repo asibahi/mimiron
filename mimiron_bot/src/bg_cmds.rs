@@ -32,8 +32,8 @@ pub async fn bg(
 pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let opts = bg::SearchOptions::empty().search_for(Some(search_term)).with_locale(locale);
-    let cards = bg::lookup(&opts)?;
+    let opts = bg::SearchOptions::empty().search_for(Some(&search_term)).with_locale(locale);
+    let cards = bg::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
@@ -49,10 +49,10 @@ pub async fn bgtext(
     let locale = get_server_locale(&ctx);
 
     let opts = bg::SearchOptions::empty()
-        .search_for(Some(search_term))
+        .search_for(Some(&search_term))
         .with_locale(locale)
         .with_text(true);
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
@@ -81,7 +81,7 @@ pub async fn bgtier(
         .with_type(minion_type.and_then(|s| s.parse().ok()))
         .for_pool(pool.and_then(|p| p.parse().ok()).unwrap_or_default());
 
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }

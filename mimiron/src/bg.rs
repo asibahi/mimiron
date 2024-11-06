@@ -302,8 +302,8 @@ impl From<CardData> for Card {
     }
 }
 
-pub struct SearchOptions {
-    search_term: Option<String>,
+pub struct SearchOptions<'s> {
+    search_term: Option<&'s str>,
     tier: Option<u8>,
     minion_type: Option<MinionType>,
     pool: Pool,
@@ -311,7 +311,7 @@ pub struct SearchOptions {
     locale: Locale,
 }
 
-impl SearchOptions {
+impl<'s> SearchOptions<'s> {
     #[must_use]
     pub const fn empty() -> Self {
         // The reason we're not just deriving and using Default here
@@ -326,7 +326,7 @@ impl SearchOptions {
         }
     }
     #[must_use]
-    pub fn search_for(self, search_term: Option<String>) -> Self {
+    pub fn search_for(self, search_term: Option<&'s str>) -> Self {
         Self { search_term, ..self }
     }
     #[must_use]
@@ -351,7 +351,7 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
+pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_> {
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .header("Authorization", format!("Bearer {}", get_access_token()))
@@ -398,7 +398,7 @@ pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
         })
         .sorted_by_key(|c| c.name
                 .to_lowercase()
-                .starts_with(&opts.search_term.as_deref().unwrap_or_default().to_lowercase())
+                .starts_with(&opts.search_term.unwrap_or_default().to_lowercase())
                 .not()
         )
         .peekable();

@@ -262,7 +262,6 @@ impl<'s> SearchOptions<'s> {
     }
 }
 
-#[allow(clippy::needless_pass_by_value)]
 pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_> {
     let search_term = &opts.search_term;
 

@@ -33,11 +33,11 @@ pub struct BGArgs {
 pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
     let opts = bg::SearchOptions::empty()
         .with_locale(locale)
-        .search_for(args.name)
+        .search_for(args.name.as_deref())
         .with_tier(args.tier)
         .with_type(args.minion_type)
         .with_text(args.text);
-    let cards = bg::lookup(&opts)?;
+    let cards = bg::lookup(opts)?;
 
     for card in cards {
         println!("{:#}", card.in_locale(locale));

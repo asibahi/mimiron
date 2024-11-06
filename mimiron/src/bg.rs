@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::Result;
 use colored::Colorize;
+use compact_str::{CompactString, ToCompactString};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -152,8 +153,16 @@ impl Localize for BGCardType {
                         write!(f, "{hero} [{armor}]")
                     }
                     BGCardType::Minion { tier, attack, health, text, minion_types, .. } => {
-                        let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
-                        let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
+                        let blurp = if minion_types.is_empty() {
+                            get_type(4) // 4 for Minion
+                        } else {
+                            minion_types
+                                .iter()
+                                .map(|t| t.in_locale(self.1))
+                                .join("/")
+                                .to_compact_string()
+                        };
+
                         write!(f, "T-{tier} {attack}/{health} {blurp}")?;
                         inner(text, f)
                     }
@@ -185,7 +194,7 @@ impl Localize for BGCardType {
                             .spell_schools
                             .iter()
                             .find(|det| det.id == *trinket_kind)
-                            .map_or(String::new(), |det| det.name(self.1));
+                            .map_or(CompactString::default(), |det| det.name(self.1));
 
                         let trinket = format!("{kind} {}", get_type(44)); // 44 for Trinket
 

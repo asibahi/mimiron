@@ -5,6 +5,7 @@ use crate::{
     AGENT,
 };
 use colored::Colorize;
+use compact_str::{CompactString, ToCompactString};
 use either::Either::{self, Left, Right};
 use itertools::Itertools;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
@@ -31,20 +32,20 @@ pub(crate) struct Metadata {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Clone)]
 pub(crate) struct LocalizedName {
-    #[serde(rename = "de_DE")] deDE: String,
-    #[serde(rename = "en_US")] enUS: String,
-    #[serde(rename = "es_ES")] esES: String,
-    #[serde(rename = "es_MX")] esMX: String,
-    #[serde(rename = "fr_FR")] frFR: String,
-    #[serde(rename = "it_IT")] itIT: String,
-    #[serde(rename = "ja_JP")] jaJP: String,
-    #[serde(rename = "ko_KR")] koKR: String,
-    #[serde(rename = "pl_PL")] plPL: String,
-    #[serde(rename = "pt_BR")] ptBR: String,
-    #[serde(rename = "ru_RU")] ruRU: String,
-    #[serde(rename = "th_TH")] thTH: String,
-    #[serde(rename = "zh_CN")] zhCN: Option<String>,
-    #[serde(rename = "zh_TW")] zhTW: String,
+    #[serde(rename = "de_DE")] deDE: CompactString,
+    #[serde(rename = "en_US")] enUS: CompactString,
+    #[serde(rename = "es_ES")] esES: CompactString,
+    #[serde(rename = "es_MX")] esMX: CompactString,
+    #[serde(rename = "fr_FR")] frFR: CompactString,
+    #[serde(rename = "it_IT")] itIT: CompactString,
+    #[serde(rename = "ja_JP")] jaJP: CompactString,
+    #[serde(rename = "ko_KR")] koKR: CompactString,
+    #[serde(rename = "pl_PL")] plPL: CompactString,
+    #[serde(rename = "pt_BR")] ptBR: CompactString,
+    #[serde(rename = "ru_RU")] ruRU: CompactString,
+    #[serde(rename = "th_TH")] thTH: CompactString,
+    #[serde(rename = "zh_CN")] zhCN: Option<CompactString>,
+    #[serde(rename = "zh_TW")] zhTW: CompactString,
 }
 impl LocalizedName {
     pub fn contains(&self, search_term: &str) -> bool {
@@ -90,7 +91,7 @@ impl Localize for LocalizedName {
 pub(crate) struct Details {
     pub id: u8,
     #[serde(with = "either::serde_untagged")]
-    name: Either<LocalizedName, String>,
+    name: Either<LocalizedName, CompactString>,
 }
 impl Details {
     pub fn contains(&self, search_term: &str) -> bool {
@@ -112,8 +113,8 @@ impl Details {
             Right(s) => s.eq_ignore_ascii_case(search_term),
         }
     }
-    pub fn name(&self, locale: Locale) -> String {
-        self.name.clone().right_or_else(|ln| ln.in_locale(locale).to_string())
+    pub fn name(&self, locale: Locale) -> CompactString {
+        self.name.clone().right_or_else(|ln| ln.in_locale(locale).to_compact_string())
     }
 }
 
@@ -267,7 +268,7 @@ pub enum Rarity { Legendary, Epic, Rare, Common, Free, Noncollectible }
 
 impl Localize for Rarity {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        let text: String = get_metadata()
+        let text: CompactString = get_metadata()
             .rarities
             .iter()
             .find(|det| *self == Self::from(det.id))
@@ -457,8 +458,16 @@ impl Localize for CardType {
                         write!(f, "{hero} [{armor}]{colon}")
                     }
                     CardType::Minion { attack, health, minion_types } => {
-                        let types = minion_types.iter().map(|t| t.in_locale(self.1)).join("/");
-                        let blurp = if types.is_empty() { get_type(4) } else { types }; // 4 for Minion
+                        let blurp = if minion_types.is_empty() {
+                            get_type(4) // 4 for Minion
+                        } else {
+                            minion_types
+                                .iter()
+                                .map(|t| t.in_locale(self.1))
+                                .join("/")
+                                .to_compact_string()
+                        };
+
                         write!(f, "{attack}/{health} {blurp}{colon}")
                     }
                     CardType::Spell { school } => {

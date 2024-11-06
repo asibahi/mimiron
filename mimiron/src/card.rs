@@ -225,17 +225,17 @@ impl From<CardData> for Card {
     }
 }
 
-pub struct SearchOptions {
-    search_term: String,
+pub struct SearchOptions<'s> {
+    search_term: &'s str,
     with_text: bool,
     reprints: bool,
     noncollectibles: bool,
     locale: Locale,
 }
 
-impl SearchOptions {
+impl<'s> SearchOptions<'s> {
     #[must_use]
-    pub const fn search_for(search_term: String) -> Self {
+    pub const fn search_for(search_term: &'s str) -> Self {
         Self {
             search_term,
             with_text: false,
@@ -262,7 +262,8 @@ impl SearchOptions {
     }
 }
 
-pub fn lookup(opts: &SearchOptions) -> Result<impl Iterator<Item = Card> + '_> {
+#[allow(clippy::needless_pass_by_value)]
+pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_> {
     let search_term = &opts.search_term;
 
     let mut res = AGENT

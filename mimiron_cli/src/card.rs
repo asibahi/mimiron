@@ -28,13 +28,14 @@ pub struct CardArgs {
     image: bool,
 }
 
+#[allow(clippy::needless_pass_by_value)]
 pub fn run(args: CardArgs, locale: Locale) -> Result<()> {
-    let opts = card::SearchOptions::search_for(args.name)
+    let opts = card::SearchOptions::search_for(&args.name)
         .with_locale(locale)
         .with_text(args.text)
         .include_reprints(args.reprints)
         .include_noncollectibles(args.all);
-    let cards = card::lookup(&opts)?.take(30);
+    let cards = card::lookup(opts)?.take(30);
 
     for card in cards {
         println!("{:#}", card.in_locale(locale));

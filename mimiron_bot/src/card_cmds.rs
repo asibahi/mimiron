@@ -20,8 +20,8 @@ pub async fn card(
 
     let locale = get_server_locale(&ctx);
 
-    let opts = card::SearchOptions::search_for(search_term).with_locale(locale);
-    let cards = card::lookup(&opts)?;
+    let opts = card::SearchOptions::search_for(&search_term).with_locale(locale);
+    let cards = card::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
@@ -37,8 +37,8 @@ pub async fn cardreprints(
     let locale = get_server_locale(&ctx);
 
     let opts =
-        card::SearchOptions::search_for(search_term).include_reprints(true).with_locale(locale);
-    let cards = card::lookup(&opts)?;
+        card::SearchOptions::search_for(&search_term).include_reprints(true).with_locale(locale);
+    let cards = card::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
@@ -53,8 +53,8 @@ pub async fn cardtext(
 
     let locale = get_server_locale(&ctx);
 
-    let opts = card::SearchOptions::search_for(search_term).with_text(true).with_locale(locale);
-    let cards = card::lookup(&opts)?;
+    let opts = card::SearchOptions::search_for(&search_term).with_text(true).with_locale(locale);
+    let cards = card::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
@@ -69,10 +69,10 @@ pub async fn allcards(
 
     let locale = get_server_locale(&ctx);
 
-    let opts = card::SearchOptions::search_for(search_term)
+    let opts = card::SearchOptions::search_for(&search_term)
         .include_noncollectibles(true)
         .with_locale(locale);
-    let cards = card::lookup(&opts)?;
+    let cards = card::lookup(opts)?;
 
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }

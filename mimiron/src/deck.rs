@@ -494,7 +494,7 @@ pub fn add_band(opts: &LookupOptions, band: Vec<String>) -> Result<Deck> {
     let band_ids = band
         .into_iter()
         .map(|name|
-            card::lookup(&card::SearchOptions::search_for(name).with_locale(opts.locale))?
+            card::lookup(card::SearchOptions::search_for(&name).with_locale(opts.locale))?
                 // Undocumented API Found by looking through playhearthstone.com card library
                 .map(|c| (c.id, ETC_ID))
                 .next()

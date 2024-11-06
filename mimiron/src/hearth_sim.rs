@@ -1,4 +1,5 @@
 use crate::{card_details::Rarity, AGENT};
+use compact_str::{format_compact, CompactString};
 use nucleo_matcher::{
     pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,
@@ -44,22 +45,22 @@ fn get_hearth_sim_ids() -> MappedRwLockReadGuard<'static, HearthSim> {
 struct HearthSimData {
     dbf_id: usize,
     count_as_copy_of_dbf_id: Option<usize>,
-    id: String,
-    name: String,
+    id: CompactString,
+    name: CompactString,
     cost: Option<u8>,
     #[serde(default)]
-    rarity: String,
+    rarity: CompactString,
     #[serde(default)]
     collectible: bool,
 }
 
-pub fn get_hearth_sim_crop_image(id: usize) -> Option<String> {
+pub fn get_hearth_sim_crop_image(id: usize) -> Option<CompactString> {
     get_hearth_sim_ids()
         .get(&id)
-        .map(|c| format!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
+        .map(|c| format_compact!("https://art.hearthstonejson.com/v1/tiles/{}.png", c.id))
 }
 
-pub fn get_hearth_sim_details(id: usize) -> Option<(String, u8, Rarity)> {
+pub fn get_hearth_sim_details(id: usize) -> Option<(CompactString, u8, Rarity)> {
     get_hearth_sim_ids().get(&id).map(|c| {
         let rarity = match c.rarity.as_str() {
             "LEGENDARY" => Rarity::Legendary,
@@ -77,7 +78,7 @@ pub fn validate_id(input_id: usize) -> usize {
     get_hearth_sim_ids().get(&input_id).and_then(|c| c.count_as_copy_of_dbf_id).unwrap_or(input_id)
 }
 
-pub fn fuzzy_search_hearth_sim(search_term: &str) -> Option<String> {
+pub fn fuzzy_search_hearth_sim(search_term: &str) -> Option<CompactString> {
     // according to the docs doing these here is apparently horribly inefficient.
     // c'est la vie
     let mut matcher = Matcher::new(Config::DEFAULT);

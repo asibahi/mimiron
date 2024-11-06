@@ -7,6 +7,7 @@ use crate::{
 };
 use anyhow::Result;
 use colored::Colorize;
+use compact_str::{format_compact, CompactString};
 use eitherable::Eitherable;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -33,8 +34,8 @@ struct CardData {
     rarity_id: Option<u8>,
     card_set_id: usize,
 
-    name: String,
-    text: String,
+    name: CompactString,
+    text: CompactString,
 
     // Stats
     mana_cost: u8,
@@ -55,9 +56,9 @@ struct CardData {
     is_zilliax_cosmetic_module: bool,
 
     // Flavor
-    image: String,
-    crop_image: Option<String>,
-    flavor_text: String,
+    image: CompactString,
+    crop_image: Option<CompactString>,
+    flavor_text: CompactString,
 }
 
 #[derive(Deserialize, Clone)]
@@ -66,7 +67,7 @@ pub struct Card {
     pub id: usize,
     card_set: usize,
 
-    pub name: String,
+    pub name: CompactString,
     pub class: HashSet<Class>,
 
     pub cost: u8,
@@ -75,18 +76,18 @@ pub struct Card {
     pub card_type: CardType,
     pub rarity: Rarity,
 
-    pub text: String,
+    pub text: CompactString,
 
-    pub image: String,
-    pub crop_image: Option<String>,
-    pub flavor_text: String,
+    pub image: CompactString,
+    pub crop_image: Option<CompactString>,
+    pub flavor_text: CompactString,
 
     pub cosmetic: bool,
 }
 impl Card {
     pub(crate) fn dummy(id: usize) -> Self {
         let (name, cost, rarity) = get_hearth_sim_details(id)
-            .unwrap_or_else(|| (format!("Unknown Card ID {id}"), 99, Rarity::Noncollectible));
+            .unwrap_or_else(|| (format_compact!("Unknown Card ID {id}"), 99, Rarity::Noncollectible));
 
         Self {
             id,
@@ -97,15 +98,15 @@ impl Card {
             rune_cost: None,
             card_type: CardType::Unknown,
             rarity,
-            text: String::new(),
+            text: CompactString::default(),
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
             crop_image: None,
-            flavor_text: String::new(),
+            flavor_text: CompactString::default(),
             cosmetic: false,
         }
     }
     #[must_use]
-    pub fn card_set(&self, locale: Locale) -> String {
+    pub fn card_set(&self, locale: Locale) -> CompactString {
         crate::card_details::get_set_by_id(self.card_set, locale)
     }
 
@@ -121,7 +122,7 @@ impl Card {
         (attack, health)
     }
 
-    pub(crate) fn text_elements(&self) -> (String, String) {
+    pub(crate) fn text_elements(&self) -> (CompactString, CompactString) {
         (self.name.clone(), self.text.clone())
     }
 }

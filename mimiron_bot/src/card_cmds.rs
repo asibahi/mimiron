@@ -97,11 +97,11 @@ fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed 
     }
 
     serenity::CreateEmbed::default()
-        .title(&card.name)
+        .title(&*card.name)
         .url(format!("https://hearthstone.blizzard.com/en-us/cards/{}", &card.id))
         .description(card.text.to_markdown())
         .color(card.rarity.color())
-        .thumbnail(&card.image)
+        .thumbnail(&*card.image)
         .fields(fields)
 }
 

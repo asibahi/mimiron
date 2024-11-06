@@ -5,7 +5,7 @@ use crate::{
     AGENT,
 };
 use colored::Colorize;
-use compact_str::{CompactString, ToCompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use either::Either::{self, Left, Right};
 use itertools::Itertools;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
@@ -151,7 +151,7 @@ impl Localize for Set {
     }
 }
 
-pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
+pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> CompactString {
     get_metadata()
         .sets
         .iter()
@@ -161,9 +161,9 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> String {
                 1453 => locale.battlegrounds().into(),
                 7 => "Hero Portraits".into(), // Should localize this
                 1586 => "Mercenaries".into(), // and this.
-                _ => format!("Set {id}"),
+                _ => format_compact!("Set {id}"),
             },
-            |s| s.in_locale(locale).to_string(),
+            |s| s.in_locale(locale).to_compact_string(),
         )
 }
 

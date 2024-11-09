@@ -13,9 +13,24 @@ use poise::serenity_prelude as serenity;
 use rand::random;
 use std::{cell::LazyCell, collections::HashMap, io::Cursor};
 
-/// Get deck cards from code
+/// Get deck cards from code. Alias "/code"
 #[poise::command(slash_command, category = "Deck")]
 pub async fn deck(
+    ctx: Context<'_>,
+    #[description = "deck code"] code: String,
+    #[description = "title"] title: Option<String>,
+    #[description = "mode"]
+    #[autocomplete = "autocomplete_mode"]
+    format: Option<String>,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    deck_inner(ctx, code, title, format).await
+}
+
+/// alias for deck
+#[poise::command(slash_command, hide_in_help)]
+pub async fn code(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,
     #[description = "title"] title: Option<String>,

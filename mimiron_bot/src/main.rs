@@ -41,6 +41,7 @@ async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> Shuttle
                 bg_cmds::bgtext(),
                 bg_cmds::bgtier(),
                 deck_cmds::deck(),
+                deck_cmds::code(),
                 deck_cmds::addband(),
                 deck_cmds::deck_context_menu(),
                 deck_cmds::deckcomp(),

@@ -49,9 +49,15 @@ enum Commands {
     #[clap(hide = true)]
     Meta(meta::MetaArgs),
 
+    // For debugging. Keywords
     #[clap(hide = true)]
-    #[command(alias("keyword"))]
-    KW { input: String },
+    #[command(alias("kw"))]
+    Keyword { input: String },
+
+    // For debugging. Search for deck by archetype name.
+    #[clap(hide = true)]
+    #[command(alias("at"))]
+    Archetype { input: String },
 }
 
 pub fn run() -> Result<()> {
@@ -67,8 +73,13 @@ pub fn run() -> Result<()> {
         Commands::Meta(args) => meta::run(args, locale)?,
 
         Commands::Token => println!("{}", mimiron::get_access_token()),
-        Commands::KW { input } => mimiron::keyword::lookup(&input)?
+
+        Commands::Keyword { input } => mimiron::keyword::lookup(&input)?
             .for_each(|kw| println!("{}", kw.in_locale(locale))),
+        Commands::Archetype { input } => println!("{}",
+            mimiron::meta::meta_search(&input, &mimiron::deck::Format::Standard, locale)?
+                .in_locale(locale)
+        ),
     }
 
     Ok(())

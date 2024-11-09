@@ -195,7 +195,7 @@ fn create_deck_reply(deck: &Deck) -> Result<poise::CreateReply, Error> {
 }
 
 /// Get a "meta" deck from Firestone's data.
-#[poise::command(slash_command, category = "Deck")]
+#[poise::command(slash_command, category = "Metagame")]
 pub async fn metadeck(
     ctx: Context<'_>,
     #[description = "Class"] class: Option<String>,
@@ -217,7 +217,7 @@ pub async fn metadeck(
 }
 
 /// Get a meta snapshot from Firestone's data.
-#[poise::command(slash_command, category = "Deck")]
+#[poise::command(slash_command, category = "Metagame")]
 pub async fn metasnap(
     ctx: Context<'_>,
     #[description = "Format"] format: Option<String>,
@@ -239,6 +239,23 @@ pub async fn metasnap(
         ));
 
     create_deck_dropdown(ctx, embed, &decks).await
+}
+
+/// Search for a deck with archetype name.
+#[poise::command(slash_command, category = "Metagame")]
+pub async fn archetype(
+    ctx: Context<'_>,
+    #[description = "search term"] search_term: String,
+    #[description = "Format"] format: Option<String>,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let locale = get_server_locale(&ctx);
+    let format = parse_format(ctx, format).await;
+
+    let deck = meta::meta_search(&search_term, &format, locale)?;
+
+    send_deck_reply(ctx, deck).await
 }
 
 async fn create_deck_dropdown(

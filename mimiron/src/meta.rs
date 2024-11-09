@@ -4,7 +4,7 @@ use crate::{
     localization::Locale,
     AGENT,
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use compact_str::{format_compact, CompactString, ToCompactString};
 use itertools::Itertools;
 use serde::Deserialize;
@@ -75,6 +75,25 @@ pub fn meta_snap(format: &Format, locale: Locale) -> Result<impl Iterator<Item =
     Ok(decks)
 }
 
+pub fn meta_search(search_term: &str, format: &Format, locale: Locale) -> Result<Deck> {
+    // This function is ridiculous calling parse::<Class>() so often and redundantly.
+    let class = search_term
+        .split_ascii_whitespace()
+        .rev() // Class name is usually last.
+        .find_map(|s| s.parse::<Class>().ok());
+
+    get_decks_stats(format, class)?
+        .find(|ds| {
+            let at = casify_archetype(&ds.archetype_name).to_lowercase();
+            at.eq_ignore_ascii_case(search_term)
+                // very lame
+                || at.split_ascii_whitespace()
+                    .any(|s| search_term.contains(s) && s.parse::<Class>().is_err())
+        })
+        .and_then(|ds| get_deck_from_deck_stat(ds, locale))
+        .ok_or(anyhow!("No deck found with this name in this format."))
+}
+
 fn casify_archetype(at: &str) -> CompactString {
     at.split('-')
         .map(|s| if s.eq_ignore_ascii_case("dk")
@@ -116,7 +135,10 @@ fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
     Some(deck)
 }
 
-fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::IntoIter<DeckStat>> {
+fn get_decks_stats(
+    format: &Format,
+    class: Option<Class>,
+) -> Result<impl Iterator<Item = DeckStat> + use<>> {
     let (d_l, all, min_count, min_log) = match format {
         Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL, 100, 10), // 2^10 == 1024
         Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL, 100, 8),              // 2^8  == 256
@@ -124,8 +146,8 @@ fn get_decks_stats(format: &Format, class: Option<Class>) -> Result<std::vec::In
         _ => anyhow::bail!("Meta decks for this format are not available"),
     };
 
-    let filter_decks = |s: &DeckStat|
-        s.total_games > min_count && (class.is_none() || class.is_some_and(|c| c == s.player_class));
+    let filter_decks =
+        |s: &DeckStat| s.total_games > min_count && class.is_none_or(|c| c == s.player_class);
 
     let first_try = get_firestone_data(d_l)?;
     let mut decks = first_try.deck_stats.into_iter().filter(filter_decks).peekable();

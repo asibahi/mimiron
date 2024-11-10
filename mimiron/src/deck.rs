@@ -14,13 +14,11 @@ use base64::{
 use colored::Colorize;
 use compact_str::{format_compact, CompactString, ToCompactString};
 use counter::Counter;
-use integer_encoding::VarIntReader;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Display, Write},
-    io::Cursor,
     ops::Not,
     str::FromStr,
 };
@@ -247,6 +245,98 @@ struct RawCodeData {
     deck_code: CompactString,
 }
 
+const CONFIG: GeneralPurposeConfig = GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
+const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
+
+impl RawCodeData {
+    fn parse(input: &[u8]) -> nom::IResult<&[u8], Self> {
+        // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
+
+        use nom::{combinator::map, multi::length_count, sequence::pair};
+
+        fn parse_varint(input: &[u8]) -> nom::IResult<&[u8], usize> {
+            use nom::{
+                bytes::complete::{take, take_till},
+                sequence::pair,
+            };
+        
+            let (rem, (p, lb)) = pair(take_till(|b: u8| b & 128 == 0), take(1u8))(input)?;
+            let n = p
+                .iter()
+                .chain(lb)
+                .enumerate()
+                .fold(0, |acc, (idx, byte)| acc | ((*byte as usize & 127) << (idx * 7)));
+        
+            Ok((rem, n))
+        }
+        
+        fn parse_card_id(input: &[u8]) -> nom::IResult<&[u8], usize> {
+            nom::combinator::map(parse_varint, validate_id)(input)
+        }
+
+        let mut decoded = input;
+        while let Ok((remainder, n)) = parse_varint(decoded) {
+            decoded = remainder;
+            println!("{n}");
+        }
+
+        #[allow(clippy::cast_possible_truncation)]
+         // starting from 2 as Format is the third number.
+        let (rem, format) =
+            map(parse_varint, |f| (f as u8).try_into().unwrap_or_default())(&input[2..])?;
+
+        // Hero ID is the 4th position
+        let (rem, hero) = parse_varint(&rem[1..])?;
+
+        let (rem, mut cards) = length_count(parse_varint, parse_card_id)(rem)?;
+
+         // double cards
+        let (rem, _) = length_count(
+            parse_varint,
+            map(parse_card_id, |id| {
+                let id = validate_id(id);
+                cards.push(id);
+                cards.push(id);
+            }),
+        )(rem)?;
+
+        // n-count cards
+        let (rem, _) = length_count(
+            parse_varint,
+            map(pair(parse_card_id, parse_varint), |(id, count)| {
+                for _ in 0..count {
+                    cards.push(id);
+                }
+            }),
+        )(rem)?;
+
+        let (rem, cond) = parse_varint(rem)?;
+        let (rem, sideboard_cards) = if cond == 1 {
+            length_count(parse_varint, pair(parse_card_id, parse_card_id))(rem)?
+        } else {
+            (rem, Vec::new())
+        };
+
+        let result = RawCodeData {
+            format,
+            hero,
+            cards,
+            sideboard_cards,
+            deck_code: ENGINE.encode(input).into(), // Hearthstone requires base64 padding
+        };
+
+        Ok((rem, result))
+    }
+
+    fn from_code (code :&str) -> Option<Self>{
+        let decoded = ENGINE.decode(code).ok()?;
+
+        RawCodeData::parse(&decoded).map(|(_,rd)| rd).ok()
+    }
+
+}
+
+
 pub fn lookup(opts: LookupOptions<'_>) -> Result<Deck> {
     let code = &opts.code;
     /* For when someone pastes something like this:
@@ -261,12 +351,12 @@ pub fn lookup(opts: LookupOptions<'_>) -> Result<Deck> {
     let raw_data = code
         // if it is a long code pasted from game or tracker
         .split_ascii_whitespace()
-        .find_map(|s| decode_deck_code(s).ok())
+        .find_map(RawCodeData::from_code)
 
         // if it is a url from the official deck builder
         .or_else(||
             code.split_terminator(&['=', '?'])
-                .find_map(|s| urlencoding::decode(s).ok().and_then(|d| decode_deck_code(&d).ok()))
+                .find_map(|s| urlencoding::decode(s).as_deref().ok().and_then(RawCodeData::from_code))
         )
         .ok_or_else(|| anyhow!("Unable to parse deck code. Code may be invalid."))?;
 
@@ -406,172 +496,6 @@ fn specific_card_adjustments(deck: &mut Deck) {
     }
 }
 
-fn get_varint(input: &[u8]) -> nom::IResult<&[u8], usize> {
-    use nom::{
-        bytes::complete::{take, take_till},
-        sequence::pair,
-    };
-
-    let (rem, (p, lb)) = pair(take_till(|b: u8| b & 128 == 0), take(1u8))(input)?;
-    let n = p
-        .iter()
-        .chain(lb)
-        .enumerate()
-        .fold(0, |acc, (idx, byte)| acc | ((*byte as usize & 127) << (idx * 7)));
-
-    Ok((rem, n))
-}
-
-fn get_id(input: &[u8]) -> nom::IResult<&[u8], usize> {
-    nom::combinator::map(get_varint, validate_id)(input)
-}
-
-#[expect(unused)]
-#[expect(clippy::cast_possible_truncation)]
-fn nom_decode_deck_code(code: &str) -> Result<RawCodeData> {
-    use nom::combinator::map;
-    use nom::multi::length_count;
-    use nom::sequence::pair;
-
-    // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
-
-    const CONFIG: GeneralPurposeConfig =
-        GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
-    const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
-
-    // this static thing is weird. need to investigate
-    let decoded: &'static [u8] = ENGINE.decode(code)?.leak();
-    let mut raw_data = RawCodeData::default();
-
-    // starting from 2 as Format is the third number.
-    let (rem, format) =
-        map(get_varint, |f| (f as u8).try_into().unwrap_or_default())(&decoded[2..])?;
-
-    // Hero ID is the 4th position
-    let (rem, hero) = get_varint(&rem[1..])?;
-
-    let (rem, mut cards) = length_count(get_varint, get_id)(rem)?;
-
-    // double cards
-    let (rem, _) = length_count(
-        get_varint,
-        map(get_id, |id| {
-            let id = validate_id(id);
-            cards.push(id);
-            cards.push(id);
-        }),
-    )(rem)?;
-
-    // n-count cards
-    let (rem, _) = length_count(
-        get_varint,
-        map(pair(get_id, get_varint), |(id, count)| {
-            for _ in 0..count {
-                cards.push(id);
-            }
-        }),
-    )(rem)?;
-
-    let (rem, cond) = get_varint(rem)?;
-    let sideboard_cards =
-        if cond == 1 { length_count(get_varint, pair(get_id, get_id))(rem)?.1 } else { Vec::new() };
-
-    let result = RawCodeData {
-        format,
-        hero,
-        cards,
-        sideboard_cards,
-        deck_code: ENGINE.encode(decoded).into(), // Hearthstone requires base64 padding
-    };
-
-    Ok(result)
-}
-
-fn decode_deck_code(code: &str) -> Result<RawCodeData> {
-    // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
-
-    const CONFIG: GeneralPurposeConfig =
-        GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
-    const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
-
-    let decoded = ENGINE.decode(code)?;
-    let mut buffer = Cursor::new(&decoded);
-
-    {
-        println!("NOM PARSING");
-        let mut decoded = decoded.as_slice();
-        while let Ok((remainder, n)) = get_varint(decoded) {
-            decoded = remainder;
-            println!("{n}");
-        }
-
-        println!("CRATE PARSING");
-        while let Ok(n) = buffer.read_varint::<usize>() {
-            println!("{n}");
-        }
-    }
-
-    let mut raw_data = RawCodeData::default();
-
-    // Format is the third number.
-    buffer.set_position(2);
-    raw_data.format = buffer.read_varint::<u8>()?.try_into().unwrap_or_default();
-
-    // Hero ID is the fifth number.
-    buffer.set_position(4);
-    raw_data.hero = buffer.read_varint()?;
-
-    // Single copy cards
-    let count = buffer.read_varint()?;
-    for _ in 0u8..count {
-        let id = buffer.read_varint()?;
-        let id = validate_id(id);
-
-        raw_data.cards.push(id);
-    }
-
-    // Double copy cards
-    let count = buffer.read_varint()?;
-    for _ in 0u8..count {
-        let id = buffer.read_varint()?;
-        let id = validate_id(id);
-
-        raw_data.cards.push(id);
-        raw_data.cards.push(id); // twice
-    }
-
-    // N-copy cards
-    let count = buffer.read_varint()?;
-    for _ in 0u8..count {
-        let id = buffer.read_varint()?;
-        let id = validate_id(id);
-
-        let n = buffer.read_varint()?;
-
-        for _ in 0u8..n {
-            raw_data.cards.push(id);
-        }
-    }
-
-    // Sideboard cards. Not sure if they're always available?
-    if buffer.read_varint::<u8>().is_ok_and(|i| i == 1) {
-        let count = buffer.read_varint()?;
-        for _ in 0u8..count {
-            let id = buffer.read_varint()?;
-            let id = validate_id(id);
-
-            let sb_id = buffer.read_varint()?;
-            let sb_id = validate_id(sb_id);
-
-            raw_data.sideboard_cards.push((id, sb_id));
-        }
-    }
-
-    raw_data.deck_code = ENGINE.encode(decoded).into(); // Hearthstone requires base64 padding
-
-    Ok(raw_data)
-}
-
 pub fn add_band(opts: LookupOptions<'_>, band: Vec<String>) -> Result<Deck> {
     // Function WILL need to be updated if new sideboard cards are printed.
 
@@ -579,7 +503,9 @@ pub fn add_band(opts: LookupOptions<'_>, band: Vec<String>) -> Result<Deck> {
     const ETC_NAME: &str = "E.T.C., Band Manager";
     const ETC_ID: usize = 90749;
 
-    let mut raw_data = decode_deck_code(opts.code)?;
+    let Some(mut raw_data) = RawCodeData::from_code(opts.code) else {
+        anyhow::bail!("Failed to parse code")
+    };
 
     anyhow::ensure!(
         raw_data.cards.iter().any(|&id| id == ETC_ID),

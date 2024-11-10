@@ -322,7 +322,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
             imageops::overlay(&mut img, &gradient, CROP_IMAGE_OFFSET as i64, 0);
         }
         Err(e) => {
-            eprintln!("Failed to get image of {name}: {e}.");
+            tracing::warn!("Failed to get image of {name}: {e}.");
             imageops::horizontal_gradient(
                 &mut *imageops::crop(&mut img, CROP_IMAGE_OFFSET, 0, CROP_WIDTH, CROP_HEIGHT),
                 &Rgba([10u8, 10, 10, 255]),

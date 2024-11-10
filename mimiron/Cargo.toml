@@ -34,3 +34,4 @@ nucleo-matcher.workspace = true
 parking_lot.workspace = true
 urlencoding.workspace = true
 compact_str.workspace = true
+tracing.workspace = true

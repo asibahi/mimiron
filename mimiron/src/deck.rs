@@ -347,13 +347,13 @@ fn raw_data_to_deck(
 
     let mut deck = get_deck_w_code()
         .or_else(|e| {
-            eprintln!("Encountered error validating code from Blizzard's servers: {e}.");
-            eprintln!("Using direct card data instead.");
+            tracing::warn!("Encountered error validating code from Blizzard's servers: {e}.");
+            tracing::warn!("Using direct card data instead.");
             get_deck_w_cards()
         })
         .unwrap_or_else(|e| {
-            eprintln!("Encountered error validating cards from Blizzard's servers: {e}.");
-            eprintln!("Using dummy data instead.");
+            tracing::warn!("Encountered error validating cards from Blizzard's servers: {e}.");
+            tracing::warn!("Using dummy data instead.");
             get_dummy_deck()
         });
 

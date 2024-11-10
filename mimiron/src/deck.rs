@@ -402,8 +402,30 @@ fn specific_card_adjustments(deck: &mut Deck) {
     }
 }
 
+fn get_varint(input: &[u8]) -> nom::IResult<&[u8], usize> {
+    use nom::{bytes::complete::{take, take_till}, sequence::pair};
+    let is_last = |b: u8| b & 0x80 == 0;
+
+    let (rem, (p,lb)) = pair(take_till(is_last), take(1u8))(input)?;
+    let n = p.iter().chain(lb).copied().enumerate().fold(0, |acc, (idx, byte)| 
+        acc | (((byte & 0x7F) as usize) << (idx * 7))
+    );
+
+    Ok((rem, n))
+}
+
 #[expect(unused)]
 fn nom_decode_deck_code(code: &str) -> Result<RawCodeData> {
+    // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
+
+    const CONFIG: GeneralPurposeConfig =
+        GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
+    const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
+
+    let decoded = ENGINE.decode(code)?;
+
+
+    
 
     todo!()
 }
@@ -418,9 +440,20 @@ fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     let decoded = ENGINE.decode(code)?;
     let mut buffer = Cursor::new(&decoded);
 
-    // while let Ok(n) = buffer.read_varint::<usize>() {
-    //     println!("{n}");
-    // }
+    {
+        println!("NOM PARSING");
+        let mut decoded = decoded.as_slice();
+        while let Ok((remainder, n)) = get_varint(decoded) {
+            decoded = remainder;
+            println!("{n}");
+            
+        }
+
+        println!("CRATE PARSING");
+        while let Ok(n) = buffer.read_varint::<usize>() {
+            println!("{n}");
+        }
+    }
 
     let mut raw_data = RawCodeData::default();
 

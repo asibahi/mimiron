@@ -402,6 +402,12 @@ fn specific_card_adjustments(deck: &mut Deck) {
     }
 }
 
+#[expect(unused)]
+fn nom_decode_deck_code(code: &str) -> Result<RawCodeData> {
+
+    todo!()
+}
+
 fn decode_deck_code(code: &str) -> Result<RawCodeData> {
     // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 

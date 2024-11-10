@@ -404,14 +404,47 @@ fn specific_card_adjustments(deck: &mut Deck) {
 
 fn get_varint(input: &[u8]) -> nom::IResult<&[u8], usize> {
     use nom::{bytes::complete::{take, take_till}, sequence::pair};
-    let is_last = |b: u8| b & 0x80 == 0;
 
-    let (rem, (p,lb)) = pair(take_till(is_last), take(1u8))(input)?;
-    let n = p.iter().chain(lb).copied().enumerate().fold(0, |acc, (idx, byte)| 
-        acc | (((byte & 0x7F) as usize) << (idx * 7))
+    let (rem, (p,lb)) = pair(take_till(|b: u8| b & 128 == 0), take(1u8))(input)?;
+    let n = p.iter().chain(lb).enumerate().fold(0, |acc, (idx, byte)| 
+        acc | ((*byte as usize & 127) << (idx * 7))
     );
 
     Ok((rem, n))
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn parse_format(input: &[u8]) -> nom::IResult<&[u8], Format> {
+    nom::combinator::map(get_varint, |f| (f as u8).try_into().unwrap_or_default())(input)
+}
+
+fn parse_single_card_list(input: &[u8]) -> nom::IResult<&[u8], Vec<usize>> {
+    use nom::multi::length_count;
+    use nom::combinator::map;
+    
+    length_count(get_varint, map(get_varint, validate_id))(input)
+}
+
+fn parse_double_card_list(input: &[u8]) -> nom::IResult<&[u8], Vec<usize>> {
+    use nom::combinator::map;
+    
+    map(parse_single_card_list, |mut v| {v.extend_from_within(..); v})(input)
+}
+
+fn parse_n_cards_list(input: &[u8]) -> nom::IResult<&[u8], Vec<usize>> {
+    use nom::sequence::pair;
+    use nom::combinator::map;
+    use nom::multi::length_count;
+
+
+    let step_1 = pair(get_varint, get_varint);
+    let step_2 = map(step_1, |(id, count)| {
+        let id = validate_id(id);
+        [id].repeat(count)
+    });
+    let step_3 = length_count(get_varint, step_2);
+    
+    map(step_3, |v| v.concat())(input)
 }
 
 #[expect(unused)]
@@ -422,10 +455,28 @@ fn nom_decode_deck_code(code: &str) -> Result<RawCodeData> {
         GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
     const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
 
-    let decoded = ENGINE.decode(code)?;
+    // this static thing is weird. need to investigate
+    let decoded: &'static [u8] = ENGINE.decode(code)?.leak();
+    let mut raw_data = RawCodeData::default();
 
-
+    // starting from 2 as Format is the third number.
+    let rem = &decoded[2..];
     
+    let (rem, format) = parse_format(rem)?;
+    raw_data.format = format;
+
+    // Hero ID is the 4th position
+    let (rem, hero) = get_varint(&rem[1..])?;
+    raw_data.hero = hero;
+
+    let (rem, single_cards) = parse_single_card_list(rem)?;
+    raw_data.cards.extend_from_slice(&single_cards);
+    
+    let (rem, double_cards) = parse_double_card_list(rem)?;
+    raw_data.cards.extend_from_slice(&double_cards);
+
+    let (rem, n_count_cards) = parse_n_cards_list(rem)?;
+    raw_data.cards.extend_from_slice(&n_count_cards);
 
     todo!()
 }

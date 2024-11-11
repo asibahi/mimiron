@@ -32,7 +32,6 @@ eitherable = "0.1.0"
 unicode-width = "0.1"
 cached = "0.53"
 either = { version = "1.13", features = ["serde"] }
-integer-encoding = "4.0.2"
 nucleo-matcher = "0.3.1"
 parking_lot = "0.12"
 compact_str = {version = "0.8", features = ["serde"]}

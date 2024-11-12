@@ -1,5 +1,6 @@
 use crate::{card_details::Rarity, AGENT};
 use compact_str::{format_compact, CompactString};
+use itertools::Itertools;
 use nucleo_matcher::{
     pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,
@@ -75,7 +76,20 @@ pub fn get_hearth_sim_details(id: usize) -> Option<(CompactString, u8, Rarity)> 
 }
 
 pub fn validate_id(input_id: usize) -> usize {
-    get_hearth_sim_ids().get(&input_id).and_then(|c| c.count_as_copy_of_dbf_id).unwrap_or(input_id)
+    let data = get_hearth_sim_ids();
+    let Some(item) = data.get(&input_id) else {
+        return input_id;
+    };
+
+    // This field does not exist in every data point. This is exhausting.
+    item.count_as_copy_of_dbf_id
+        .or(data.iter()
+            .filter(|(_, c)| c.collectible && item.name.eq(&c.name))
+            .map(|(id, _)| id)
+            .copied()
+            .min()
+        )
+        .unwrap_or(input_id)
 }
 
 pub fn fuzzy_search_hearth_sim(search_term: &str) -> Option<CompactString> {

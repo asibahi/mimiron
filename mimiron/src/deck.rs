@@ -2,6 +2,7 @@ use crate::{
     card::{self, Card},
     card_details::{CardType, Class, Details},
     get_access_token,
+    hearth_sim::validate_id,
     localization::{Locale, Localize},
     AGENT,
 };
@@ -272,10 +273,6 @@ impl RawCodeData {
             map_opt(pair(verify(take_till(is_last), is_in_bounds), take(1u8)), try_varint)(input)
         }
 
-        fn parse_card_id(input: &[u8]) -> IResult<&[u8], usize> {
-            map(parse_varint, crate::hearth_sim::validate_id)(input)
-        }
-
         // let mut decoded = input;
         // while let Ok((remainder, n)) = parse_varint(decoded) {
         //     decoded = remainder;
@@ -290,15 +287,15 @@ impl RawCodeData {
         let (rem, cards) = map(
             tuple((
                 // single cards
-                length_count(parse_varint, parse_card_id),
+                length_count(parse_varint, parse_varint),
 
                 // double cards
-                length_count(parse_varint, map(parse_card_id, |id| [id; 2])),
+                length_count(parse_varint, map(parse_varint, |id| [id; 2])),
 
                 // n-count cards
                 length_count(
                     parse_varint,
-                    map(pair(parse_card_id, parse_varint), |(id, n)| [id].repeat(n)),
+                    map(pair(parse_varint, parse_varint), |(id, n)| [id].repeat(n)),
                 ),
             )),
             |(v1, v2, vn)| v1.into_iter()
@@ -311,7 +308,7 @@ impl RawCodeData {
         let (rem, sideboard_cards) = map(
             cond(
                 c.is_some_and(|c| c == 1),
-                length_count(parse_varint, pair(parse_card_id, parse_card_id)),
+                length_count(parse_varint, pair(parse_varint, parse_varint)),
             ),
             Option::unwrap_or_default,
         )(rem)?;
@@ -388,7 +385,7 @@ fn raw_data_to_deck(
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", opts.locale.to_string())
             .header("Authorization", format!("Bearer {}", get_access_token()))
-            .query("ids", raw_data.cards.iter().join(","));
+            .query("ids", raw_data.cards.iter().map(|id| validate_id(*id)).join(","));
 
         if raw_data.sideboard_cards.is_empty().not() {
             req = req.query(
@@ -396,7 +393,7 @@ fn raw_data_to_deck(
                 raw_data
                     .sideboard_cards
                     .iter()
-                    .map(|(id, sb_id)| format_compact!("{id}:{sb_id}"))
+                    .map(|(id, sb_id)| format_compact!("{}:{}", validate_id(*id), validate_id(*sb_id)))
                     .join(","),
             );
         }

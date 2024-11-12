@@ -1,6 +1,5 @@
 use crate::{card_details::Rarity, AGENT};
 use compact_str::{format_compact, CompactString};
-use itertools::Itertools;
 use nucleo_matcher::{
     pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,

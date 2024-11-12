@@ -26,7 +26,7 @@ pub use crate::deck_image::ImageOptions;
 
 #[derive(Clone, Default, Deserialize)]
 #[serde(from = "String")]
-pub enum Format { #[default] Standard, Wild, Classic, Twist, Custom(String) }
+pub enum Format { #[default] Standard, Wild, Classic, Twist, Custom(CompactString) }
 
 impl Display for Format {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,7 +54,7 @@ impl From<String> for Format {
             "standard" | "std" | "s" => Self::Standard,
             "twist" | "t" => Self::Twist,
             "classic" | "c" => Self::Classic,
-            _ => Self::Custom(value),
+            _ => Self::Custom(value.into()),
         }
     }
 }
@@ -149,7 +149,7 @@ impl Localize for Deck {
 
         writeln!(buffer, "\t{}", self.title.bold()).ok();
 
-        let cards = self.cards.iter().fold(BTreeMap::<_, usize>::new(), |mut map, card| {
+        let cards = self.cards.iter().fold(BTreeMap::new(), |mut map, card| {
             *map.entry(card).or_default() += 1;
             map
         });
@@ -164,7 +164,7 @@ impl Localize for Deck {
                 writeln!(buffer, "Sideboard: {}", sideboard.sideboard_card.name).ok();
 
                 let cards = sideboard.cards_in_sideboard.iter().fold(
-                    BTreeMap::<_, usize>::new(),
+                    BTreeMap::new(),
                     |mut map, card| {
                         *map.entry(card).or_default() += 1;
                         map
@@ -237,9 +237,9 @@ impl<'s> LookupOptions<'s> {
     }
 }
 
-#[derive(Default)]
 struct RawCodeData {
     format: Format,
+    hero: usize,
     cards: Vec<usize>,
     sideboard_cards: Vec<(usize, usize)>,
     deck_code: CompactString,
@@ -255,8 +255,8 @@ impl RawCodeData {
 
         use nom::{
             bytes::complete::{take, take_till},
-            combinator::{cond, map, map_opt, map_res, opt, verify},
-            multi::{count, length_count},
+            combinator::{cond, map, map_opt, opt, verify},
+            multi::length_count,
             sequence::{pair, tuple},
             IResult,
         };
@@ -273,17 +273,17 @@ impl RawCodeData {
             map_opt(pair(verify(take_till(is_last), is_in_bounds), take(1u8)), try_varint)(input)
         }
 
-        // let mut decoded = input;
-        // while let Ok((remainder, n)) = parse_varint(decoded) {
-        //     decoded = remainder;
-        //     println!("{n}");
-        // }
+        #[cfg(debug_assertions)]
+        for id in nom::multi::many0(parse_varint)(input)?.1 {
+            println!("{id}");
+        }
 
         // starting from 2 as Format is the third number.
-        let (rem, format) = map_res(parse_varint, TryInto::try_into)(&input[2..])?;
+        let (rem, format) = map(parse_varint, |f| f.try_into().unwrap_or_default())(&input[2..])?;
 
-        // skip two numbers over Hero ID.
-        let (rem, _) = count(parse_varint, 2)(rem)?;
+        // skip 1 byte for Hero ID.
+        let (rem, _) = parse_varint(rem)?;
+        let (rem, hero) = parse_varint(rem)?;
         let (rem, cards) = map(
             tuple((
                 // single cards
@@ -315,6 +315,7 @@ impl RawCodeData {
 
         let result = Self {
             format,
+            hero,
             cards,
             sideboard_cards,
             deck_code: ENGINE.encode(input).into(), // Hearthstone requires base64 padding
@@ -385,6 +386,7 @@ fn raw_data_to_deck(
             .get("https://us.api.blizzard.com/hearthstone/deck")
             .query("locale", opts.locale.to_string())
             .header("Authorization", format!("Bearer {}", get_access_token()))
+            .query("hero", raw_data.hero.to_string())
             .query("ids", raw_data.cards.iter().map(|id| validate_id(*id)).join(","));
 
         if raw_data.sideboard_cards.is_empty().not() {

@@ -83,7 +83,7 @@ pub fn validate_id(input_id: usize) -> usize {
     // This field does not exist in every data point. This is exhausting.
     item.count_as_copy_of_dbf_id
         .or(data.iter()
-            .filter(|(_, c)| c.collectible && item.name.eq(&c.name))
+            .filter(|(_, c)| item.collectible == c.collectible && item.name.eq(&c.name))
             .map(|(id, _)| id)
             .copied()
             .min()

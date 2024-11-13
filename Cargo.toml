@@ -38,8 +38,8 @@ compact_str = {version = "0.8", features = ["serde"]}
 
 # bot deps
 poise = "0.6.1"
-shuttle-serenity = "0.48"
-shuttle-runtime = "0.48"
+shuttle-serenity = "0.49"
+shuttle-runtime = "0.49"
 tracing = "0.1.40"
 urlencoding = "2.1.3"
 rand = "0.8.5"

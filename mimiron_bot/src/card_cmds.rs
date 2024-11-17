@@ -10,7 +10,7 @@ use mimiron::{
 use poise::serenity_prelude as serenity;
 use std::ops::Not;
 
-/// Search for a constructed card by name. Be precise!
+/// Search by name for a constructed card
 #[poise::command(slash_command, category = "Constructed")]
 pub async fn card(
     ctx: Context<'_>,
@@ -26,7 +26,7 @@ pub async fn card(
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-/// Search for a constructed card by name, including reprints. Be precise!
+/// Search by name for a constructed card, includes reprints
 #[poise::command(slash_command, category = "Constructed")]
 pub async fn cardreprints(
     ctx: Context<'_>,
@@ -43,7 +43,7 @@ pub async fn cardreprints(
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-/// Search for a constructed card by text.
+/// Search by text for a constructed card
 #[poise::command(slash_command, category = "Constructed")]
 pub async fn cardtext(
     ctx: Context<'_>,
@@ -59,7 +59,7 @@ pub async fn cardtext(
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-/// Search includes all cards, including noncollectibles. Expect some nonsense.
+/// Search includes all cards, including tokens. Expect nonsense.
 #[poise::command(slash_command, category = "Constructed")]
 pub async fn allcards(
     ctx: Context<'_>,
@@ -105,7 +105,7 @@ fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed 
         .fields(fields)
 }
 
-/// Search for a keyword!
+/// Search for a keyword
 #[poise::command(slash_command, category = "Constructed")]
 pub async fn keyword(
     ctx: Context<'_>,

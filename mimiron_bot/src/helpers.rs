@@ -44,16 +44,12 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                 .filter(|cmd| cmd.hide_in_help.not())
                 // get context menu commands at the bottom.
                 .sorted_by_key(|cmd| cmd.slash_action.is_none())
-                .map(|cmd| {
-                    let name = cmd.context_menu_name.as_deref().unwrap_or(&cmd.name);
-                    let prefix = cmd.slash_action.map_or("Context menu: `", |_| "`/");
-                    format!(
-                        "{}{}`: _{}_",
-                        prefix,
-                        name,
-                        cmd.description.as_deref().unwrap_or_default()
-                    )
-                })
+                .map(|cmd| format!(
+                    "{}{}`: _{}_",
+                    cmd.slash_action.map_or("Context menu: `", |_| "`/"),
+                    cmd.context_menu_name.as_deref().unwrap_or(&cmd.name),
+                    cmd.description.as_deref().unwrap_or_default()
+                ))
                 .join("\n");
 
             (category.unwrap_or_default(), cmds, false)

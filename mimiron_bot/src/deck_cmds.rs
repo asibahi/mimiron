@@ -13,7 +13,7 @@ use poise::serenity_prelude as serenity;
 use rand::random;
 use std::{cell::LazyCell, collections::HashMap, io::Cursor};
 
-/// Get deck cards from code. Alias "/code"
+/// Get deck image from code
 #[poise::command(slash_command, category = "Deck")]
 pub async fn deck(
     ctx: Context<'_>,
@@ -79,7 +79,7 @@ pub async fn deck_inner(
     send_deck_reply(ctx, deck).await
 }
 
-/// Add a band to a deck with ETC but without a band.
+/// Add a band to a deck with ETC but no band.
 #[poise::command(slash_command, category = "Deck")]
 pub async fn addband(
     ctx: Context<'_>,
@@ -99,7 +99,7 @@ pub async fn addband(
     send_deck_reply(ctx, deck).await
 }
 
-/// Compare two decks. Provide both codes.
+/// Compare two decks
 #[poise::command(slash_command, category = "Deck")]
 pub async fn deckcomp(
     ctx: Context<'_>,
@@ -241,7 +241,7 @@ pub async fn metasnap(
     create_deck_dropdown(ctx, embed, &decks).await
 }
 
-/// Search for a deck with archetype name.
+/// Find a deck with archetype name
 #[poise::command(slash_command, category = "Metagame")]
 pub async fn archetype(
     ctx: Context<'_>,

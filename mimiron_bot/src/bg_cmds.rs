@@ -9,7 +9,7 @@ use mimiron::{
 };
 use poise::serenity_prelude as serenity;
 
-/// alias for /bg
+/// Alias for /bg
 #[poise::command(slash_command, hide_in_help)]
 pub async fn battlegrounds(
     ctx: Context<'_>,
@@ -19,7 +19,7 @@ pub async fn battlegrounds(
     bg_inner(ctx, search_term).await
 }
 
-/// Search for a battlegrounds card by name. Be precise!
+/// Search by name for a battlegrounds card
 #[poise::command(slash_command, category = "Battlegrounds")]
 pub async fn bg(
     ctx: Context<'_>,
@@ -38,7 +38,7 @@ pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-/// Search for a battlegrounds card by text.
+/// Search by text for a battlegrounds card
 #[poise::command(slash_command, category = "Battlegrounds")]
 pub async fn bgtext(
     ctx: Context<'_>,
@@ -57,7 +57,7 @@ pub async fn bgtext(
     paginated_embeds(ctx, cards, |c| inner_card_embed(&c, locale)).await
 }
 
-/// Search for a battlegrounds card by tier and optionally minion type.and Duos/Solos
+/// Search by tier, minion type, or mode for a battlegrounds card
 #[poise::command(slash_command, category = "Battlegrounds")]
 pub async fn bgtier(
     ctx: Context<'_>,

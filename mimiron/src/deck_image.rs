@@ -430,7 +430,18 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
         .or_else(|| get_hearth_sim_crop_image(card.id))
         .unwrap_or_else(|| "https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
-    let buf = AGENT.get(link.as_str()).call()?.body_mut().read_to_vec()?;
+    let buf = AGENT
+        .get(link.as_str())
+        .call()
+        .map_err(ureq::Error::into_io)
+        .inspect_err(|e| tracing::error!(
+            link = link.as_str(),
+            "Error getting card image data. (is it 104 ?): {}, ErrorKind {}",
+            e,
+            e.kind()
+        ))?
+        .body_mut()
+        .read_to_vec()?;
 
     Ok(image::load_from_memory(&buf)?.into())
 }

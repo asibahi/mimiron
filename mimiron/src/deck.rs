@@ -255,9 +255,9 @@ impl RawCodeData {
 
         use nom::{
             bytes::complete::{take, take_till},
-            combinator::{cond, map, map_opt, opt, verify},
+            combinator::{map, map_opt, recognize, verify},
             multi::length_count,
-            sequence::{pair, tuple},
+            sequence::{pair, preceded, tuple},
             IResult,
         };
 
@@ -265,12 +265,13 @@ impl RawCodeData {
         fn parse_varint(input: &[u8]) -> IResult<&[u8], usize> {
             let is_last = |b| b & 0x80 == 0;
             let is_in_bounds = |p: &[u8]| p.len() < 9;
-            let try_varint = |(p, lb): (&[u8], &[u8])|
-                p.iter().chain(lb).enumerate().try_fold(0, |acc, (idx, byte)|
-                    ((*byte as usize) & 0x7F).checked_shl(idx as u32 * 7).map(|n| acc | n)
-                );
 
-            map_opt(pair(verify(take_till(is_last), is_in_bounds), take(1u8)), try_varint)(input)
+            map_opt(
+                recognize(pair(verify(take_till(is_last), is_in_bounds), take(1u8))),
+                |p: &[u8]| p.iter().enumerate().try_fold(0, |acc, (idx, byte)|
+                    ((*byte as usize) & 0x7F).checked_shl(idx as u32 * 7).map(|n| acc | n)
+                ),
+            )(input)
         }
 
         #[cfg(debug_assertions)]
@@ -278,14 +279,15 @@ impl RawCodeData {
             println!("{id}");
         }
 
-        // starting from 2 as Format is the third number.
-        let (rem, format) = map(parse_varint, |f| f.try_into().unwrap_or_default())(&input[2..])?;
+        map(tuple((
+            // format
+            map(parse_varint, |f| f.try_into().unwrap_or_default()),
 
-        // skip 1 byte for Hero ID.
-        let (rem, _) = parse_varint(rem)?;
-        let (rem, hero) = parse_varint(rem)?;
-        let (rem, cards) = map(
-            tuple((
+            // hero
+            preceded(parse_varint, parse_varint),
+
+            // cards
+            map(tuple((
                 // single cards
                 length_count(parse_varint, parse_varint),
 
@@ -299,29 +301,24 @@ impl RawCodeData {
                 ),
             )),
             |(v1, v2, vn)| v1.into_iter()
-                    .chain(v2.into_iter().flatten())
-                    .chain(vn.into_iter().flatten())
-                    .collect(),
-        )(rem)?;
+                .chain(v2.into_iter().flatten())
+                .chain(vn.into_iter().flatten())
+                .collect()
+            ),
 
-        let (rem, c) = opt(parse_varint)(rem)?;
-        let (rem, sideboard_cards) = map(
-            cond(
-                c.is_some_and(|c| c == 1),
+            // sideboard
+            preceded(
+                verify(parse_varint, |i| *i == 1),
                 length_count(parse_varint, pair(parse_varint, parse_varint)),
             ),
-            Option::unwrap_or_default,
-        )(rem)?;
-
-        let result = Self {
+        )),
+        |(format, hero, cards, sideboard_cards)| RawCodeData {
             format,
             hero,
             cards,
             sideboard_cards,
             deck_code: ENGINE.encode(input).into(), // Hearthstone requires base64 padding
-        };
-
-        Ok((rem, result))
+        })(&input[2..]) // starting from 2 as Format is the third number.
     }
 
     fn from_code(code: &str) -> Option<Self> {

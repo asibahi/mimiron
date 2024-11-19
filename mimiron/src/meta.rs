@@ -52,26 +52,20 @@ impl DeckStat {
     result = true,
 )]
 fn get_firestone_data(link: &'static str) -> Result<FirestoneStats> {
-    // is this a good idea?
-    // let ret = loop {
-    //     match AGENT.get(link).call(){
-    //         Ok(mut res) => break res.body_mut().read_json::<FirestoneStats>()?,
-    //         Err(ureq::Error::Io(err)) => continue,
-    //         err => err?,
-    //     };
-    // };
-    let ret = AGENT
-        .get(link)
-        .call()
-        .map_err(ureq::Error::into_io)
-        .inspect_err(|e| tracing::error!(
-            link = link,
-            "Error getting FireStone data. (is it 104 ?): {}, ErrorKind {}",
-            e,
-            e.kind()
-        ))?
-        .body_mut()
-        .read_json::<FirestoneStats>()?;
+    let mut counter = 5;
+    let ret = loop {
+        match AGENT.get(link).call() {
+            Ok(mut res) => break res.body_mut().read_json::<FirestoneStats>()?,
+            Err(ureq::Error::Io(err))
+                if counter > 0 && err.kind() == std::io::ErrorKind::ConnectionReset =>
+            {   // is this a good idea?
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                counter -= 1;
+                continue;
+            }
+            err => err?,
+        };
+    };
     Ok(ret)
 }
 

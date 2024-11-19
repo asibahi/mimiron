@@ -271,7 +271,7 @@ async fn create_deck_dropdown(
             options: decks
                 .iter()
                 .map(|(i, d)| serenity::CreateSelectMenuOption::new(&*d.title, i.to_string()))
-                .collect::<Vec<_>>(),
+                .collect(),
         },
     )
     .placeholder("Select a deck from the above.");

@@ -378,7 +378,7 @@ fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zon
             let slug = draw_card_slug(card, count, zone, sb_style);
             ((card.id, zone), slug)
         })
-        .collect::<HashMap<_, _>>()
+        .collect()
 }
 
 fn draw_heading_slug(heading: &str) -> RgbaImage {
@@ -435,13 +435,13 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
     Ok(image::load_from_memory(&buf)?.into())
 }
 
-fn draw_text<'a>(
-    canvas: &'a mut RgbaImage,
+fn draw_text(
+    canvas: &mut RgbaImage,
     color: impl Into<Rgba<u8>> + Copy,
     x_offset: u32,
     y_offset: u32, // band-aid for Deck Title.
     scale: f32,
-    text: &'a str,
+    text: &str,
 ) {
     let mut caret = 0.0;
     let v_metric = FONTS[0].0.as_scaled(scale).ascent();

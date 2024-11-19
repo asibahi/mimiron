@@ -199,7 +199,7 @@ impl From<CardData> for Card {
             class: if c.multi_class_ids.is_empty() {
                 HashSet::from([c.class_id.unwrap_or_default().into()])
             } else {
-                c.multi_class_ids.into_iter().map(Class::from).collect::<HashSet<_>>()
+                c.multi_class_ids.into_iter().map(Class::from).collect()
             },
             cost: c.mana_cost,
             rune_cost: c.rune_cost,

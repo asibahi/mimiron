@@ -15,7 +15,7 @@ const FOOTER: &str = "This bot uses the Blizzard API, which mirrors the official
                       is hosted on the free tier of http://shuttle.rs .";
 
 /// Help Menu
-#[poise::command(slash_command, hide_in_help)]
+#[poise::command(slash_command, install_context = "Guild|User", hide_in_help)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
     // ego inflation
@@ -133,7 +133,7 @@ pub async fn on_error(
 
 pub fn on_success(ctx: &Context<'_>) {
     let command = ctx.command().name.as_str();
-    let guild = ctx.guild().map_or("Direct Messages".into(), |g| g.name.clone());
+    let guild = ctx.guild().map_or(format!("User: {}", ctx.author().name), |g| g.name.clone());
 
     let invocation = ctx.invocation_string();
 

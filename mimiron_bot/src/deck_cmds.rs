@@ -14,7 +14,7 @@ use rand::random;
 use std::{cell::LazyCell, collections::HashMap, io::Cursor};
 
 /// Get deck image from code
-#[poise::command(slash_command, category = "Deck")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Deck")]
 pub async fn deck(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,
@@ -29,7 +29,7 @@ pub async fn deck(
 }
 
 /// alias for deck
-#[poise::command(slash_command, hide_in_help)]
+#[poise::command(slash_command, install_context = "Guild|User", hide_in_help)]
 pub async fn code(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,
@@ -80,7 +80,7 @@ pub async fn deck_inner(
 }
 
 /// Add a band to a deck with ETC but no band.
-#[poise::command(slash_command, category = "Deck")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Deck")]
 pub async fn addband(
     ctx: Context<'_>,
     #[description = "deck code"] code: String,
@@ -100,7 +100,7 @@ pub async fn addband(
 }
 
 /// Compare two decks
-#[poise::command(slash_command, category = "Deck")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Deck")]
 pub async fn deckcomp(
     ctx: Context<'_>,
     #[description = "deck 1 code"] code1: String,
@@ -195,7 +195,7 @@ fn create_deck_reply(deck: &Deck) -> Result<poise::CreateReply, Error> {
 }
 
 /// Get a "meta" deck from Firestone's data.
-#[poise::command(slash_command, category = "Metagame")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Metagame")]
 pub async fn metadeck(
     ctx: Context<'_>,
     #[description = "Class"] class: Option<String>,
@@ -217,7 +217,7 @@ pub async fn metadeck(
 }
 
 /// Get a meta snapshot from Firestone's data.
-#[poise::command(slash_command, category = "Metagame")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Metagame")]
 pub async fn metasnap(
     ctx: Context<'_>,
     #[description = "Format"] format: Option<String>,
@@ -242,7 +242,7 @@ pub async fn metasnap(
 }
 
 /// Find a deck with archetype name
-#[poise::command(slash_command, category = "Metagame")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Metagame")]
 pub async fn archetype(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,

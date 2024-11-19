@@ -9,8 +9,8 @@ use mimiron::{
 };
 use poise::serenity_prelude as serenity;
 
-/// Alias for /bg
-#[poise::command(slash_command, hide_in_help)]
+/// alias for /bg
+#[poise::command(slash_command, install_context = "Guild|User", hide_in_help)]
 pub async fn battlegrounds(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -20,7 +20,7 @@ pub async fn battlegrounds(
 }
 
 /// Search by name for a battlegrounds card
-#[poise::command(slash_command, category = "Battlegrounds")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Battlegrounds")]
 pub async fn bg(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -39,7 +39,7 @@ pub async fn bg_inner(ctx: Context<'_>, search_term: String) -> Result<(), Error
 }
 
 /// Search by text for a battlegrounds card
-#[poise::command(slash_command, category = "Battlegrounds")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Battlegrounds")]
 pub async fn bgtext(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -58,7 +58,7 @@ pub async fn bgtext(
 }
 
 /// Search by tier, minion type, or mode for a battlegrounds card
-#[poise::command(slash_command, category = "Battlegrounds")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Battlegrounds")]
 pub async fn bgtier(
     ctx: Context<'_>,
     #[description = "tier"]

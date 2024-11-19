@@ -11,7 +11,7 @@ use poise::serenity_prelude as serenity;
 use std::ops::Not;
 
 /// Search by name for a constructed card
-#[poise::command(slash_command, category = "Constructed")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Constructed")]
 pub async fn card(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -27,7 +27,7 @@ pub async fn card(
 }
 
 /// Search by name for a constructed card, includes reprints
-#[poise::command(slash_command, category = "Constructed")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Constructed")]
 pub async fn cardreprints(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -44,7 +44,7 @@ pub async fn cardreprints(
 }
 
 /// Search by text for a constructed card
-#[poise::command(slash_command, category = "Constructed")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Constructed")]
 pub async fn cardtext(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -60,7 +60,7 @@ pub async fn cardtext(
 }
 
 /// Search includes all cards, including tokens. Expect nonsense.
-#[poise::command(slash_command, category = "Constructed")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Constructed")]
 pub async fn allcards(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,
@@ -106,7 +106,7 @@ fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed 
 }
 
 /// Search for a keyword
-#[poise::command(slash_command, category = "Constructed")]
+#[poise::command(slash_command, install_context = "Guild|User", category = "Constructed")]
 pub async fn keyword(
     ctx: Context<'_>,
     #[description = "search term"] search_term: String,

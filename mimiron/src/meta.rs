@@ -98,10 +98,10 @@ pub fn meta_search(search_term: &str, format: &Format, locale: Locale) -> Result
     get_decks_stats(format, class)?
         .find(|ds| {
             let at = casify_archetype(&ds.archetype_name).to_lowercase();
-            at.eq_ignore_ascii_case(search_term)
+            at.eq_ignore_ascii_case(search_term.trim())
                 // very lame
                 || at.split_ascii_whitespace()
-                    .any(|s| search_term.contains(s) && s.parse::<Class>().is_err())
+                    .any(|s| search_term.to_lowercase().contains(s) && s.parse::<Class>().is_err())
         })
         .and_then(|ds| get_deck_from_deck_stat(ds, locale))
         .ok_or(anyhow!("No deck found with this name in this format."))

@@ -256,7 +256,7 @@ impl RawCodeData {
         use nom::{
             bytes::complete::{take, take_till},
             combinator::{map, map_opt, recognize, verify},
-            multi::length_count,
+            multi::{count, length_count},
             sequence::{pair, preceded, tuple},
             IResult,
         };
@@ -279,7 +279,8 @@ impl RawCodeData {
             println!("{id}");
         }
 
-        map(tuple((
+        // Format is the third number.
+        preceded(verify(count(parse_varint, 2), |r| r == vec![0, 1]), map(tuple((
             // format
             map(parse_varint, |f| f.try_into().unwrap_or_default()),
 
@@ -307,9 +308,12 @@ impl RawCodeData {
             ),
 
             // sideboard
-            preceded(
-                verify(parse_varint, |i| *i == 1),
-                length_count(parse_varint, pair(parse_varint, parse_varint)),
+            map(
+                length_count(
+                    parse_varint, 
+                    length_count(parse_varint, pair(parse_varint, parse_varint))
+                ),
+                |v| v.first().cloned().unwrap_or_default(),
             ),
         )),
         |(format, hero, cards, sideboard_cards)| RawCodeData {
@@ -318,7 +322,7 @@ impl RawCodeData {
             cards,
             sideboard_cards,
             deck_code: ENGINE.encode(input).into(), // Hearthstone requires base64 padding
-        })(&input[2..]) // starting from 2 as Format is the third number.
+        }))(input)
     }
 
     fn from_code(code: &str) -> Option<Self> {

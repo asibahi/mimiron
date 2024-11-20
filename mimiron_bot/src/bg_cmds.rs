@@ -130,7 +130,7 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
     };
 
     // Buddies, Golden Minions, and Hero Powers.
-    fields.extend(bg::get_associated_cards(card, locale).filter_map(
+    fields.extend(bg::get_associated_cards(card, locale, false).filter_map(
         |(assoc_card, assoc)| {
             let (bg::BGCardType::Minion { ref text, .. }
             | bg::BGCardType::HeroPower { ref text, .. }) = assoc_card.card_type
@@ -138,9 +138,9 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
                 return None;
             };
             let title = match assoc {
-                bg::Association::Buddy | bg::Association::HeroPower => assoc_card.name,
                 bg::Association::Golden =>
-                    format!("{}: {}", locale.golden(), assoc_card.name).into(),
+                format!("{}: {}", locale.golden(), assoc_card.name).into(),
+                _ => assoc_card.name,
             };
             Some((title, format!("{}: {}", assoc_card.card_type.in_locale(locale), text.to_markdown()), false))
         },

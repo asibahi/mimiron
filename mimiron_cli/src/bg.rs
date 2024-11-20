@@ -44,7 +44,7 @@ pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
         if args.image {
             println!("\tImage: {}", card.image);
         }
-        for (card, assoc) in bg::get_associated_cards(&card, locale) {
+        for (card, assoc) in bg::get_associated_cards(&card, locale, true) {
             bg::print_assoc_card(&card, locale, assoc);
         }
     }

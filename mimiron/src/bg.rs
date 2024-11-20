@@ -417,31 +417,33 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
 }
 
 #[derive(Clone, Copy)]
-pub enum Association {
-    Buddy,
-    HeroPower,
-    Golden,
-}
+pub enum Association { Buddy, HeroPower, Golden, Token }
 
 pub fn get_associated_cards(
     card: &Card,
     locale: Locale,
+    all: bool,
 ) -> impl Iterator<Item = (Card, Association)> + use<> {
     let mut cards = Vec::with_capacity(3);
 
     match &card.card_type {
         BGCardType::Hero { buddy_id, child_ids, .. } => {
-            // Getting the starting hero power only. API sometimes has outdated HPs.
-            // The smallest ChildID Hero Power is (usually) the correct hero power.
-            // Hope we don't get rate limited ...
-            if let Some(res) = child_ids
-                .iter()
-                .sorted()
-                .filter_map(|id| get_card_by_id(*id, locale).ok())
-                .find(|c| matches!(c.card_type, BGCardType::HeroPower { .. }))
+            for card in child_ids.iter().filter_map(|id| get_card_by_id(*id, locale).ok())
             {
-                cards.push((res, Association::HeroPower));
-            };
+                if all {
+                    match card.card_type {
+                        BGCardType::Minion { .. } if Some(card.id) != *buddy_id =>
+                            cards.push((card, Association::Token)),
+                        BGCardType::HeroPower { .. } => cards.push((card, Association::HeroPower)),
+                        _ => (),
+                    }
+                } else if matches!(card.card_type, BGCardType::HeroPower { .. }) {
+                    // Getting the starting hero power only. API sometimes has outdated HPs.
+                    // The first (smaller?) ChildID Hero Power is probably the correct hero power.
+                    cards.push((card, Association::HeroPower));
+                    break;
+                }
+            }
 
             if let Some(res) = buddy_id.and_then(|id| get_card_by_id(id, locale).ok()) {
                 cards.push((res, Association::Buddy));
@@ -471,6 +473,16 @@ pub fn print_assoc_card(card: &Card, locale: Locale, assoc: Association) {
             .green();
             println!("{text}");
         }
+        (Association::Token, BGCardType::Minion { .. }) => {
+            let text = textwrap::fill(
+                &format!("{:+}", card.in_locale(locale)),
+                textwrap::Options::new(textwrap::termwidth() - 10)
+                    .initial_indent("\t")
+                    .subsequent_indent(&format!("\t{:<20} ", " ")),
+            )
+            .red();
+            println!("{text}");
+        }
         (Association::HeroPower, _) => {
             let text = textwrap::fill(
                 &format!("{:+}", card.in_locale(locale)),
@@ -488,7 +500,8 @@ pub fn print_assoc_card(card: &Card, locale: Locale, assoc: Association) {
             let text = text.to_console().yellow();
             println!("{text}");
         }
-        _ => unreachable!("In Battlegrounds only Minions can be Golden."),
+
+        _ => unreachable!("In Battlegrounds only Minions can be Golden or Tokens."),
     }
 }
 

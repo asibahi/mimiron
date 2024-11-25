@@ -109,9 +109,10 @@ pub fn meta_search(search_term: &str, format: &Format, locale: Locale) -> Result
 
 fn casify_archetype(at: &str) -> CompactString {
     at.split('-')
-        .map(|s| if s.eq_ignore_ascii_case("dk")
-                || s.eq_ignore_ascii_case("dh")
-                || (s.len() == 3
+        .map(|s| if s.eq_ignore_ascii_case("dk") // Death Knight
+                || s.eq_ignore_ascii_case("dh")  // Demon Hunter
+                || s.eq_ignore_ascii_case("xl")  // X-Large
+                || (s.len() <= 3                 // DK Runes
                     && s.chars().all(
                         |c| c.eq_ignore_ascii_case(&'b')
                             || c.eq_ignore_ascii_case(&'f')
@@ -121,7 +122,10 @@ fn casify_archetype(at: &str) -> CompactString {
                 s.to_compact_string().to_uppercase()
             } else {
                 let mut chars = s.chars();
-                chars.next().map_or_else(CompactString::default, |first| first.to_uppercase().chain(chars).collect())
+                chars.next().map_or_else(
+                    CompactString::default,
+                    |first| first.to_uppercase().chain(chars).collect()
+                )
             }
         )
         .fold(CompactString::default(), |acc, t|
@@ -154,7 +158,7 @@ fn get_decks_stats(
 ) -> Result<impl Iterator<Item = DeckStat> + use<>> {
     let (d_l, all, min_count, min_log) = match format {
         Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL, 100, 10), // 2^10 == 1024
-        Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL, 100, 8),              // 2^8  == 256
+        Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL, 100, 9),              // 2^9  == 512
         Format::Twist => (TWIST_DECKS_D_L, TWIST_DECKS_ALL, 50, 7),            // 2^7  == 128
         _ => anyhow::bail!("Meta decks for this format are not available"),
     };

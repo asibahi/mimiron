@@ -6,7 +6,7 @@ use mimiron::{
     localization::Locale,
 };
 use poise::serenity_prelude as serenity;
-use std::{cell::LazyCell, collections::HashMap, iter::Iterator, ops::Not};
+use std::{cell::LazyCell, collections::HashMap, ops::Not};
 
 const FOOTER: &str = "This bot uses the Blizzard API, which mirrors the official card library, \
                       with supplemental data from HearthSim and Firestone. Code is available at \

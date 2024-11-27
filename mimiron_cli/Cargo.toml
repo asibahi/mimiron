@@ -15,8 +15,6 @@ anyhow.workspace = true
 clap.workspace = true
 directories.workspace = true
 chrono.workspace = true
-dotenvy.workspace = true
-
 
 [[bin]]
 name = "mimiron"

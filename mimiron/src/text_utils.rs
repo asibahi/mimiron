@@ -104,7 +104,7 @@ mod prettify_tests {
     use super::*;
     use TextTree as TT;
 
-    impl<'s> TextTree<'s> {
+    impl TextTree<'_> {
         fn in_bold(input: Self) -> Self {
             Self::Bold(Box::new(input))
         }

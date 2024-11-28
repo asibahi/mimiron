@@ -58,9 +58,9 @@ impl From<String> for Format {
         }
     }
 }
-impl TryFrom<usize> for Format {
+impl TryFrom<u8> for Format {
     type Error = anyhow::Error;
-    fn try_from(value: usize) -> Result<Self, Self::Error> {
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
             1 => Self::Wild,
             2 => Self::Standard,
@@ -254,9 +254,11 @@ impl RawCodeData {
         // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 
         use nom::{
+            branch::alt,
             bytes::complete::{take, take_till},
-            combinator::{map, map_opt, recognize, verify},
+            combinator::{map, map_opt, recognize, success, verify},
             multi::{count, length_count},
+            number::complete::u8,
             sequence::{pair, preceded, tuple},
             IResult,
         };
@@ -276,34 +278,28 @@ impl RawCodeData {
 
         #[cfg(debug_assertions)]
         {
-            let mut raw_code = String::new();
-            for id in nom::multi::many0(parse_varint)(input)?.1 {
-                _ = write!(raw_code, "{id} ");
-            }
+            let raw_code = nom::combinator::iterator(input, parse_varint).fuse().join(", ");
             tracing::info!(raw_code);
         }
 
         // Format is the third number.
-        preceded(verify(count(parse_varint, 2), |r| r == vec![0, 1]), map(tuple((
+        preceded(verify(count(u8, 2), |r| r == vec![0, 1]), map(tuple((
             // format
-            map(parse_varint, |f| f.try_into().unwrap_or_default()),
+            map(u8, |f| f.try_into().unwrap_or_default()),
 
             // hero
-            preceded(parse_varint, parse_varint),
+            preceded(u8, parse_varint),
 
             // cards
             map(tuple((
                 // single cards
-                length_count(parse_varint, parse_varint),
+                length_count(u8, parse_varint),
 
                 // double cards
-                length_count(parse_varint, map(parse_varint, |id| [id; 2])),
+                length_count(u8, map(parse_varint, |id| [id; 2])),
 
                 // n-count cards
-                length_count(
-                    parse_varint,
-                    map(pair(parse_varint, parse_varint), |(id, n)| [id].repeat(n)),
-                ),
+                length_count(u8, map(pair(parse_varint, u8), |(id, n)| [id].repeat(n as usize))),
             )),
             |(v1, v2, vn)| v1.into_iter()
                 .chain(v2.into_iter().flatten())
@@ -312,13 +308,13 @@ impl RawCodeData {
             ),
 
             // sideboard
-            map(
-                length_count(
-                    parse_varint, 
-                    length_count(parse_varint, pair(parse_varint, parse_varint))
+            alt((
+                preceded(
+                    verify(u8, |i| *i == 1),
+                    length_count(u8, pair(parse_varint, parse_varint)),
                 ),
-                |v| v.first().cloned().unwrap_or_default(),
-            ),
+                success(Vec::new()),
+            )),
         )),
         |(format, hero, cards, sideboard_cards)| RawCodeData {
             format,

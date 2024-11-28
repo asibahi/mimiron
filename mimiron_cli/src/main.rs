@@ -86,6 +86,14 @@ pub fn run() -> Result<()> {
 }
 
 fn main() {
+    #[cfg(debug_assertions)]
+    tracing_subscriber::fmt()
+        .with_line_number(true)
+        .with_writer(std::io::stderr).with_env_filter("mimiron=info")
+        // .with_max_level(tracing_subscriber::filter::LevelFilter::WARN)
+        .without_time()
+        .init();
+
     if let Err(e) = run() {
         eprintln!("Encountered error: {e}");
         std::process::exit(1)

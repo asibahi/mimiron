@@ -46,6 +46,7 @@ rand = "0.8.5"
 clap = { version = "4", features = ["derive", "env"] }
 directories = "5.0"
 chrono = "0.4"
+tracing-subscriber = {version = "0.3.18", features = ["env-filter"]}
 
 [workspace.lints.rust]
 rust_2018_idioms = { level = "warn", priority = -1 }

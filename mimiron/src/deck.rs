@@ -275,8 +275,12 @@ impl RawCodeData {
         }
 
         #[cfg(debug_assertions)]
-        for id in nom::multi::many0(parse_varint)(input)?.1 {
-            println!("{id}");
+        {
+            let mut raw_code = String::new();
+            for id in nom::multi::many0(parse_varint)(input)?.1 {
+                _ = write!(raw_code, "{id} ");
+            }
+            tracing::info!(raw_code);
         }
 
         // Format is the third number.
@@ -436,13 +440,11 @@ fn raw_data_to_deck(
 
     let mut deck = get_deck_w_code()
         .or_else(|e| {
-            tracing::warn!("Encountered error validating code from Blizzard's servers: {e}.");
-            tracing::warn!("Using direct card data instead.");
+            tracing::warn!("Encountered error validating code from Blizzard's servers: {e}. Using direct card data instead.");
             get_deck_w_cards()
         })
         .unwrap_or_else(|e| {
-            tracing::warn!("Encountered error validating cards from Blizzard's servers: {e}.");
-            tracing::warn!("Using dummy data instead.");
+            tracing::warn!("Encountered error validating cards from Blizzard's servers: {e}. Using dummy data instead.");
             get_dummy_deck()
         });
 

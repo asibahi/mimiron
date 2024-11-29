@@ -331,27 +331,27 @@ impl<'s> SearchOptions<'s> {
         }
     }
     #[must_use]
-    pub fn search_for(self, search_term: Option<&'s str>) -> Self {
+    pub const fn search_for(self, search_term: Option<&'s str>) -> Self {
         Self { search_term, ..self }
     }
     #[must_use]
-    pub fn with_tier(self, tier: Option<u8>) -> Self {
+    pub const fn with_tier(self, tier: Option<u8>) -> Self {
         Self { tier, ..self }
     }
     #[must_use]
-    pub fn with_type(self, minion_type: Option<MinionType>) -> Self {
+    pub const fn with_type(self, minion_type: Option<MinionType>) -> Self {
         Self { minion_type, ..self }
     }
     #[must_use]
-    pub fn with_text(self, with_text: bool) -> Self {
+    pub const fn with_text(self, with_text: bool) -> Self {
         Self { with_text, ..self }
     }
     #[must_use]
-    pub fn with_locale(self, locale: Locale) -> Self {
+    pub const fn with_locale(self, locale: Locale) -> Self {
         Self { locale, ..self }
     }
     #[must_use]
-    pub fn for_pool(self, pool: Pool) -> Self {
+    pub const fn for_pool(self, pool: Pool) -> Self {
         Self { pool, ..self }
     }
 }

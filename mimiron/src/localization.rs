@@ -23,12 +23,12 @@ impl Locale {
             Self::plPL => "Ustawka",
             Self::ptBR => "Campos de Batalha",
             Self::ruRU => "Поля сражений",
-            Locale::enUS
-            | Locale::esES
-            | Locale::esMX
-            | Locale::thTH
-            | Locale::zhCN
-            | Locale::zhTW => "Battlegrounds",
+            Self::enUS
+            | Self::esES
+            | Self::esMX
+            | Self::thTH
+            | Self::zhCN
+            | Self::zhTW => "Battlegrounds",
         }
     }
 

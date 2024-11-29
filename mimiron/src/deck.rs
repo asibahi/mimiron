@@ -228,11 +228,11 @@ impl<'s> LookupOptions<'s> {
         Self { code, locale: Locale::enUS, format: None }
     }
     #[must_use]
-    pub fn with_locale(self, locale: Locale) -> Self {
+    pub const fn with_locale(self, locale: Locale) -> Self {
         Self { locale, ..self }
     }
     #[must_use]
-    pub fn with_custom_format(self, format: Option<&'s str>) -> Self {
+    pub const fn with_custom_format(self, format: Option<&'s str>) -> Self {
         Self { format, ..self }
     }
 }
@@ -316,7 +316,7 @@ impl RawCodeData {
                 success(Vec::new()),
             )),
         )),
-        |(format, hero, cards, sideboard_cards)| RawCodeData {
+        |(format, hero, cards, sideboard_cards)| Self {
             format,
             hero,
             cards,

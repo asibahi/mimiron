@@ -115,7 +115,10 @@ pub async fn on_error(
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
             let command = ctx.command().name.as_str();
-            let guild = ctx.guild().map_or(format!("User: {}", ctx.author().name), |g| g.name.clone());
+            let guild = ctx.guild().map_or_else(
+                || format!("User: {}", ctx.author().name),
+                |g| g.name.clone()
+            );
 
             let invocation = ctx.invocation_string();
             let mut error = error.to_string();
@@ -133,7 +136,10 @@ pub async fn on_error(
 
 pub fn on_success(ctx: &Context<'_>) {
     let command = ctx.command().name.as_str();
-    let guild = ctx.guild().map_or(format!("User: {}", ctx.author().name), |g| g.name.clone());
+    let guild = ctx.guild().map_or_else(
+        || format!("User: {}", ctx.author().name),
+        |g| g.name.clone()
+    );
 
     let invocation = ctx.invocation_string();
 

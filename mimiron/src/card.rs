@@ -255,19 +255,19 @@ impl<'s> SearchOptions<'s> {
         }
     }
     #[must_use]
-    pub fn with_text(self, with_text: bool) -> Self {
+    pub const fn with_text(self, with_text: bool) -> Self {
         Self { with_text, ..self }
     }
     #[must_use]
-    pub fn include_reprints(self, reprints: bool) -> Self {
+    pub const fn include_reprints(self, reprints: bool) -> Self {
         Self { reprints, ..self }
     }
     #[must_use]
-    pub fn include_noncollectibles(self, noncollectibles: bool) -> Self {
+    pub const fn include_noncollectibles(self, noncollectibles: bool) -> Self {
         Self { noncollectibles, ..self }
     }
     #[must_use]
-    pub fn with_locale(self, locale: Locale) -> Self {
+    pub const fn with_locale(self, locale: Locale) -> Self {
         Self { locale, ..self }
     }
 }

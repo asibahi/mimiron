@@ -16,7 +16,7 @@ image = { version = "0.25", default-features = false, features = [
 # lib deps
 colored = "2"
 serde = { version = "1", features = ["derive"] }
-ureq = "3.0.0-rc2"
+ureq = "=3.0.0-rc2"
 base64 = "0.22"
 counter = "0.6"
 nom = "7.1.3"
@@ -38,7 +38,7 @@ compact_str = {version = "0.8", features = ["serde"]}
 poise = { git = "https://github.com/serenity-rs/poise.git", rev = "22b5b01"}
 shuttle-serenity = "0.49"
 shuttle-runtime = "0.49"
-tracing = "0.1.40"
+tracing = "0.1.41"
 urlencoding = "2.1.3"
 rand = "0.8.5"
 
@@ -46,7 +46,7 @@ rand = "0.8.5"
 clap = { version = "4", features = ["derive", "env"] }
 directories = "5.0"
 chrono = "0.4"
-tracing-subscriber = {version = "0.3.18", features = ["env-filter"]}
+tracing-subscriber = {version = "0.3.19", features = ["env-filter"]}
 
 [workspace.lints.rust]
 rust_2018_idioms = { level = "warn", priority = -1 }

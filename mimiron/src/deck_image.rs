@@ -403,34 +403,35 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
 
     '_flag: {
-        let flag_width =  SLUG_WIDTH / 2;
-        let stripe_width =  SLUG_WIDTH / 6;
+        let flag_width = img.width() - (2 * MARGIN);
+        let flag_height = CROP_HEIGHT / 4;
+        let stripe_width =  flag_width / 3;
 
         let mut flag = imageops::crop(
             img,
             img.width() - MARGIN - flag_width,
             MARGIN,
             flag_width,
-            CROP_HEIGHT);
+            flag_height);
 
         // GREEN
         drawing::draw_filled_rect_mut(
             &mut *flag,
-            Rect::at(0, 0).of_size(stripe_width, CROP_HEIGHT),
+            Rect::at(0, 0).of_size(stripe_width, flag_height),
             Rgba([0x00, 0x7A, 0x3D, 255]),
         );
 
         // WHITE
         drawing::draw_filled_rect_mut(
             &mut *flag,
-            Rect::at(stripe_width as i32, 0).of_size(stripe_width, CROP_HEIGHT),
+            Rect::at(stripe_width as i32, 0).of_size(stripe_width, flag_height),
             Rgba([0xFF, 0xFF, 0xFF, 255]),
         );
 
         // BLACK 
         drawing::draw_filled_rect_mut(
             &mut *flag,
-            Rect::at(2 * stripe_width as i32, 0).of_size(SLUG_WIDTH / 6, CROP_HEIGHT),
+            Rect::at(2 * stripe_width as i32, 0).of_size(stripe_width, flag_height),
             Rgba([0, 0, 0, 255]),
         );
 
@@ -438,28 +439,32 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
         for i in 0..3 {
             let center = (
                 (stripe_width - MARGIN) as i32 + (i + 1) * (stripe_width + 2 * MARGIN) as i32 / 4, 
-                CROP_HEIGHT as i32 / 2
+                flag_height as i32 / 2
             );
-            let rad = 5 * MARGIN as i32 / 2;
-            let srd = MARGIN as i32;
+            let rad = MARGIN as i32 * 5 / 4;
+            let srd = MARGIN as i32 * 5 / 7;
 
-            let s = |r: i32, a:f64| (r as f64 * (a * PI).sin()) as i32;
-            let c = |r: i32, a:f64| (r as f64 * (a * PI).cos()) as i32;
+            let v = if vertical { -0.1 } else { 0.0 };
+
+            let s = |r: i32, a:f64| (r as f64 * ((a + v) * PI).sin()) as i32;
+            let c = |r: i32, a:f64| (r as f64 * ((a + v) * PI).cos()) as i32;
+
+            let poly = &[
+                Point::new(center.0 + s(rad, 0.0), center.1 - c(rad, 0.0)),
+                Point::new(center.0 + s(srd, 0.2), center.1 - c(srd, 0.2)),
+                Point::new(center.0 + s(rad, 0.4), center.1 - c(rad, 0.4)),
+                Point::new(center.0 + s(srd, 0.6), center.1 - c(srd, 0.6)),
+                Point::new(center.0 + s(rad, 0.8), center.1 - c(rad, 0.8)),
+                Point::new(center.0 + s(srd, 1.0), center.1 - c(srd, 1.0)),
+                Point::new(center.0 + s(rad, 1.2), center.1 - c(rad, 1.2)),
+                Point::new(center.0 + s(srd, 1.4), center.1 - c(srd, 1.4)),
+                Point::new(center.0 + s(rad, 1.6), center.1 - c(rad, 1.6)),
+                Point::new(center.0 + s(srd, 1.8), center.1 - c(srd, 1.8)),
+            ];
 
             drawing::draw_antialiased_polygon_mut(
                 &mut *flag, 
-                &[
-                    Point::new(center.0 + s(rad, 0.0), center.1 - c(rad, 0.0)),
-                    Point::new(center.0 + s(srd, 0.2), center.1 - c(srd, 0.2)),
-                    Point::new(center.0 + s(rad, 0.4), center.1 - c(rad, 0.4)),
-                    Point::new(center.0 + s(srd, 0.6), center.1 - c(srd, 0.6)),
-                    Point::new(center.0 + s(rad, 0.8), center.1 - c(rad, 0.8)),
-                    Point::new(center.0 + s(srd, 1.0), center.1 - c(srd, 1.0)),
-                    Point::new(center.0 + s(rad, 1.2), center.1 - c(rad, 1.2)),
-                    Point::new(center.0 + s(srd, 1.4), center.1 - c(srd, 1.4)),
-                    Point::new(center.0 + s(rad, 1.6), center.1 - c(rad, 1.6)),
-                    Point::new(center.0 + s(srd, 1.8), center.1 - c(srd, 1.8)),
-                ],
+                poly,
                 Rgba([0xCE, 0x11, 0x26, 255]),
                 interpolate,
             );

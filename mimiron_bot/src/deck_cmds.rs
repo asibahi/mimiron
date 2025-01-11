@@ -22,10 +22,13 @@ pub async fn deck(
     #[description = "mode"]
     #[autocomplete = "autocomplete_mode"]
     format: Option<String>,
+    #[description = "mode"]
+    #[autocomplete = "autocomplete_shape"]
+    shape: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    deck_inner(ctx, code, title, format).await
+    deck_inner(ctx, code, title, format, shape).await
 }
 
 /// alias for deck
@@ -37,15 +40,25 @@ pub async fn code(
     #[description = "mode"]
     #[autocomplete = "autocomplete_mode"]
     format: Option<String>,
+    #[description = "mode"]
+    #[autocomplete = "autocomplete_shape"]
+    shape: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    deck_inner(ctx, code, title, format).await
+    deck_inner(ctx, code, title, format, shape).await
 }
 
 #[allow(clippy::unused_async)]
 async fn autocomplete_mode<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
     ["Standard", "Wild", "Twist"]
+        .into_iter()
+        .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
+}
+
+#[allow(clippy::unused_async)]
+async fn autocomplete_shape<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+    ["Default", "Vertical", "Groups"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
@@ -58,7 +71,7 @@ pub async fn deck_context_menu(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    deck_inner(ctx, msg.content, None, None).await
+    deck_inner(ctx, msg.content, None, None, None).await
 }
 
 pub async fn deck_inner(
@@ -66,17 +79,26 @@ pub async fn deck_inner(
     code: String,
     title: Option<String>,
     format: Option<String>,
+    shape: Option<String>,
 ) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let opts = LookupOptions::lookup(&code).with_locale(locale).with_custom_format(format.as_deref());
+    let l_opts = LookupOptions::lookup(&code).with_locale(locale).with_custom_format(format.as_deref());
 
-    let mut deck = deck::lookup(opts)?;
+    let i_opts = match shape {
+        Some(s) if s.starts_with('V') || s.starts_with('v') => 
+            deck::ImageOptions::Regular { columns: 1, inline_sideboard: true },
+        Some(s) if s.starts_with('g') || s.starts_with('G') => 
+            deck::ImageOptions::Groups,
+        _ => deck::ImageOptions::Adaptable
+    };
+
+    let mut deck = deck::lookup(l_opts)?;
     if let Some(title) = title {
         deck.title = title.into();
     }
 
-    send_deck_reply(ctx, deck).await
+    send_deck_reply(ctx, deck, i_opts).await
 }
 
 /// Add a band to a deck with ETC but no band.
@@ -96,7 +118,7 @@ pub async fn addband(
 
     let deck = deck::add_band(opts, vec![member1, member2, member3])?;
 
-    send_deck_reply(ctx, deck).await
+    send_deck_reply(ctx, deck, deck::ImageOptions::Adaptable).await
 }
 
 /// Compare two decks
@@ -153,20 +175,20 @@ pub async fn deckcomp(
     create_deck_dropdown(ctx, embed, &[(0, deck1), (1, deck2)]).await
 }
 
-async fn send_deck_reply(ctx: Context<'_>, deck: Deck) -> Result<(), Error> {
-    ctx.send(create_deck_reply(&deck)?).await?;
+async fn send_deck_reply(ctx: Context<'_>, deck: Deck, opts: deck::ImageOptions) -> Result<(), Error> {
+    ctx.send(create_deck_reply(&deck, opts)?).await?;
 
     Ok(())
 }
 
-fn create_deck_reply(deck: &Deck) -> Result<poise::CreateReply, Error> {
+fn create_deck_reply(deck: &Deck, opts: deck::ImageOptions) -> Result<poise::CreateReply, Error> {
     let attachment_name = format!(
         "{}.png",
         deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>()
     );
 
     let attachment = {
-        let img = deck.get_image(deck::ImageOptions::Adaptable)?;
+        let img = deck.get_image(opts)?;
 
         let mut image_data = Cursor::new(Vec::<u8>::new());
         img.write_to(&mut image_data, image::ImageFormat::Png)?;
@@ -213,7 +235,7 @@ pub async fn metadeck(
         .find_or_first(|_| random::<u8>() % 5 == 0)
         .unwrap();
 
-    send_deck_reply(ctx, deck).await
+    send_deck_reply(ctx, deck, deck::ImageOptions::Adaptable).await
 }
 
 /// Get a meta snapshot from Firestone's data.
@@ -255,7 +277,7 @@ pub async fn archetype(
 
     let deck = meta::meta_search(&search_term, &format, locale)?;
 
-    send_deck_reply(ctx, deck).await
+    send_deck_reply(ctx, deck, deck::ImageOptions::Adaptable).await
 }
 
 async fn create_deck_dropdown(
@@ -288,7 +310,7 @@ async fn create_deck_dropdown(
 
     let replies = decks
         .iter()
-        .map(|(_, deck)| LazyCell::new(|| create_deck_reply(deck).unwrap_or_default()))
+        .map(|(_, deck)| LazyCell::new(|| create_deck_reply(deck, deck::ImageOptions::Adaptable).unwrap_or_default()))
         .collect::<Vec<_>>();
 
     while let Some(choice) = serenity::collector::ComponentInteractionCollector::new(ctx)

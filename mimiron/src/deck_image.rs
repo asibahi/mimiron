@@ -237,7 +237,7 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
 
     if let Some(sideboards) = &deck.sideboard_cards {
         // always last column
-        let sb_col = img.width() - COLUMN_WIDTH - MARGIN;
+        let sb_col = img.width() - COLUMN_WIDTH;
         let mut sb_cursor = 1;
 
         for sb in sideboards {

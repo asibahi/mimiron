@@ -77,7 +77,7 @@ pub enum ImageOptions {
 pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
-        ImageOptions::Adaptable => img_elise_format(deck),
+        ImageOptions::Adaptable => img_columns_format(deck, None, true),
         ImageOptions::Regular { columns, inline_sideboard } =>
             img_columns_format(deck, NonZeroU32::new(columns as u32), inline_sideboard),
     }
@@ -286,22 +286,7 @@ fn img_elise_format(deck: &Deck) -> Result<RgbaImage> {
         .collect::<Vec<_>>()
         .into_par_iter()
         .map(|(card, count, zone)| {
-            // TODO - too many unwraps
-            // TODO - count is unused
-
-            let buf = AGENT
-                .get(card.image.as_str())
-                .call()
-                .unwrap()
-                .body_mut()
-                .read_to_vec()
-                .unwrap();
-            let mut img = image::load_from_memory(&buf).unwrap();
-            if matches!(zone, Zone::Sideboard { .. }) {
-                img = img.grayscale();
-            }
-
-            let img = img.resize(CARD_IMG_WIDTH, CARD_IMG_HEIGHT, imageops::FilterType::Gaussian).into();
+            let img = fetch_and_fix_card_image(card, zone);
 
             ((card.id, zone), img)
         })
@@ -364,6 +349,46 @@ fn img_elise_format(deck: &Deck) -> Result<RgbaImage> {
     }
 
     Ok(img)
+}
+
+fn fetch_and_fix_card_image(card: &Card, zone: Zone) -> image::ImageBuffer<Rgba<u8>, Vec<u8>> {
+    // TODO - too many unwraps
+    // TODO - count is unused
+
+    let buf = AGENT
+        .get(card.image.as_str())
+        .call()
+        .unwrap()
+        .body_mut()
+        .read_to_vec()
+        .unwrap();
+    let mut img = image::load_from_memory(&buf).unwrap();
+
+    let mut min_x = u32::MAX;
+    let mut min_y = u32::MAX;
+    let mut max_x = 0;
+    let mut max_y = 0;
+
+    // need to crop away the transparent bits
+    // unfortunately this method gives different sizes for spells/minions/legendaries.
+    // all in all a whole mess. Blizzard does not regulate the card image size
+
+    for (xp, yp, p) in img.pixels() {
+        if p.0[3] != 0 {
+            min_x = min_x.min(xp);
+            min_y = min_y.min(yp);
+            max_x = max_x.max(xp);
+            max_y = max_y.max(yp);
+        }
+    }
+
+    img = img.crop_imm(min_x, min_y, max_x-min_x, max_y-min_y);
+
+    if matches!(zone, Zone::Sideboard { .. }) {
+        img = img.grayscale();
+    }
+
+    img.resize(CARD_IMG_WIDTH, CARD_IMG_HEIGHT, imageops::FilterType::Gaussian).into()
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]

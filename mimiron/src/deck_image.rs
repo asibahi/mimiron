@@ -85,16 +85,17 @@ fn img_columns_format(
     inline_sideboard: bool,
 ) -> Result<RgbaImage> {
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
+    let slug_map = get_cards_slugs(
+        deck,
+        if inline_sideboard { SideboardStyle::Indented } else { SideboardStyle::EndOfDeck },
+    );
 
     let (mut img, pos_in_img) = {
-        let main_deck_length = ordered_main_deck.clone().count();
-
-        let sideboards_length = deck.sideboard_cards.as_ref().map_or(0, |sbs| {
-            let sbt = !inline_sideboard as usize;
-            sbs.iter().fold(0, |acc, sb| sb.cards_in_sideboard.iter().unique().count() + sbt + acc)
-        });
-
-        let length = (main_deck_length + sideboards_length) as u32;
+        let length = (slug_map.len()
+            + deck.sideboard_cards
+                .as_ref()
+                .filter(|_| !inline_sideboard)
+                .map_or(0, std::vec::Vec::len)) as u32;
 
         let col_count = col_count.map_or_else(|| (length / 15 + 1).max(2), u32::from);
         let cards_in_col = length / col_count + (length % col_count).min(1);
@@ -122,11 +123,6 @@ fn img_columns_format(
 
         (img, move |c| (c / cards_in_col, c % cards_in_col + (!vertical_title) as u32))
     };
-
-    let slug_map = get_cards_slugs(
-        deck,
-        if inline_sideboard { SideboardStyle::Indented } else { SideboardStyle::EndOfDeck },
-    );
 
     let mut cursor = 0;
 

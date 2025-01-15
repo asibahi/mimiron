@@ -88,7 +88,7 @@ pub async fn bgtier(
 
 #[allow(clippy::unused_async)]
 // Should probably get a list from the library for ome source of truth. Needs streams.
-async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
     ["Solos", "Duos"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
@@ -96,7 +96,7 @@ async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterato
 
 #[allow(clippy::unused_async)]
 // Should probably get a list from the library for ome source of truth. Needs streams.
-async fn autocomplete_type<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+async fn autocomplete_type<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
     [
         "Beast",
         "Demon",

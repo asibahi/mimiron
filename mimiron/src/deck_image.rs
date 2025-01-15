@@ -274,13 +274,12 @@ enum SideboardStyle { EndOfDeck, Indented }
 fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyle) -> RgbaImage {
     assert!(count > 0);
 
-    let (name, cost, rarity) = if let Some(Some((name, cost, rarity))) =
-        matches!(card.card_type, CardType::Unknown).then(|| get_hearth_sim_details(card.id))
-    {
-        (name, cost, rarity)
-    } else {
-        (card.name.clone(), card.cost, card.rarity)
-    };
+    // if card type is Unknown data other than card id is usually junk.
+    let (name, cost, rarity) = 
+        matches!(card.card_type, CardType::Unknown)
+        .then(|| get_hearth_sim_details(card.id))
+        .flatten()
+        .unwrap_or_else(|| (card.name.clone(), card.cost, card.rarity));
 
     let r_color = rarity.color();
     let c_color = card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect::<Vec<_>>();

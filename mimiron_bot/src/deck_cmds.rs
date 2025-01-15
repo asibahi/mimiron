@@ -50,14 +50,14 @@ pub async fn code(
 }
 
 #[allow(clippy::unused_async)]
-async fn autocomplete_mode<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+async fn autocomplete_mode<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
     ["Standard", "Wild", "Twist"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
 
 #[allow(clippy::unused_async)]
-async fn autocomplete_shape<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
+async fn autocomplete_shape<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
     ["Default", "Vertical", "Groups"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))

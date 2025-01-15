@@ -476,8 +476,8 @@ fn specific_card_adjustments(deck: &mut Deck) {
                 });
 
             if let Some(Card {
-                ref mut cost,
-                card_type: CardType::Minion { ref mut attack, ref mut health, .. },
+                cost,
+                card_type: CardType::Minion { attack, health, .. },
                 ..
             }) = deck.cards.iter_mut().find(|c| c.id == ZILLIAX_DELUXE_3000_ID)
             {

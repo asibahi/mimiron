@@ -50,8 +50,11 @@ tracing-subscriber = {version = "0.3.19", features = ["env-filter"]}
 
 [workspace.lints.rust]
 rust_2018_idioms = { level = "warn", priority = -1 }
-rust-2024-compatibility = { level = "warn", priority = -1 }
 refining_impl_trait_internal = "allow"
+
+rust-2024-compatibility = { level = "warn", priority = -1 }
+tail_expr_drop_order = "allow"
+if_let_rescope = "allow"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

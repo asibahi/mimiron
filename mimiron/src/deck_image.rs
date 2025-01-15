@@ -27,6 +27,10 @@ use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock};
 const CROP_WIDTH: u32 = 243;
 const CROP_HEIGHT: u32 = 64;
 
+// Numbers based on card images provided by Blizzard API
+const CARD_IMG_WIDTH: u32 = 404;
+const CARD_IMG_HEIGHT: u32 = 558;
+
 const INFO_WIDTH: u32 = CROP_HEIGHT;
 const COLOR_BAND_WIDTH: u32 = CROP_HEIGHT / 8;
 const MANA_WIDTH: u32 = INFO_WIDTH - COLOR_BAND_WIDTH;
@@ -73,7 +77,7 @@ pub enum ImageOptions {
 pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
-        ImageOptions::Adaptable => img_columns_format(deck, None, true),
+        ImageOptions::Adaptable => img_elise_format(deck),
         ImageOptions::Regular { columns, inline_sideboard } =>
             img_columns_format(deck, NonZeroU32::new(columns as u32), inline_sideboard),
     }
@@ -256,6 +260,106 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
                 img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
                 sb_cursor += 1;
             }
+        }
+    }
+
+    Ok(img)
+}
+
+#[expect(unused)]
+#[allow(clippy::unnecessary_wraps)]
+fn img_elise_format(deck: &Deck) -> Result<RgbaImage> {
+    let ordered_main_deck = deck.cards.iter().sorted().dedup();
+
+    let card_images = deck.cards
+        .iter()
+        .sorted()
+        .dedup_with_count()
+        .map(|(count, card)| (card, count, Zone::MainDeck))
+        .chain(deck.sideboard_cards.iter().flat_map(
+            |sbs| sbs.iter().flat_map(
+                |sb| sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(
+                    |(count, card)| (card, count, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })
+                )
+            )
+        ))
+        .collect::<Vec<_>>()
+        .into_par_iter()
+        .map(|(card, count, zone)| {
+            // TODO - too many unwraps
+            // TODO - count is unused
+
+            let buf = AGENT
+                .get(card.image.as_str())
+                .call()
+                .unwrap()
+                .body_mut()
+                .read_to_vec()
+                .unwrap();
+            let mut img = image::load_from_memory(&buf).unwrap();
+            if matches!(zone, Zone::Sideboard { .. }) {
+                img = img.grayscale();
+            }
+
+            let img = img.resize(CARD_IMG_WIDTH, CARD_IMG_HEIGHT, imageops::FilterType::Gaussian).into();
+
+            ((card.id, zone), img)
+        })
+        .collect::<HashMap<_, RgbaImage>>();
+
+    let length = card_images.len() as u32;
+
+    let col_count = (length / 4 + (length % 4).min(1)).max(5);
+    let row_count = length / col_count + (length % col_count).min(1);
+
+    let img_width = col_count * (CARD_IMG_WIDTH - 2* MARGIN) + MARGIN;
+    let img_height = row_count * (CARD_IMG_HEIGHT - 2* MARGIN) + ROW_HEIGHT + MARGIN;
+
+    // canvase
+    let mut img = RgbaImage::from_pixel(
+        img_width,
+        img_height,
+        [255; 4].into(),
+    );
+
+    draw_deck_title(&mut img, deck, false);
+
+    let mut cursor = 0;
+
+    for card in ordered_main_deck {
+        let slug = &card_images[&(card.id, Zone::MainDeck)];
+
+        let col = cursor % col_count;
+        let row = cursor / col_count;
+
+        imageops::overlay(
+            &mut img, 
+            slug,
+            (col * (CARD_IMG_WIDTH - 2* MARGIN) + MARGIN).into(),
+            (row * (CARD_IMG_HEIGHT - 2* MARGIN) + ROW_HEIGHT + MARGIN).into(),
+        );
+
+        cursor += 1;
+
+        for slug in deck
+            .sideboard_cards
+            .iter()
+            .flatten()
+            .filter(|sb| sb.sideboard_card.id == card.id)
+            .flat_map(|sb| sb.cards_in_sideboard.iter().sorted().dedup())
+            .map(|c| &card_images[&(c.id, Zone::Sideboard { sb_card_id: card.id })])
+        {
+            let col = cursor % col_count;
+            let row = cursor / col_count;
+
+            imageops::overlay(
+                &mut img, 
+                slug,
+                (col * (CARD_IMG_WIDTH - 2* MARGIN) + MARGIN).into(),
+                (row * (CARD_IMG_HEIGHT - 2* MARGIN) + ROW_HEIGHT + MARGIN).into(),
+            );
+    
+            cursor += 1;
         }
     }
 

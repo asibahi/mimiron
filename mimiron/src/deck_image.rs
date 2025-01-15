@@ -70,7 +70,7 @@ pub enum ImageOptions {
     Adaptable,
 }
 
-pub fn get(deck: &Deck, shape: ImageOptions) -> Result<RgbaImage> {
+pub fn get(deck: &Deck, shape: ImageOptions) -> RgbaImage {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
         ImageOptions::Adaptable => img_columns_format(deck, None, true),
@@ -83,7 +83,7 @@ fn img_columns_format(
     deck: &Deck,
     col_count: Option<NonZeroU32>,
     inline_sideboard: bool,
-) -> Result<RgbaImage> {
+) -> RgbaImage {
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
     let slug_map = get_cards_slugs(
         deck,
@@ -97,7 +97,7 @@ fn img_columns_format(
                 .filter(|_| !inline_sideboard)
                 .map_or(0, std::vec::Vec::len)) as u32;
 
-        let col_count = col_count.map_or_else(|| (length / 15 + 1).max(2), u32::from);
+        let col_count = col_count.map_or_else(|| (length / 15 + (length % 15).min(1)).max(2), u32::from);
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
         let vertical_title = col_count == 1;
@@ -131,7 +131,7 @@ fn img_columns_format(
 
         let (col, row) = pos_in_img(cursor);
 
-        img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+        _ = img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN);
 
         cursor += 1;
 
@@ -146,7 +146,7 @@ fn img_columns_format(
             {
                 let (col, row) = pos_in_img(cursor);
 
-                img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+                _ = img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN);
                 cursor += 1;
             }
         }
@@ -155,11 +155,11 @@ fn img_columns_format(
     if inline_sideboard.not() {
         for sb in deck.sideboard_cards.iter().flatten() {
             let (col, row) = pos_in_img(cursor);
-            img.copy_from(
+            _ = img.copy_from(
                 &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),
                 col * COLUMN_WIDTH + MARGIN,
                 row * ROW_HEIGHT + MARGIN,
-            )?;
+            );
             cursor += 1;
 
             for slug in
@@ -168,17 +168,17 @@ fn img_columns_format(
                 )
             {
                 let (col, row) = pos_in_img(cursor);
-                img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN)?;
+                _ = img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN);
 
                 cursor += 1;
             }
         }
     }
 
-    Ok(img)
+    img
 }
 
-fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
+fn img_groups_format(deck: &Deck) -> RgbaImage {
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
     let slug_map = get_cards_slugs(deck, SideboardStyle::EndOfDeck);
 
@@ -223,12 +223,12 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
 
     for (i, slug) in class_cards {
         let i = i as u32 + 1;
-        img.copy_from(slug, MARGIN, i * ROW_HEIGHT + MARGIN)?;
+        _ = img.copy_from(slug, MARGIN, i * ROW_HEIGHT + MARGIN);
     }
 
     for (i, slug) in neutral_cards {
         let i = i as u32 + 1;
-        img.copy_from(slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN)?;
+        _ = img.copy_from(slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN);
     }
 
     if let Some(sideboards) = &deck.sideboard_cards {
@@ -237,11 +237,11 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
         let mut sb_cursor = 1;
 
         for sb in sideboards {
-            img.copy_from(
+            _ = img.copy_from(
                 &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),
                 sb_col,
                 sb_cursor * ROW_HEIGHT + MARGIN,
-            )?;
+            );
             sb_cursor += 1;
 
             for slug in
@@ -249,13 +249,13 @@ fn img_groups_format(deck: &Deck) -> Result<RgbaImage> {
                     &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
                 )
             {
-                img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN)?;
+                _ = img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN);
                 sb_cursor += 1;
             }
         }
     }
 
-    Ok(img)
+    img
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]

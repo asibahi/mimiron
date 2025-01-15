@@ -188,7 +188,7 @@ fn create_deck_reply(deck: &Deck, opts: deck::ImageOptions) -> Result<poise::Cre
     );
 
     let attachment = {
-        let img = deck.get_image(opts)?;
+        let img = deck.get_image(opts);
 
         let mut image_data = Cursor::new(Vec::<u8>::new());
         img.write_to(&mut image_data, image::ImageFormat::Png)?;

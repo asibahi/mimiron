@@ -1,5 +1,5 @@
 use crate::{
-    card_details::{CardType, Class, MinionType, Rarity, RuneCost, SpellSchool},
+    card_details::{CardType, Class, Faction, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     hearth_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
     localization::{Locale, Localize},
@@ -52,6 +52,8 @@ struct CardData {
 
     spell_school_id: Option<u8>,
 
+    faction_id: Option<Vec<usize>>,
+
     // Whether card is functional or cosmetic. For Zilliax Deluxe 3000.
     is_zilliax_cosmetic_module: bool,
 
@@ -76,6 +78,8 @@ pub struct Card {
     pub card_type: CardType,
     pub rarity: Rarity,
 
+    pub faction: Option<Faction>,
+
     pub text: CompactString,
 
     pub image: CompactString,
@@ -98,6 +102,7 @@ impl Card {
             rune_cost: None,
             card_type: CardType::Unknown,
             rarity,
+            faction: None,
             text: CompactString::default(),
             image: "https://art.hearthstonejson.com/v1/orig/GAME_006.png".into(),
             crop_image: None,
@@ -167,16 +172,23 @@ impl Localize for Card {
 
                 let rarity = self.0.rarity.in_locale(self.1);
                 let class = self.0.class.iter().map(|c| c.in_locale(self.1)).fold(
-                    CompactString::default(), 
+                    CompactString::default(),
                     |acc, t| if acc.is_empty() {
-                            t.to_compact_string()
-                        } else {
-                            format_compact!("{}/{}", acc, t)
-                        }
-                    );
+                        t.to_compact_string()
+                    } else {
+                        format_compact!("{}/{}", acc, t)
+                    },
+                );
+
+                let faction = self
+                    .0
+                    .faction
+                    .map(|f| f.in_locale(self.1).to_compact_string())
+                    .map_or_else(CompactString::default, |r| format_compact!("{r} "));
+
                 let card_info = self.0.card_type.in_locale(self.1);
 
-                write!(f, "{name}{:padding$} {rarity} {class} {runes}({cost}) {card_info}.", "")?;
+                write!(f, "{name}{:padding$} {rarity} {class} {runes}({cost}) {faction}{card_info}.", "")?;
 
                 if f.alternate() {
                     let set = self.0.card_set(self.1);
@@ -224,6 +236,9 @@ impl From<CardData> for Card {
                 _ => CardType::Unknown,
             },
             rarity: c.rarity_id.unwrap_or_default().into(),
+
+            faction: c.faction_id.into_iter().flatten().next().map(Faction),
+
             text: c.text,
 
             image: c.image,

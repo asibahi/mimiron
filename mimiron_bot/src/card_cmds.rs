@@ -78,19 +78,20 @@ pub async fn allcards(
 }
 
 fn inner_card_embed(card: &card::Card, locale: Locale) -> serenity::CreateEmbed {
-    let class = card.class.iter().map(Emoji::emoji).collect::<String>();
-
-    let rarity = card.rarity.emoji();
+    let desc = format!(
+        "{} ({}) {}{}",
+        card.class.iter().map(Emoji::emoji).collect::<String>(),
+        card.cost,
+        card.faction
+            .map(|f| f.in_locale(locale).to_string())
+            .map_or(String::new(), |f| format!("{f} ")),
+        card.card_type.in_locale(locale)
+    );
 
     let mut fields = vec![
-        (" ", format!("{} ({}) {}", class, card.cost, card.card_type.in_locale(locale)), true),
-        (" ", format!("{} {}", rarity, card.card_set(locale)), true),
+        (" ", desc, true),
+        (" ", format!("{} {}", card.rarity.emoji(), card.card_set(locale)), true),
     ];
-
-    // Blizzard data is wrong here. Scrubbed that part from the crate.
-    // if card.in_arena {
-    //     fields.push((" ", "<:arena:1293955150918189067>".into(), true));
-    // }
 
     if card.flavor_text.is_empty().not() {
         fields.push(("Flavor Text", card.flavor_text.to_markdown(), false));

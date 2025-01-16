@@ -84,7 +84,7 @@ struct DeckData {
     deck_code: CompactString,
     format: Format,
     hero: Card,
-    class: Details,
+    class: Details<u8>,
     cards: Vec<Card>,
     sideboard_cards: Option<Vec<Sideboard>>,
     invalid_card_ids: Option<Vec<usize>>,

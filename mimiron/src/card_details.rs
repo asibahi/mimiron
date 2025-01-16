@@ -21,11 +21,12 @@ use std::{
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Metadata {
     pub sets: Vec<Set>,
-    pub types: Vec<Details>,
-    pub rarities: Vec<Details>,
-    pub classes: Vec<Details>,
-    pub minion_types: Vec<Details>,
-    pub spell_schools: Vec<Details>,
+    pub types: Vec<Details<u8>>,
+    pub rarities: Vec<Details<u8>>,
+    pub classes: Vec<Details<u8>>,
+    pub minion_types: Vec<Details<u8>>,
+    pub spell_schools: Vec<Details<u8>>,
+    pub factions: Vec<Details<usize>>,
     pub keywords: Vec<Keyword>,
 }
 
@@ -88,12 +89,14 @@ impl Localize for LocalizedName {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Details {
-    pub id: u8,
+pub(crate) struct Details<ID> {
+    // ID is the id type. usually u8 but it is usize for factions.
+    // probably should just make it usize all over.
+    pub id: ID,
     #[serde(with = "either::serde_untagged")]
     name: Either<LocalizedName, CompactString>,
 }
-impl Details {
+impl<ID> Details<ID> {
     pub fn contains(&self, search_term: &str) -> bool {
         match self.name.as_ref() {
             Left(ln) => ln.deDE.eq_ignore_ascii_case(search_term)
@@ -260,6 +263,20 @@ impl Class {
             Self::Warrior => (200, 21, 24),
             Self::Neutral => (169, 169, 169),
         }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct Faction(pub usize);
+
+impl Localize for Faction {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        get_metadata()
+            .factions
+            .iter()
+            .find(|det| self.0 == det.id)
+            .map(|det| det.name(locale))
+            .unwrap_or_default()
     }
 }
 

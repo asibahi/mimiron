@@ -21,7 +21,7 @@ pub const BLIZZARD_CLIENT_SECRET: &str = "BLIZZARD_CLIENT_SECRET";
 pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(||
     ureq::Agent::config_builder()
         .timeout_connect(Some(std::time::Duration::from_secs(2)))
-        .user_agent(Some(String::from("mimiron cli https://github.com/asibahi/mimiron")))
+        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
         .build()
         .into()
 );

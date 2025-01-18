@@ -6,7 +6,7 @@ default-members = ["mimiron", "mimiron_cli"]
 [workspace.dependencies]
 # global deps
 anyhow = "1"
-itertools = "0.13.0"
+itertools = "0.14.0"
 image = { version = "0.25", default-features = false, features = [
     "png",
     "jpeg",
@@ -14,9 +14,9 @@ image = { version = "0.25", default-features = false, features = [
 ] }
 
 # lib deps
-colored = "2"
+colored = "3.0"
 serde = { version = "1", features = ["derive"] }
-ureq = "=3.0.0-rc2"
+ureq = "=3.0.0-rc5"
 base64 = "0.22"
 counter = "0.6"
 nom = "7.1.3"
@@ -36,25 +36,21 @@ compact_str = {version = "0.8", features = ["serde"]}
 
 # bot deps
 poise = { git = "https://github.com/serenity-rs/poise.git", rev = "22b5b01"}
-shuttle-serenity = "0.49"
-shuttle-runtime = "0.49"
+shuttle-serenity = "0.51"
+shuttle-runtime = "0.51"
 tracing = "0.1.41"
 urlencoding = "2.1.3"
 rand = "0.8.5"
 
 # cli deps
 clap = { version = "4", features = ["derive", "env"] }
-directories = "5.0"
+directories = "6.0"
 chrono = "0.4"
 tracing-subscriber = {version = "0.3.19", features = ["env-filter"]}
 
 [workspace.lints.rust]
 rust_2018_idioms = { level = "warn", priority = -1 }
 refining_impl_trait_internal = "allow"
-
-rust-2024-compatibility = { level = "warn", priority = -1 }
-tail_expr_drop_order = "allow"
-if_let_rescope = "allow"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

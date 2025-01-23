@@ -12,7 +12,6 @@ use itertools::Itertools;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use serde::Deserialize;
 use std::{
-    collections::HashSet,
     fmt::{Display, Formatter},
     str::FromStr,
     time::{Duration, Instant},
@@ -171,7 +170,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> CompactString {
         )
 }
 
-#[derive(EnumSetType, Deserialize)]
+#[derive(EnumSetType, Hash, Deserialize)]
 #[serde(rename_all = "lowercase")] // for Firestone's API.
 pub enum Class {
     DeathKnight,
@@ -201,22 +200,22 @@ impl TryFrom<u8> for Class {
     type Error = anyhow::Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(Self::DeathKnight),
-            14 => Ok(Self::DemonHunter),
-            2 => Ok(Self::Druid),
-            // placeholder => Ok(Class::Evoker),
-            3 => Ok(Self::Hunter),
-            4 => Ok(Self::Mage),
-            // placeholder => Ok(Class::Monk),
-            5 => Ok(Self::Paladin),
-            6 => Ok(Self::Priest),
-            7 => Ok(Self::Rogue),
-            8 => Ok(Self::Shaman),
-            9 => Ok(Self::Warlock),
-            10 => Ok(Self::Warrior),
-            _ => Err(anyhow::anyhow!("Not a valid class (yet?)")),
-        }
+        Ok(match value {
+            1 => Self::DeathKnight,
+            14 => Self::DemonHunter,
+            2 => Self::Druid,
+            // placeholder => Class::Evoker,
+            3 => Self::Hunter,
+            4 => Self::Mage,
+            // placeholder => Class::Monk,
+            5 => Self::Paladin,
+            6 => Self::Priest,
+            7 => Self::Rogue,
+            8 => Self::Shaman,
+            9 => Self::Warlock,
+            10 => Self::Warrior,
+            _ => anyhow::bail!("Not a valid class (yet?)"),
+        })
     }
 }
 impl FromStr for Class {
@@ -273,8 +272,8 @@ impl Localize for EnumSet<Class> {
                 .classes
                 .iter()
                 .find(|det| det.id == 12) // Neutral
-                .map(|det| det.name(locale))
                 .expect("Neutral (12) always exists")
+                .name(locale)
         } else {
             self.into_iter().map(|c| c.in_locale(locale).to_compact_string()).fold(
                 CompactString::default(),
@@ -388,7 +387,7 @@ impl From<u8> for SpellSchool {
 
 // All minion types in the game, including for Mercenaries, are listed.
 // This is to futureproof adding any of them to Standard in the future.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(EnumSetType)]
 pub enum MinionType {
     BloodElf, Draenei,   Dwarf,  Gnome,
     Human,    NightElf,  Orc,    Tauren,
@@ -454,6 +453,28 @@ impl FromStr for MinionType {
     }
 }
 
+impl Localize for EnumSet<MinionType> {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        if self.is_empty() {
+            get_metadata()
+                .types
+                .iter()
+                .find(|det| det.id == 4) // 4 for Minion
+                .expect("Minion (4) always exists")
+                .name(locale)
+        } else {
+            self.iter().map(|t| t.in_locale(locale).to_compact_string()).fold(
+                CompactString::default(),
+                |acc, t| if acc.is_empty() {
+                    t.to_compact_string()
+                } else {
+                    format_compact!("{}/{}", acc, t)
+                },
+            )
+        }
+    }
+}
+
 #[derive(Clone, Copy, Deserialize)]
 pub struct RuneCost { blood: u8, frost: u8, unholy: u8 }
 
@@ -470,7 +491,7 @@ impl Display for RuneCost {
 #[derive(Clone)]
 pub enum CardType {
     Hero { armor: u8 },
-    Minion { attack: u8, health: u8, minion_types: HashSet<MinionType> },
+    Minion { attack: u8, health: u8, minion_types: EnumSet<MinionType> },
     Spell { school: Option<SpellSchool> },
     Weapon { attack: u8, durability: u8 },
     Location { durability: u8 },
@@ -497,19 +518,7 @@ impl Localize for CardType {
                         write!(f, "{hero} [{armor}]{colon}")
                     }
                     CardType::Minion { attack, health, minion_types } => {
-                        let blurp = if minion_types.is_empty() {
-                            get_type(4) // 4 for Minion
-                        } else {
-                            minion_types.iter().map(|t| t.in_locale(self.1)).fold(
-                                CompactString::default(),
-                                |acc, t| if acc.is_empty() {
-                                    t.to_compact_string()
-                                } else {
-                                    format_compact!("{}/{}", acc, t)
-                                },
-                            )
-                        };
-
+                        let blurp = minion_types.in_locale(self.1);
                         write!(f, "{attack}/{health} {blurp}{colon}")
                     }
                     CardType::Spell { school } => {

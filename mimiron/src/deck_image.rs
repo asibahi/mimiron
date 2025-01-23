@@ -278,7 +278,8 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
         .unwrap_or_else(|| (card.name.clone(), card.cost, card.rarity));
 
     let r_color = rarity.color();
-    let c_color = card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect::<Vec<_>>();
+    let c_color =
+        card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect::<Vec<_>>();
 
     let indent = match (zone, sb_style) {
         (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
@@ -400,10 +401,8 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
 }
 
-#[cached::proc_macro::cached(result = true, key = "u8", convert = r#"{(class as u8)}"#)]
+#[cached::proc_macro::cached(result = true)]
 fn get_class_icon(class: Class) -> Result<RgbaImage> {
-    // anyhow::ensure!(class != Class::Neutral);
-
     let link = format!(
         "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
         class.in_en_us().to_string().to_ascii_lowercase().replace(' ', "")

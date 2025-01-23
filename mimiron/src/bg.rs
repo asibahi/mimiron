@@ -6,11 +6,11 @@ use crate::{
 };
 use anyhow::Result;
 use colored::Colorize;
-use compact_str::{format_compact, CompactString, ToCompactString};
+use compact_str::{format_compact, CompactString};
+use enumset::EnumSet;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
-    collections::HashSet,
     fmt::{self, Display},
     ops::Not,
     str::FromStr,
@@ -97,7 +97,7 @@ pub enum BGCardType {
         attack: u8,
         health: u8,
         text: CompactString,
-        minion_types: HashSet<MinionType>,
+        minion_types: EnumSet<MinionType>,
         upgrade_id: Option<usize>,
     },
     Spell {
@@ -153,20 +153,7 @@ impl Localize for BGCardType {
                         write!(f, "{hero} [{armor}]")
                     }
                     BGCardType::Minion { tier, attack, health, text, minion_types, .. } => {
-                        let blurp = if minion_types.is_empty() {
-                            get_type(4) // 4 for Minion
-                        } else {
-                            minion_types
-                                .iter()
-                                .map(|t| t.in_locale(self.1))
-                                .fold(CompactString::default(), |acc, t|
-                                    if acc.is_empty() {
-                                        t.to_compact_string()
-                                    } else {
-                                        format_compact!("{}/{}", acc, t)
-                                    }
-                                )
-                        };
+                        let blurp = minion_types.in_locale(self.1);
 
                         write!(f, "T-{tier} {attack}/{health} {blurp}")?;
                         inner(text, f)

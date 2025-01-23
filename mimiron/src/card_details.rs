@@ -7,6 +7,7 @@ use crate::{
 use colored::Colorize;
 use compact_str::{format_compact, CompactString, ToCompactString};
 use either::Either::{self, Left, Right};
+use enumset::{EnumSet, EnumSetType};
 use itertools::Itertools;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use serde::Deserialize;
@@ -170,7 +171,7 @@ pub(crate) fn get_set_by_id(id: usize, locale: Locale) -> CompactString {
         )
 }
 
-#[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[derive(EnumSetType, Deserialize)]
 #[serde(rename_all = "lowercase")] // for Firestone's API.
 pub enum Class {
     DeathKnight,
@@ -186,35 +187,35 @@ pub enum Class {
     Shaman,
     Warlock,
     Warrior,
-    #[default]
-    Neutral,
 }
 impl Localize for Class {
     fn in_locale(&self, locale: Locale) -> impl Display {
         get_metadata()
             .classes
             .iter()
-            .find(|det| *self == Self::from(det.id))
+            .find(|det| Self::try_from(det.id).is_ok_and(|c| c == *self))
             .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
 }
-impl From<u8> for Class {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for Class {
+    type Error = anyhow::Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            1 => Self::DeathKnight,
-            14 => Self::DemonHunter,
-            2 => Self::Druid,
-            // placeholder => Class::Evoker,
-            3 => Self::Hunter,
-            4 => Self::Mage,
-            // placeholder => Class::Monk,
-            5 => Self::Paladin,
-            6 => Self::Priest,
-            7 => Self::Rogue,
-            8 => Self::Shaman,
-            9 => Self::Warlock,
-            10 => Self::Warrior,
-            _ => Self::Neutral, // 12. Fine Default state
+            1 => Ok(Self::DeathKnight),
+            14 => Ok(Self::DemonHunter),
+            2 => Ok(Self::Druid),
+            // placeholder => Ok(Class::Evoker),
+            3 => Ok(Self::Hunter),
+            4 => Ok(Self::Mage),
+            // placeholder => Ok(Class::Monk),
+            5 => Ok(Self::Paladin),
+            6 => Ok(Self::Priest),
+            7 => Ok(Self::Rogue),
+            8 => Ok(Self::Shaman),
+            9 => Ok(Self::Warlock),
+            10 => Ok(Self::Warrior),
+            _ => Err(anyhow::anyhow!("Not a valid class (yet?)")),
         }
     }
 }
@@ -240,14 +241,14 @@ impl FromStr for Class {
                 .classes
                 .iter()
                 .find(|det| det.contains(s))
-                .map(|det| Self::from(det.id))
+                .and_then(|det| Self::try_from(det.id).ok())
                 .ok_or_else(|| anyhow::anyhow!("Not a valid class (yet?)")),
         }
     }
 }
 impl Class {
     #[must_use]
-    pub const fn color(&self) -> (u8, u8, u8) {
+    pub const fn color(self) -> (u8, u8, u8) {
         match self {
             // colors from d0nkey.top
             Self::DeathKnight => (108, 105, 154),
@@ -261,7 +262,28 @@ impl Class {
             Self::Shaman => (43, 125, 180),
             Self::Warlock => (162, 112, 153),
             Self::Warrior => (200, 21, 24),
-            Self::Neutral => (169, 169, 169),
+        }
+    }
+}
+
+impl Localize for EnumSet<Class> {
+    fn in_locale(&self, locale: Locale) -> impl Display {
+        if self.is_empty() {
+            get_metadata()
+                .classes
+                .iter()
+                .find(|det| det.id == 12) // Neutral
+                .map(|det| det.name(locale))
+                .expect("Neutral (12) always exists")
+        } else {
+            self.into_iter().map(|c| c.in_locale(locale).to_compact_string()).fold(
+                CompactString::default(),
+                |acc, t| if acc.is_empty() {
+                    t.to_compact_string()
+                } else {
+                    format_compact!("{acc}/{t}")
+                },
+            )
         }
     }
 }
@@ -478,16 +500,14 @@ impl Localize for CardType {
                         let blurp = if minion_types.is_empty() {
                             get_type(4) // 4 for Minion
                         } else {
-                            minion_types
-                                .iter()
-                                .map(|t| t.in_locale(self.1))
-                                .fold(CompactString::default(), |acc, t|
-                                    if acc.is_empty() {
-                                        t.to_compact_string()
-                                    } else {
-                                        format_compact!("{}/{}", acc, t)
-                                    }
-                                )
+                            minion_types.iter().map(|t| t.in_locale(self.1)).fold(
+                                CompactString::default(),
+                                |acc, t| if acc.is_empty() {
+                                    t.to_compact_string()
+                                } else {
+                                    format_compact!("{}/{}", acc, t)
+                                },
+                            )
                         };
 
                         write!(f, "{attack}/{health} {blurp}{colon}")
@@ -505,7 +525,7 @@ impl Localize for CardType {
                     }
                     CardType::Location { durability } => {
                         let location = get_type(39); // 39 for Location
-                        write!(f, "{location} /{durability}{colon}")
+                        write!(f, "/{durability} {location}{colon}")
                     }
                     CardType::HeroPower => {
                         // 10 for Hero Power. these numbers should be in the type itself tbh

@@ -135,7 +135,7 @@ impl From<DeckData> for Deck {
             ),
             deck_code: value.deck_code,
             format: value.format,
-            class: value.class.id.into(),
+            class: value.class.id.try_into().unwrap_or(Class::Mage),
             cards: value.cards,
             sideboard_cards: value.sideboard_cards,
             invalid_card_ids: value.invalid_card_ids,
@@ -417,7 +417,7 @@ fn raw_data_to_deck(
             title: "Hearthstone Deck".into(),
             deck_code: raw_data.deck_code.clone(),
             format: Format::Standard,
-            class: Class::Neutral,
+            class: Class::Mage,
             cards: raw_data.cards.iter().map(|&id| card::Card::dummy(id)).collect(),
             sideboard_cards: raw_data
                 .sideboard_cards

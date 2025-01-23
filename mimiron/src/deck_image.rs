@@ -184,13 +184,13 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
 
     let class_cards = ordered_main_deck
         .clone()
-        .filter(|&c| c.class.contains(&Class::Neutral).not())
+        .filter(|&c| c.class.is_empty().not())
         .map(|c| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
 
     let neutral_cards = ordered_main_deck
-        .filter(|&c| c.class.contains(&Class::Neutral))
+        .filter(|&c| c.class.is_empty())
         .map(|c| &slug_map[&(c.id, Zone::MainDeck)])
         .enumerate()
         .collect::<Vec<_>>();
@@ -300,7 +300,9 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
             // Class color band
             _ if x <= indent + MANA_WIDTH + COLOR_BAND_WIDTH => {
                 let idx = y * c_color.len() as u32 / CROP_HEIGHT;
-                c_color[idx as usize]
+                c_color.get(idx as usize)
+                    .copied()
+                    .unwrap_or([169, 169, 169, 255]) // Neutral color
             }
             _ => [10, 10, 10, 255],
         }
@@ -398,9 +400,9 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
 }
 
-#[cached::proc_macro::cached(result = true)]
+#[cached::proc_macro::cached(result = true, key = "u8", convert = r#"{(class as u8)}"#)]
 fn get_class_icon(class: Class) -> Result<RgbaImage> {
-    anyhow::ensure!(class != Class::Neutral);
+    // anyhow::ensure!(class != Class::Neutral);
 
     let link = format!(
         "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",

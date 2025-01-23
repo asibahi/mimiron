@@ -67,11 +67,11 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub trait Emoji {
-    fn emoji(&self) -> &'static str;
+pub trait Emoji : Copy {
+    fn emoji(self) -> &'static str;
 }
 impl Emoji for Class {
-    fn emoji(&self) -> &'static str {
+    fn emoji(self) -> &'static str {
         match self {
             Self::DeathKnight => "<:dk:1182031994822086786>",
             Self::DemonHunter => "<:dh:1182032009359528116>",
@@ -84,12 +84,11 @@ impl Emoji for Class {
             Self::Shaman => "<:sh:1182031998802464808>",
             Self::Warlock => "<:wk:1182032014757601340>",
             Self::Warrior => "<:wr:1182032006171861152>",
-            Self::Neutral => "",
         }
     }
 }
 impl Emoji for Rarity {
-    fn emoji(&self) -> &'static str {
+    fn emoji(self) -> &'static str {
         match self {
             Self::Legendary => "<:legendary:1182038161099067522>",
             Self::Epic => "<:epic:1182038156841844837>",
@@ -100,7 +99,7 @@ impl Emoji for Rarity {
     }
 }
 impl Emoji for Pool {
-    fn emoji(&self) -> &'static str {
+    fn emoji(self) -> &'static str {
         match self {
             Self::Solos => ":one: ",
             Self::Duos => ":two: ",

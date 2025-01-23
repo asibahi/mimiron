@@ -9,11 +9,11 @@ use anyhow::Result;
 use colored::Colorize;
 use compact_str::{format_compact, CompactString, ToCompactString};
 use eitherable::Eitherable;
+use enumset::EnumSet;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
     cmp::Ordering,
-    collections::HashSet,
     fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
     ops::Not,
@@ -70,7 +70,7 @@ pub struct Card {
     card_set: usize,
 
     pub name: CompactString,
-    pub class: HashSet<Class>,
+    pub class: EnumSet<Class>,
 
     pub cost: u8,
     pub rune_cost: Option<RuneCost>,
@@ -97,7 +97,7 @@ impl Card {
             id,
             card_set: 1635,
             name,
-            class: HashSet::from([Class::Neutral]),
+            class: EnumSet::empty(),
             cost,
             rune_cost: None,
             card_type: CardType::Unknown,
@@ -171,14 +171,7 @@ impl Localize for Card {
                 );
 
                 let rarity = self.0.rarity.in_locale(self.1);
-                let class = self.0.class.iter().map(|c| c.in_locale(self.1)).fold(
-                    CompactString::default(),
-                    |acc, t| if acc.is_empty() {
-                        t.to_compact_string()
-                    } else {
-                        format_compact!("{}/{}", acc, t)
-                    },
-                );
+                let class = self.0.class.in_locale(self.1);
 
                 let faction = self
                     .0
@@ -208,11 +201,11 @@ impl From<CardData> for Card {
             id: c.id,
             card_set: c.card_set_id,
             name: c.name,
-            class: if c.multi_class_ids.is_empty() {
-                HashSet::from([c.class_id.unwrap_or_default().into()])
-            } else {
-                c.multi_class_ids.into_iter().map(Class::from).collect()
-            },
+            class: c.multi_class_ids
+                .into_iter()
+                .chain(c.class_id)
+                .filter_map(|c| Class::try_from(c).ok())
+                .collect(),
             cost: c.mana_cost,
             rune_cost: c.rune_cost,
             card_type: match c.card_type_id.unwrap_or_default() {

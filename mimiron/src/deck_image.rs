@@ -20,7 +20,6 @@ use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
 use rayon::prelude::*;
-use core::f32;
 use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock};
 
 // Numbers based on the crops provided by Blizzard API
@@ -97,7 +96,8 @@ fn img_columns_format(
                 .filter(|_| !inline_sideboard)
                 .map_or(0, std::vec::Vec::len)) as u32;
 
-        let col_count = col_count.map_or_else(|| (length / 15 + (length % 15).min(1)).max(2), u32::from);
+        let col_count =
+            col_count.map_or_else(|| (length / 15 + (length % 15).min(1)).max(2), u32::from);
         let cards_in_col = length / col_count + (length % col_count).min(1);
 
         let vertical_title = col_count == 1;
@@ -106,13 +106,13 @@ fn img_columns_format(
             RgbaImage::from_pixel(
                 ROW_HEIGHT * cards_in_col + MARGIN,
                 COLUMN_WIDTH + ROW_HEIGHT + MARGIN,
-                [255; 4].into(),
+                Rgba([255; 4]),
             )
         } else {
             RgbaImage::from_pixel(
                 COLUMN_WIDTH * col_count + MARGIN,
                 ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
-                [255; 4].into(),
+                Rgba([255; 4]),
             )
         };
 
@@ -215,7 +215,7 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
         RgbaImage::from_pixel(
             columns * COLUMN_WIDTH + MARGIN,
             rows * ROW_HEIGHT + MARGIN,
-            [255; 4].into(),
+            Rgba([255; 4]),
         )
     };
 
@@ -271,15 +271,15 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     assert!(count > 0);
 
     // if card type is Unknown data other than card id is usually junk.
-    let (name, cost, rarity) = 
-        matches!(card.card_type, CardType::Unknown)
+    let (name, cost, rarity) = matches!(card.card_type, CardType::Unknown)
         .then(|| get_hearth_sim_details(card.id))
         .flatten()
         .unwrap_or_else(|| (card.name.clone(), card.cost, card.rarity));
 
-    let r_color = rarity.color();
-    let c_color =
-        card.class.iter().map(Class::color).map(|(x, y, z)| [x, y, z, 255]).collect::<Vec<_>>();
+    let alpha = |(x, y, z)| [x, y, z, 255];
+
+    let r_color = alpha(rarity.color());
+    let c_color = card.class.iter().map(|c| alpha(c.color())).collect::<Vec<_>>();
 
     let indent = match (zone, sb_style) {
         (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
@@ -290,7 +290,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y|
         match x {
             // Legendary color for Sideboard indent
-            _ if x < indent.saturating_sub(MARGIN) => [255, 128, 0, 255],
+            _ if x < indent.saturating_sub(MARGIN) => alpha(Rarity::Legendary.color()),
 
             // gap between Sideboard marker and Mana Square
             _ if x < indent => [255; 4],
@@ -301,9 +301,8 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
             // Class color band
             _ if x <= indent + MANA_WIDTH + COLOR_BAND_WIDTH => {
                 let idx = y * c_color.len() as u32 / CROP_HEIGHT;
-                c_color.get(idx as usize)
-                    .copied()
-                    .unwrap_or([169, 169, 169, 255]) // Neutral color
+                // Neutral color
+                c_color.get(idx as usize).copied().unwrap_or([169, 169, 169, 255])
             }
             _ => [10, 10, 10, 255],
         }
@@ -325,7 +324,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
             imageops::horizontal_gradient(
                 &mut *imageops::crop(&mut img, CROP_IMAGE_OFFSET, 0, CROP_WIDTH, CROP_HEIGHT),
                 &Rgba([10u8, 10, 10, 255]),
-                &Rgba([r_color.0, r_color.1, r_color.2, 255]),
+                &Rgba(r_color),
             );
         }
     }
@@ -334,16 +333,23 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, 0, CARD_NAME_SCALE, &name);
 
     // card cost
-    let cost = cost.to_string();
+    let cost = cost.to_compact_string();
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &cost);
-    draw_text(&mut img, [255; 4], indent + (MANA_WIDTH.saturating_sub(tw)) / 2, 0, CARD_NAME_SCALE, &cost);
+    draw_text(
+        &mut img,
+        [255; 4],
+        indent + (MANA_WIDTH.saturating_sub(tw)) / 2,
+        0,
+        CARD_NAME_SCALE,
+        &cost,
+    );
 
     // rarity square
     // drawn latest to overlap previous elements.
     drawing::draw_filled_rect_mut(
         &mut img,
         Rect::at((SLUG_WIDTH - INFO_WIDTH) as i32, 0).of_size(INFO_WIDTH, CROP_HEIGHT),
-        Rgba([r_color.0, r_color.1, r_color.2, 255]),
+        Rgba(r_color),
     );
 
     // card count
@@ -371,8 +377,7 @@ fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zon
                 )
             )
         ))
-        .collect::<Vec<_>>()
-        .into_par_iter()
+        .par_bridge()
         .map(|(card, count, zone)| {
             let slug = draw_card_slug(card, count, zone, sb_style);
             ((card.id, zone), slug)
@@ -381,7 +386,7 @@ fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zon
 }
 
 fn draw_heading_slug(heading: &str) -> RgbaImage {
-    let mut img = RgbaImage::from_pixel(SLUG_WIDTH, CROP_HEIGHT, [255; 4].into());
+    let mut img = RgbaImage::from_pixel(SLUG_WIDTH, CROP_HEIGHT, Rgba([255; 4]));
     draw_text(&mut img, [10, 10, 10, 255], 15, 0, HEADING_SCALE, heading);
     img
 }
@@ -405,7 +410,7 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
 fn get_class_icon(class: Class) -> Result<RgbaImage> {
     let link = format!(
         "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-        class.in_en_us().to_string().to_ascii_lowercase().replace(' ', "")
+        class.in_en_us().to_compact_string().to_ascii_lowercase().replace(' ', "")
     );
 
     let buf = AGENT.get(link).call()?.body_mut().read_to_vec()?;

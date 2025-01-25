@@ -1,12 +1,12 @@
 use crate::{
-    card_details::{get_metadata, MinionType},
+    card_details::{get_metadata, MinionType, SpellSchool},
     get_access_token,
     localization::{Locale, Localize},
     CardSearchResponse, CardTextDisplay, AGENT,
 };
 use anyhow::Result;
 use colored::Colorize;
-use compact_str::{format_compact, CompactString};
+use compact_str::{format_compact, CompactString, ToCompactString};
 use enumset::EnumSet;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -26,7 +26,7 @@ struct CardData {
     name: CompactString,
     text: CompactString,
     card_type_id: u8,
-    spell_school_id: Option<u8>, // useful for Trinkets
+    spell_school_id: Option<u8>, // Trinkets
 
     // Stats
     attack: Option<u8>,
@@ -53,7 +53,7 @@ struct BGData {
     reward: bool,
     companion_id: Option<usize>,
     duos_only: bool,
-    solos_only: bool, // Are _any_ minions or heroes Solos only?
+    solos_only: bool,
     image: CompactString,
     tier: Option<u8>,
     upgrade_id: Option<usize>,
@@ -121,7 +121,7 @@ pub enum BGCardType {
     Trinket {
         text: CompactString,
         cost: u8,
-        trinket_kind: u8,
+        trinket_kind: SpellSchool,
     },
 }
 impl Localize for BGCardType {
@@ -182,11 +182,7 @@ impl Localize for BGCardType {
                         inner(text, f)
                     }
                     BGCardType::Trinket { text, cost, trinket_kind } => {
-                        let kind = get_metadata()
-                            .spell_schools
-                            .iter()
-                            .find(|det| det.id == *trinket_kind)
-                            .map_or(CompactString::default(), |det| det.name(self.1));
+                        let kind = trinket_kind.in_locale(self.1);
 
                         let trinket = format_compact!("{kind} {}", get_type(44)); // 44 for Trinket
 
@@ -269,8 +265,7 @@ impl From<CardData> for Card {
             _ if c.card_type_id == 44 => BGCardType::Trinket {
                 text: c.text,
                 cost: c.mana_cost,
-                // 11 is Lesser. 12 is Greater. 9 is Tavern, 10 is Spellcraft.
-                trinket_kind: c.spell_school_id.unwrap_or(11),
+                trinket_kind: c.spell_school_id.map_or(SpellSchool::Lesser, SpellSchool::from),
             },
 
             _ => BGCardType::Spell { tier: 0, cost: c.mana_cost, text: c.text },
@@ -347,7 +342,7 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
         .header("Authorization", format!("Bearer {}", get_access_token()))
-        .query("locale", opts.locale.to_string())
+        .query("locale", opts.locale.to_compact_string())
         .query("gameMode", "battlegrounds");
 
     if let Some(t) = &opts.search_term {
@@ -358,14 +353,14 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
         res = res.query(
             "minionType",
             t.in_en_us() // Is it always enUS?
-                .to_string()
+                .to_compact_string()
                 .to_lowercase()
                 .replace(' ', ""),
         );
     }
 
     if let Some(t) = opts.tier {
-        res = res.query("tier", t.to_string());
+        res = res.query("tier", t.to_compact_string());
     }
 
     let res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;
@@ -415,8 +410,7 @@ pub fn get_associated_cards(
 
     match &card.card_type {
         BGCardType::Hero { buddy_id, child_ids, .. } => {
-            for card in child_ids.iter().filter_map(|id| get_card_by_id(*id, locale).ok())
-            {
+            for card in child_ids.iter().filter_map(|id| get_card_by_id(*id, locale).ok()) {
                 if all {
                     match card.card_type {
                         BGCardType::Minion { .. } if Some(card.id) != *buddy_id =>
@@ -495,7 +489,7 @@ pub fn print_assoc_card(card: &Card, locale: Locale, assoc: Association) {
 fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let res = AGENT
         .get(format!("https://us.api.blizzard.com/hearthstone/cards/{id}"))
-        .query("locale", locale.to_string())
+        .query("locale", locale.to_compact_string())
         .query("gameMode", "battlegrounds")
         .header("Authorization", format!("Bearer {}", get_access_token()))
         .call()?

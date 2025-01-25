@@ -371,7 +371,7 @@ fn raw_data_to_deck(
     let get_deck_w_code = || -> Result<Deck> {
         let deck = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", opts.locale.to_string())
+            .query("locale", opts.locale.to_compact_string())
             .query("code", &raw_data.deck_code)
             .header("Authorization", format!("Bearer {}", get_access_token()))
             .call()?
@@ -386,9 +386,9 @@ fn raw_data_to_deck(
     let get_deck_w_cards = || -> Result<Deck> {
         let mut req = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", opts.locale.to_string())
+            .query("locale", opts.locale.to_compact_string())
             .header("Authorization", format!("Bearer {}", get_access_token()))
-            .query("hero", raw_data.hero.to_string())
+            .query("hero", raw_data.hero.to_compact_string())
             .query("ids", raw_data.cards.iter().map(|id| validate_id(*id)).join(","));
 
         if raw_data.sideboard_cards.is_empty().not() {
@@ -418,15 +418,15 @@ fn raw_data_to_deck(
             deck_code: raw_data.deck_code.clone(),
             format: Format::Standard,
             class: Class::Mage,
-            cards: raw_data.cards.iter().map(|&id| card::Card::dummy(id)).collect(),
+            cards: raw_data.cards.iter().map(|&id| Card::dummy(id)).collect(),
             sideboard_cards: raw_data
                 .sideboard_cards
                 .iter()
                 .chunk_by(|(_, sb_card)| sb_card)
                 .into_iter()
                 .map(|(&sb_card, sb)| Sideboard {
-                    sideboard_card: card::Card::dummy(sb_card),
-                    cards_in_sideboard: sb.map(|&(c, _)| card::Card::dummy(c)).collect(),
+                    sideboard_card: Card::dummy(sb_card),
+                    cards_in_sideboard: sb.map(|&(c, _)| Card::dummy(c)).collect(),
                 })
                 .map(Some)
                 .collect::<Option<Vec<_>>>()
@@ -451,7 +451,7 @@ fn raw_data_to_deck(
 
     // if the deck has invalid card IDs, add dummy cards with backup Data from HearthSim.
     for id in deck.invalid_card_ids.iter().flatten() {
-        deck.cards.push(card::Card::dummy(*id));
+        deck.cards.push(Card::dummy(*id));
     }
 
     specific_card_adjustments(&mut deck);
@@ -476,11 +476,8 @@ fn specific_card_adjustments(deck: &mut Deck) {
                     (acc_c + c.cost, acc_a + a.unwrap_or_default(), acc_h + h.unwrap_or_default())
                 });
 
-            if let Some(Card {
-                cost,
-                card_type: CardType::Minion { attack, health, .. },
-                ..
-            }) = deck.cards.iter_mut().find(|c| c.id == ZILLIAX_DELUXE_3000_ID)
+            if let Some(Card { cost, card_type: CardType::Minion { attack, health, .. }, .. }) =
+                deck.cards.iter_mut().find(|c| c.id == ZILLIAX_DELUXE_3000_ID)
             {
                 *cost = zilliax_cost;
                 *attack = zilliax_attack;

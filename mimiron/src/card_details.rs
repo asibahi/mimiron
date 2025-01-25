@@ -267,23 +267,16 @@ impl Class {
 
 impl Localize for EnumSet<Class> {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        if self.is_empty() {
-            get_metadata()
+        self.into_iter()
+            .map(|c| c.in_locale(locale).to_compact_string())
+            .reduce(|a, b| format_compact!("{a}/{b}"))
+            .unwrap_or_else(|| get_metadata()
                 .classes
                 .iter()
                 .find(|det| det.id == 12) // Neutral
                 .expect("Neutral (12) always exists")
                 .name(locale)
-        } else {
-            self.into_iter().map(|c| c.in_locale(locale).to_compact_string()).fold(
-                CompactString::default(),
-                |acc, t| if acc.is_empty() {
-                    t.to_compact_string()
-                } else {
-                    format_compact!("{acc}/{t}")
-                },
             )
-        }
     }
 }
 
@@ -355,7 +348,10 @@ pub enum SpellSchool {
     Holy,   Shadow, Fel,
 
     // BG Schools. Show up in tokens search.
-    Spellcraft, Tavern, Greater, Lesser,
+    Spellcraft, Tavern,
+    
+    // BG Trinkets. They're grouped with Spell Schools in the API.
+    Greater, Lesser,
 }
 impl Localize for SpellSchool {
     fn in_locale(&self, locale: Locale) -> impl Display {
@@ -402,7 +398,6 @@ impl Localize for MinionType {
         get_metadata()
             .minion_types
             .iter()
-            // fucking Blood Elfs. They're first, so they return with `_ => Naga` below
             .find(|det| Self::try_from(det.id).is_ok_and(|s| s == *self))
             .map_or("UNKNOWN".into(), |det| det.name(locale))
     }
@@ -455,23 +450,16 @@ impl FromStr for MinionType {
 
 impl Localize for EnumSet<MinionType> {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        if self.is_empty() {
-            get_metadata()
+        self.into_iter()
+            .map(|c| c.in_locale(locale).to_compact_string())
+            .reduce(|a, b| format_compact!("{a}/{b}"))
+            .unwrap_or_else(|| get_metadata()
                 .types
                 .iter()
                 .find(|det| det.id == 4) // 4 for Minion
                 .expect("Minion (4) always exists")
                 .name(locale)
-        } else {
-            self.iter().map(|t| t.in_locale(locale).to_compact_string()).fold(
-                CompactString::default(),
-                |acc, t| if acc.is_empty() {
-                    t.to_compact_string()
-                } else {
-                    format_compact!("{}/{}", acc, t)
-                },
             )
-        }
     }
 }
 

@@ -90,8 +90,9 @@ pub struct Card {
 }
 impl Card {
     pub(crate) fn dummy(id: usize) -> Self {
-        let (name, cost, rarity) = get_hearth_sim_details(id)
-            .unwrap_or_else(|| (format_compact!("Unknown Card ID {id}"), 99, Rarity::Noncollectible));
+        let (name, cost, rarity) = get_hearth_sim_details(id).unwrap_or_else(
+            || (format_compact!("Unknown Card ID {id}"), 99, Rarity::Noncollectible)
+        );
 
         Self {
             id,
@@ -285,7 +286,7 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
 
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
-        .query("locale", opts.locale.to_string())
+        .query("locale", opts.locale.to_compact_string())
         .query("textFilter", search_term)
         .query("pageSize", "500")
         .header("Authorization", format!("Bearer {}", get_access_token()));

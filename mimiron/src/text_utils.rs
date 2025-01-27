@@ -1,10 +1,10 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_till1},
-    combinator::{all_consuming, map},
+    bytes::{tag, take_till1},
+    combinator::all_consuming,
     multi::many0,
     sequence::delimited,
-    IResult,
+    IResult, Parser,
 };
 use std::{borrow::Cow, fmt::Write};
 
@@ -71,32 +71,30 @@ impl CardTextDisplay for str {
 // Parser from HTML tags to TextTree
 // ====================
 
-fn parse_bold(i: &str) -> IResult<&str, TextTree<'_>> {
-    let marks = delimited(tag("<b>"), parse_body, tag("</b>"));
-    map(marks, |c| TextTree::Bold(Box::new(c)))(i)
+fn bold<'s>() -> impl Parser<&'s str, Output = TextTree<'s>, Error = ()> {
+    delimited(tag("<b>"), body, tag("</b>")).map(|c| TextTree::Bold(Box::new(c)))
 }
 
-fn parse_italic(i: &str) -> IResult<&str, TextTree<'_>> {
-    let marks = delimited(tag("<i>"), parse_body, tag("</i>"));
-    map(marks, |c| TextTree::Italic(Box::new(c)))(i)
+fn italic<'s>() -> impl Parser<&'s str, Output = TextTree<'s>, Error = ()> {
+    delimited(tag("<i>"), body, tag("</i>")).map(|c| TextTree::Italic(Box::new(c)))
 }
 
-fn parse_plain(i: &str) -> IResult<&str, TextTree<'_>> {
-    let body = take_till1(|c| c == '<');
-    map(body, TextTree::String)(i)
+fn plain<'s>() -> impl Parser<&'s str, Output = TextTree<'s>, Error = ()> {
+    take_till1(|c| c == '<').map(TextTree::String)
 }
 
-fn parse_body(i: &str) -> IResult<&str, TextTree<'_>> {
-    let apply_parsers = alt((parse_bold, parse_italic, parse_plain));
-    map(many0(apply_parsers), |inner| match inner.len() {
-        0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
-        1 => inner.into_iter().next().unwrap(),
-        _ => TextTree::Seq(inner),
-    })(i)
+fn body(i: &str) -> IResult<&str, TextTree<'_>, ()> {
+    many0(alt((bold(), italic(), plain())))
+        .map(|inner| match inner.len() {
+            0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
+            1 => inner.into_iter().next().unwrap(),
+            _ => TextTree::Seq(inner),
+        })
+        .parse_complete(i) // no recursive opaque types for you
 }
 
 fn to_text_tree(i: &str) -> Result<TextTree<'_>, &str> {
-    all_consuming(parse_body)(i).map(|(_, s)| s).map_err(|_| i)
+    all_consuming(body).parse_complete(i).map(|(_, s)| s).map_err(|_| i)
 }
 
 #[cfg(test)]

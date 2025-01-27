@@ -7,10 +7,6 @@ use crate::{
     AGENT,
 };
 use anyhow::{anyhow, Result};
-use base64::{
-    alphabet,
-    engine::{DecodePaddingMode, Engine as _, GeneralPurpose, GeneralPurposeConfig},
-};
 use colored::Colorize;
 use compact_str::{format_compact, CompactString, ToCompactString};
 use itertools::Itertools;
@@ -246,63 +242,69 @@ struct RawCodeData {
     deck_code: CompactString,
 }
 
-const CONFIG: GeneralPurposeConfig =
-    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
-const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
-
 impl RawCodeData {
-    fn parse(input: &[u8]) -> nom::IResult<&[u8], Self> {
+    fn from_code(code: &str) -> Option<Self> {
         // Deckstring encoding: https://hearthsim.info/docs/deckstrings/
 
+        use base64::{
+            alphabet,
+            engine::{DecodePaddingMode, Engine as _, GeneralPurpose, GeneralPurposeConfig},
+        };
         use nom::{
             branch::alt,
-            bytes::complete::{take, take_till},
-            combinator::{map, map_opt, recognize, success, verify},
+            bytes::{take, take_till},
+            combinator::{recognize, success, verify},
             multi::{count, length_count},
-            number::complete::u8,
-            sequence::{pair, preceded, tuple},
-            IResult,
+            number::u8,
+            sequence::preceded,
+            Parser,
         };
 
+        const CONFIG: GeneralPurposeConfig =
+            GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent);
+        const ENGINE: GeneralPurpose = GeneralPurpose::new(&alphabet::STANDARD, CONFIG);
+
         #[allow(clippy::cast_possible_truncation)]
-        fn parse_varint(input: &[u8]) -> IResult<&[u8], usize> {
+        fn varint<'a>() -> impl Parser<&'a [u8], Output = usize, Error = ()> {
             let is_last = |b| b & 0x80 == 0;
             let is_in_bounds = |p: &[u8]| p.len() < 9;
 
-            map_opt(
-                recognize(pair(verify(take_till(is_last), is_in_bounds), take(1u8))),
-                |p: &[u8]| p.iter().enumerate().try_fold(0, |acc, (idx, byte)|
+            recognize((verify(take_till(is_last), is_in_bounds), take(1u8))).map_opt(
+                |p: &[u8]| p.iter().enumerate().try_fold(0, |acc, (idx, byte)| 
                     ((*byte as usize) & 0x7F).checked_shl(idx as u32 * 7).map(|n| acc | n)
                 ),
-            )(input)
+            )
         }
+
+        let decoded = ENGINE.decode(code).ok()?;
+        let decoded = decoded.as_slice();
 
         #[cfg(debug_assertions)]
         {
-            let raw_code = nom::combinator::iterator(input, parse_varint).fuse().join(", ");
+            let raw_code =
+                nom::combinator::iterator(decoded, varint()).fuse().join(", ");
             tracing::info!(raw_code);
         }
 
-        // Format is the third number.
-        preceded(verify(count(u8, 2), |r| r == vec![0, 1]), map(tuple((
+        let ret = preceded(verify(count(u8(), 2), |r| r == vec![0, 1]), (
             // format
-            map(u8, |f| f.try_into().unwrap_or_default()),
+            u8().map(|f| f.try_into().unwrap_or_default()),
 
             // hero
-            preceded(u8, parse_varint),
+            preceded(u8(), varint()),
 
             // cards
-            map(tuple((
+            (
                 // single cards
-                length_count(u8, parse_varint),
+                length_count(u8(), varint()),
 
                 // double cards
-                length_count(u8, map(parse_varint, |id| [id; 2])),
+                length_count(u8(), varint().map(|id| [id; 2])),
 
                 // n-count cards
-                length_count(u8, map(pair(parse_varint, u8), |(id, n)| [id].repeat(n as usize))),
-            )),
-            |(v1, v2, vn)| v1.into_iter()
+                length_count(u8(), (varint(), u8()).map(|(id, n)| [id].repeat(n as usize))),
+            )
+            .map(|(v1, v2, vn)| v1.into_iter()
                 .chain(v2.into_iter().flatten())
                 .chain(vn.into_iter().flatten())
                 .collect()
@@ -311,25 +313,24 @@ impl RawCodeData {
             // sideboard
             alt((
                 preceded(
-                    verify(u8, |i| *i == 1),
-                    length_count(u8, pair(parse_varint, parse_varint)),
+                    verify(u8(), |i| *i == 1),
+                    length_count(u8(), (varint(), varint())),
                 ),
                 success(Vec::new()),
             )),
-        )),
-        |(format, hero, cards, sideboard_cards)| Self {
+        )
+        .map(|(format, hero, cards, sideboard_cards)| Self {
             format,
             hero,
             cards,
             sideboard_cards,
-            deck_code: ENGINE.encode(input).into(), // Hearthstone requires base64 padding
-        }))(input)
-    }
+            deck_code: ENGINE.encode(decoded).into(), // Hearthstone requires base64 padding
+        }))
+        .parse_complete(decoded)
+        .map(|(_, rd)| rd)
+        .ok();
 
-    fn from_code(code: &str) -> Option<Self> {
-        let decoded = ENGINE.decode(code).ok()?;
-
-        Self::parse(&decoded).map(|(_, rd)| rd).ok()
+        ret
     }
 }
 

@@ -19,7 +19,7 @@ serde = { version = "1", features = ["derive"] }
 ureq = { version = "3", features = ["json"] }
 base64 = "0.22"
 counter = "0.6"
-nom = "7.1.3"
+nom = "8"
 textwrap = { version = "0.16", default-features = false, features = [
     "terminal_size",
 ] }

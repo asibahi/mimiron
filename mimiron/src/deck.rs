@@ -20,7 +20,7 @@ use std::{
 
 pub use crate::deck_image::ImageOptions;
 
-#[derive(Clone, Default, Deserialize)]
+#[derive(Clone, Default, Deserialize, Debug, PartialEq)]
 #[serde(from = "String")]
 pub enum Format { #[default] Standard, Wild, Classic, Twist, Custom(CompactString) }
 
@@ -234,6 +234,7 @@ impl<'s> LookupOptions<'s> {
     }
 }
 
+#[derive(Debug, PartialEq)]
 struct RawCodeData {
     format: Format,
     hero: usize,
@@ -527,4 +528,34 @@ pub fn add_band(opts: LookupOptions<'_>, band: Vec<String>) -> Result<Deck> {
 
 fn format_count(count: usize) -> CompactString {
     (count > 1).then(|| format_compact!("{count}x")).unwrap_or_default()
+}
+
+#[cfg(test)]
+#[allow(clippy::unreadable_literal)]
+mod deck_code_tests{
+    use super::*;
+
+    #[test]
+    fn deck_parse() {
+        const CODE: &str =
+            "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA=";
+
+        let rcd = RawCodeData::from_code(CODE).unwrap();
+
+        let expected = RawCodeData {
+            format: Format::Standard,
+            hero: 78065,
+            cards: Vec::from([
+                90648, 91251, 112846, 113663, 80647, 80647, 95344, 95344, 100101, 100101, 105855,
+                105855, 107920, 107920, 110880, 110880, 111969, 111969, 112799, 112799, 112812, 112812,
+                112830, 112830, 112834, 112834, 112867, 112867, 113576, 113576,
+            ]),
+            sideboard_cards: Vec::new(),
+            deck_code:
+                "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA="
+                    .into(),
+        };
+
+        assert_eq!(rcd, expected);
+    }
 }

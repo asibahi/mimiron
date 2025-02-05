@@ -2,7 +2,6 @@ use anyhow::Result;
 use clap::{ArgGroup, Args};
 use mimiron::{
     bg,
-    card_details::MinionType,
     localization::{Locale, Localize},
 };
 
@@ -18,8 +17,8 @@ pub struct BGArgs {
     tier: Option<u8>,
 
     /// Search by Minion type
-    #[arg(short = 'T', long = "type", group = "search", value_parser = str::parse::<MinionType>)]
-    minion_type: Option<MinionType>,
+    #[arg(short = 'T', long = "type", group = "search")]
+    minion_type: Option<String>,
 
     /// Include text inside text boxes.
     #[arg(long)]
@@ -35,7 +34,7 @@ pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
         .with_locale(locale)
         .search_for(args.name.as_deref())
         .with_tier(args.tier)
-        .with_type(args.minion_type)
+        .with_type(args.minion_type.and_then(|s| s.parse().ok()))
         .with_text(args.text);
     let cards = bg::lookup(opts)?;
 

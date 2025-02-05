@@ -34,7 +34,7 @@ pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
         .with_locale(locale)
         .search_for(args.name.as_deref())
         .with_tier(args.tier)
-        .with_type(args.minion_type.and_then(|s| s.parse().ok()))
+        .with_type(args.minion_type.and_then(|s| s.parse().inspect_err(|e| eprintln!("{e}")).ok()))
         .with_text(args.text);
     let cards = bg::lookup(opts)?;
 

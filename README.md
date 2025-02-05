@@ -64,14 +64,6 @@ mimiron deck AAECAa0GCOWwBKi2BJfvBO+RBeKkBf3EBc/GBcbHBRCi6AOEnwShtgSktgSWtwT52wS
 
 ![Deck look up in terminal](README/decklookup.png)
 
-If the deck has E.T.C., Band Manager, you can add the band members with `--addband` argument. The card names should be exact, or at least give a unique card. This gives you the updated deck code in the output.
-
-```sh
-mimiron deck --addband "Holy Maki Roll" "Melted Maker" "Anachronos" AAECAZ8FBsvEBf3EBcHGBYv+BY3+BdiBBgzJoATquQTavQTA4gSgmQXBxAXu6QWt7QWK/gXCggaOlQaGowYA 
-```
-
-![Deck image](README/addbanddecklookup.png)
-
 Save an image of the deck with the `--image` flag. Defaults to your Downloads folder unless you specify `--output`.
 
 Note: Most images are acquired from Blizzard's servers. Ommissions are filled from https://hearthstonejson.com 

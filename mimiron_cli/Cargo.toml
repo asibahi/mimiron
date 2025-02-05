@@ -16,6 +16,7 @@ clap.workspace = true
 directories.workspace = true
 chrono.workspace = true
 tracing-subscriber.workspace = true
+rayon.workspace = true
 
 [[bin]]
 name = "mimiron"

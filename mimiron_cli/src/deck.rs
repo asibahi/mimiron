@@ -4,6 +4,7 @@ use mimiron::{
     deck::{self, LookupOptions},
     localization::{Locale, Localize},
 };
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -52,13 +53,13 @@ enum ImageFormat { Groups, Single, Square, Wide, Adapt }
 pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
     if args.batch {
         let file = BufReader::new(File::open(&args.input)?);
-        for line in file.lines() {
-            let line = line?;
+        file.lines().map_while(Result::ok).par_bridge().for_each(|line| {
             let args = DeckArgs { input: line.clone(), ..args.clone() };
             if let Err(e) = run_one(args, locale) {
                 eprintln!("{e} in \"{line}\"");
             }
-        }
+        });
+
     } else {
         run_one(args, locale)?;
     }

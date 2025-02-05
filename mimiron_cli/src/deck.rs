@@ -20,12 +20,8 @@ pub struct DeckArgs {
     comp: Option<String>,
 
     /// Instead of a code, specify a file with multiple deck codes (separated by new lines).
-    #[arg(long, conflicts_with("comp"), conflicts_with("band"))]
+    #[arg(long, conflicts_with("comp"))]
     batch: bool,
-
-    /// Add Sideboard cards for E.T.C., Band Manager if the deck code lacks them. Make sure card names are exact.
-    #[arg(short, long("addband"), value_name("BAND_MEMBER"), num_args(3), conflicts_with("comp"))]
-    band: Option<Vec<String>>,
 
     /// Override format/game mode provided by code (For Twist, Tavern Brawl, etc.)
     #[arg(short, long)]
@@ -73,12 +69,7 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
     let opts = LookupOptions::lookup(&args.input).with_locale(locale).with_custom_format(args.mode.as_deref());
 
-    let deck = if let Some(band) = args.band {
-        // Add Band resolution.
-        deck::add_band(opts, band)?
-    } else {
-        deck::lookup(opts)?
-    };
+    let deck = deck::lookup(opts)?;
 
     // Deck compare and/or printing
     if let Some(code) = args.comp {

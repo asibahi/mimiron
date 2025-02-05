@@ -1,5 +1,5 @@
 use crate::{
-    card::{self, Card},
+    card::Card,
     card_details::{CardType, Class, Details},
     get_access_token,
     hearth_sim::validate_id,
@@ -487,43 +487,6 @@ fn specific_card_adjustments(deck: &mut Deck) {
             }
         }
     }
-}
-
-pub fn add_band(opts: LookupOptions<'_>, band: Vec<String>) -> Result<Deck> {
-    // Function WILL need to be updated if new sideboard cards are printed.
-
-    // Constants that might change should ETC be added to core.
-    const ETC_NAME: &str = "E.T.C., Band Manager";
-    const ETC_ID: usize = 90749;
-
-    let Some(mut raw_data) = RawCodeData::from_code(opts.code) else {
-        anyhow::bail!("Failed to parse code")
-    };
-
-    anyhow::ensure!(
-        raw_data.cards.iter().any(|&id| id == ETC_ID),
-        "{ETC_NAME} does not exist in the deck."
-    );
-
-    anyhow::ensure!(
-        raw_data.sideboard_cards.iter().all(|&(_, id)| id != ETC_ID),
-        "Deck already has an {ETC_NAME} Sideboard."
-    );
-
-    let band_ids = band
-        .into_iter()
-        .map(|name|
-            card::lookup(card::SearchOptions::search_for(&name).with_locale(opts.locale))?
-                // Undocumented API Found by looking through playhearthstone.com card library
-                .map(|c| (c.id, ETC_ID))
-                .next()
-                .ok_or_else(|| anyhow!("Band found brown M&M's."))
-        )
-        .collect::<Result<Vec<(_, _)>>>()?;
-
-    raw_data.sideboard_cards.extend(band_ids);
-
-    Ok(raw_data_to_deck(opts, raw_data, None))
 }
 
 fn format_count(count: usize) -> CompactString {

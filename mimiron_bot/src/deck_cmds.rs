@@ -101,26 +101,6 @@ pub async fn deck_inner(
     send_deck_reply(ctx, deck, i_opts).await
 }
 
-/// Add a band to a deck with ETC but no band.
-#[poise::command(slash_command, install_context = "Guild|User", category = "Deck")]
-pub async fn addband(
-    ctx: Context<'_>,
-    #[description = "deck code"] code: String,
-    #[description = "band member"] member1: String,
-    #[description = "band member"] member2: String,
-    #[description = "band member"] member3: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-
-    let locale = get_server_locale(&ctx);
-
-    let opts = LookupOptions::lookup(&code).with_locale(locale);
-
-    let deck = deck::add_band(opts, vec![member1, member2, member3])?;
-
-    send_deck_reply(ctx, deck, deck::ImageOptions::Adaptable).await
-}
-
 /// Compare two decks
 #[poise::command(slash_command, install_context = "Guild|User", category = "Deck")]
 pub async fn deckcomp(

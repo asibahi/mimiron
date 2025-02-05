@@ -41,13 +41,17 @@ const CROP_IMAGE_OFFSET: u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
 const HEADING_SCALE: f32 = 50.0;
 const CARD_NAME_SCALE: f32 = 40.0;
 
-static FONTS: [(LazyLock<FontRef<'_>>, f32); 3] = [
+// massive potential here to cut memory usage of the bot.
+static FONTS: [(LazyLock<FontRef<'_>>, f32); 4] = [
     // Base font
     (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()), 1.0 ),
     
     // Fallbacks
     (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()), 1.2 ), 
     (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()), 1.3 ),
+
+    // pixel font
+    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/Jersey10-Regular.ttf")).unwrap()), 1.0 ), 
 ];
 
 #[derive(Clone, Copy)]
@@ -104,14 +108,14 @@ fn img_columns_format(
 
         let mut img = if vertical_title {
             RgbaImage::from_pixel(
-                ROW_HEIGHT * cards_in_col + MARGIN,
+                ROW_HEIGHT * cards_in_col + 4 * MARGIN,
                 COLUMN_WIDTH + ROW_HEIGHT + MARGIN,
                 Rgba([255; 4]),
             )
         } else {
             RgbaImage::from_pixel(
                 COLUMN_WIDTH * col_count + MARGIN,
-                ROW_HEIGHT * (cards_in_col + 1) + MARGIN,
+                ROW_HEIGHT * (cards_in_col + 1) + 4 * MARGIN,
                 Rgba([255; 4]),
             )
         };
@@ -120,6 +124,8 @@ fn img_columns_format(
         if vertical_title {
             img = imageops::rotate90(&img);
         }
+
+        draw_advertisement(&mut img);
 
         (img, move |c| (c / cards_in_col, c % cards_in_col + (!vertical_title) as u32))
     };
@@ -214,12 +220,13 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
 
         RgbaImage::from_pixel(
             columns * COLUMN_WIDTH + MARGIN,
-            rows * ROW_HEIGHT + MARGIN,
+            rows * ROW_HEIGHT + 4 * MARGIN,
             Rgba([255; 4]),
         )
     };
 
     draw_deck_title(&mut img, deck, false);
+    draw_advertisement(&mut img);
 
     for (i, slug) in class_cards {
         let i = i as u32 + 1;
@@ -404,6 +411,20 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
     });
 
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
+}
+
+fn draw_advertisement(img: &mut RgbaImage) {
+    let h_offset = (img.width() - (COLUMN_WIDTH / 3)) as i32;
+    let v_offset = (img.height() - MARGIN * 4) as i32;
+    imageproc::drawing::draw_text_mut(
+        img,
+        Rgba([10, 10, 10, 255]),
+        h_offset,
+        v_offset,
+        20.0,
+        &*FONTS[3].0,
+        "github.com/asibahi/mimiron"
+    );
 }
 
 #[cached::proc_macro::cached(result = true)]

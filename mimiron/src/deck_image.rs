@@ -23,35 +23,41 @@ use rayon::prelude::*;
 use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock};
 
 // Numbers based on the crops provided by Blizzard API
-const CROP_WIDTH: u32 = 243;
-const CROP_HEIGHT: u32 = 64;
+const CROP_WIDTH        : u32 = 243;
+const CROP_HEIGHT       : u32 = 64;
 
-const INFO_WIDTH: u32 = CROP_HEIGHT;
-const COLOR_BAND_WIDTH: u32 = CROP_HEIGHT / 8;
-const MANA_WIDTH: u32 = INFO_WIDTH - COLOR_BAND_WIDTH;
+const INFO_WIDTH        : u32 = CROP_HEIGHT;
+const COLOR_BAND_WIDTH  : u32 = CROP_HEIGHT / 8;
+const MANA_WIDTH        : u32 = INFO_WIDTH - COLOR_BAND_WIDTH;
 
-const MARGIN: u32 = 5;
+const MARGIN            : u32 = 5;
 
-const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + INFO_WIDTH;
-const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
-const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
+const SLUG_WIDTH        : u32 = CROP_WIDTH * 2 + INFO_WIDTH;
+const ROW_HEIGHT        : u32 = CROP_HEIGHT + MARGIN;
+const COLUMN_WIDTH      : u32 = SLUG_WIDTH + MARGIN;
 
-const CROP_IMAGE_OFFSET: u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
+const CROP_IMAGE_OFFSET : u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
 
-const HEADING_SCALE: f32 = 50.0;
-const CARD_NAME_SCALE: f32 = 40.0;
+const HEADING_SCALE     : f32 = 50.0;
+const CARD_NAME_SCALE   : f32 = 40.0;
 
-// massive potential here to cut memory usage of the bot.
+macro_rules! lazy {
+    ($s:literal, $f: literal) => {
+        (LazyLock::new(|| FontRef::try_from_slice(include_bytes!(concat!("../fonts/", $s))).unwrap()), $f)
+    };
+}
+
+// potential here to cut memory usage of the bot.
 static FONTS: [(LazyLock<FontRef<'_>>, f32); 4] = [
     // Base font
-    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/YanoneKaffeesatz-Medium.ttf")).unwrap()), 1.0 ),
+    lazy!("YanoneKaffeesatz-Medium.ttf", 1.0),
     
     // Fallbacks
-    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/NotoSansCJK-Medium.ttc")).unwrap()), 1.2 ), 
-    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/NotoSansThaiLooped-Medium.ttf")).unwrap()), 1.3 ),
+    lazy!("NotoSansCJK-Medium.ttc", 1.2),
+    lazy!("NotoSansThaiLooped-Medium.ttf", 1.3),
 
     // pixel font
-    (LazyLock::new(|| FontRef::try_from_slice(include_bytes!("../fonts/Jersey10-Regular.ttf")).unwrap()), 1.0 ), 
+    lazy!("Jersey10-Regular.ttf", 1.0),
 ];
 
 #[derive(Clone, Copy)]
@@ -414,16 +420,20 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
 }
 
 fn draw_advertisement(img: &mut RgbaImage) {
-    let h_offset = (img.width() - (COLUMN_WIDTH / 3)) as i32;
-    let v_offset = (img.height() - MARGIN * 4) as i32;
-    imageproc::drawing::draw_text_mut(
+    let text = "github.com/asibahi/mimiron";
+    let (tw, th) = drawing::text_size(20.0, &*FONTS[3].0, text);
+
+    let h_offset = (img.width() - (tw + MARGIN)) as i32;
+    let v_offset = (img.height() - (th + MARGIN)) as i32;
+
+    drawing::draw_text_mut(
         img,
         Rgba([10, 10, 10, 255]),
         h_offset,
         v_offset,
         20.0,
         &*FONTS[3].0,
-        "github.com/asibahi/mimiron"
+        text,
     );
 }
 

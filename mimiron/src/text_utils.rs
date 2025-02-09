@@ -4,7 +4,7 @@ use nom::{
     combinator::all_consuming,
     multi::many0,
     sequence::delimited,
-    IResult, Parser,
+    Parser,
 };
 use std::{borrow::Cow, fmt::Write};
 
@@ -71,30 +71,34 @@ impl CardTextDisplay for str {
 // Parser from HTML tags to TextTree
 // ====================
 
-fn bold<'s>() -> impl Parser<&'s str, Output = TextTree<'s>, Error = ()> {
-    delimited(tag("<b>"), body, tag("</b>")).map(|c| TextTree::Bold(Box::new(c)))
+macro_rules! parser {
+    ($name: ident, $expr: expr) => {
+        struct $name;
+        impl<'a> Parser<&'a str> for $name {
+            type Output = TextTree<'a>;
+            type Error = ();
+
+            fn process<OM: nom::OutputMode>(
+                &mut self,
+                input: &'a str,
+            ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
+                $expr.process::<OM>(input)
+            }
+        }
+    };
 }
 
-fn italic<'s>() -> impl Parser<&'s str, Output = TextTree<'s>, Error = ()> {
-    delimited(tag("<i>"), body, tag("</i>")).map(|c| TextTree::Italic(Box::new(c)))
-}
-
-fn plain<'s>() -> impl Parser<&'s str, Output = TextTree<'s>, Error = ()> {
-    take_till1(|c| c == '<').map(TextTree::String)
-}
-
-fn body(i: &str) -> IResult<&str, TextTree<'_>, ()> {
-    many0(alt((bold(), italic(), plain())))
-        .map(|inner| match inner.len() {
-            0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
-            1 => inner.into_iter().next().unwrap(),
-            _ => TextTree::Seq(inner),
-        })
-        .parse_complete(i) // no recursive opaque types for you
-}
+parser!(Plain, take_till1(|c| c == '<').map(TextTree::String));
+parser!(Bold, delimited(tag("<b>"), Body, tag("</b>")).map(|c| TextTree::Bold(Box::new(c))));
+parser!(Italic, delimited(tag("<i>"), Body, tag("</i>")).map(|c| TextTree::Italic(Box::new(c))));
+parser!(Body, many0(alt((Bold, Italic, Plain))).map(|inner| match inner.len() {
+        0 => TextTree::Empty, // to deal with empty tags: i.e. <b></b>
+        1 => inner.into_iter().next().unwrap(),
+        _ => TextTree::Seq(inner),
+}));
 
 fn to_text_tree(i: &str) -> Result<TextTree<'_>, &str> {
-    all_consuming(body).parse_complete(i).map(|(_, s)| s).map_err(|_| i)
+    all_consuming(Body).parse_complete(i).map(|(_, s)| s).map_err(|_| i)
 }
 
 #[cfg(test)]

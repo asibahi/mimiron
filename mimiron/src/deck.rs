@@ -253,9 +253,9 @@ impl RawCodeData {
         };
         use nom::{
             branch::alt,
-            bytes::{take, take_till},
-            combinator::{recognize, success, verify},
-            multi::{count, length_count},
+            bytes::{tag, take, take_while_m_n},
+            combinator::{recognize, success},
+            multi::length_count,
             number::u8,
             sequence::preceded,
             Parser,
@@ -267,10 +267,9 @@ impl RawCodeData {
 
         #[allow(clippy::cast_possible_truncation)]
         fn varint<'a>() -> impl Parser<&'a [u8], Output = usize, Error = ()> {
-            let is_last = |b| b & 0x80 == 0;
-            let is_in_bounds = |p: &[u8]| p.len() < 9;
+            let is_ongoing = |b| b & 0x80 != 0;
 
-            recognize((verify(take_till(is_last), is_in_bounds), take(1u8))).map_opt(
+            recognize(take_while_m_n(0, 8, is_ongoing).and(take(1u8))).map_opt(
                 |p: &[u8]| p.iter().enumerate().try_fold(0, |acc, (idx, byte)| 
                     ((*byte as usize) & 0x7F).checked_shl(idx as u32 * 7).map(|n| acc | n)
                 ),
@@ -282,12 +281,11 @@ impl RawCodeData {
 
         #[cfg(debug_assertions)]
         {
-            let raw_code =
-                nom::combinator::iterator(decoded, varint()).fuse().join(", ");
+            let raw_code = nom::combinator::iterator(decoded, varint()).fuse().join(", ");
             tracing::info!(raw_code);
         }
 
-        let ret = preceded(verify(count(u8(), 2), |r| r == vec![0, 1]), (
+        let ret = preceded(tag([0, 1].as_slice()), (
             // format
             u8().map(|f| f.try_into().unwrap_or_default()),
 
@@ -314,7 +312,7 @@ impl RawCodeData {
             // sideboard
             alt((
                 preceded(
-                    verify(u8(), |i| *i == 1),
+                    tag([1].as_slice()),
                     length_count(u8(), (varint(), varint())),
                 ),
                 success(Vec::new()),
@@ -399,7 +397,9 @@ fn raw_data_to_deck(
                 raw_data
                     .sideboard_cards
                     .iter()
-                    .map(|(id, sb_id)| format_compact!("{}:{}", validate_id(*id), validate_id(*sb_id)))
+                    .map(|(id, sb_id)|
+                        format_compact!("{}:{}", validate_id(*id), validate_id(*sb_id))
+                    )
                     .join(","),
             );
         }
@@ -495,7 +495,7 @@ fn format_count(count: usize) -> CompactString {
 
 #[cfg(test)]
 #[allow(clippy::unreadable_literal)]
-mod deck_code_tests{
+mod deck_code_tests {
     use super::*;
 
     #[test]

@@ -499,7 +499,7 @@ mod deck_code_tests {
     use super::*;
 
     #[test]
-    fn deck_parse() {
+    fn normal_deck() {
         const CODE: &str =
             "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA=";
 
@@ -518,6 +518,33 @@ mod deck_code_tests {
                 "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA="
                     .into(),
         };
+
+        assert_eq!(rcd, expected);
+    }
+
+    #[test]
+    fn deck_with_sideboard() {
+        const CODE: &str =
+            "AAECAQcK/cQFrNEFtPgF95cGx6QGk6gG+skG0MoGquoGr/EGCo7UBOypBtW6BqS7BvPKBovcBrDiBtjxBrv0Brz0BgABBs2eBv3EBfSzBsekBvezBsekBtDKBv3EBejeBsekBuntBv3EBQAA";
+
+        let rcd = RawCodeData::from_code(CODE).unwrap();
+
+        let expected = RawCodeData {
+            format: Format::Standard,
+            hero: 7,
+            cards: vec![
+                90749, 92332, 97332, 101367, 102983, 103443, 107770, 107856, 111914, 112815, 76302,
+                76302, 103660, 103660, 105813, 105813, 105892, 105892, 107891, 107891, 110091,
+                110091, 110896, 110896, 112856, 112856, 113211, 113211, 113212, 113212,
+            ],
+            sideboard_cards: vec![
+                (102221, 90749), (104948, 102983), (104951, 102983), (107856, 90749),
+                (110440, 102983), (112361, 90749)
+            ],
+            deck_code:
+                "AAECAQcK/cQFrNEFtPgF95cGx6QGk6gG+skG0MoGquoGr/EGCo7UBOypBtW6BqS7BvPKBovcBrDiBtjxBrv0Brz0BgABBs2eBv3EBfSzBsekBvezBsekBtDKBv3EBejeBsekBuntBv3EBQAA"
+                .into()
+         };
 
         assert_eq!(rcd, expected);
     }

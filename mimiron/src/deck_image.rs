@@ -131,7 +131,7 @@ fn img_columns_format(
             img = imageops::rotate90(&img);
         }
 
-        draw_advertisement(&mut img);
+        draw_footer(&mut img, deck.class.color());
 
         (img, move |c| (c / cards_in_col, c % cards_in_col + (!vertical_title) as u32))
     };
@@ -232,7 +232,7 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
     };
 
     draw_deck_title(&mut img, deck, false);
-    draw_advertisement(&mut img);
+    draw_footer(&mut img, deck.class.color());
 
     for (i, slug) in class_cards {
         let i = i as u32 + 1;
@@ -419,12 +419,12 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
     draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
 }
 
-fn draw_advertisement(img: &mut RgbaImage) {
+fn draw_footer(img: &mut RgbaImage, (r, g, b): (u8, u8, u8)) {
     let text = "github.com/asibahi/mimiron";
     let (tw, th) = drawing::text_size(20.0, &*FONTS[3].0, text);
 
     let h_offset = (img.width() - (tw + MARGIN)) as i32;
-    let v_offset = (img.height() - (th + MARGIN)) as i32;
+    let v_offset = (img.height() - (th + 2 * MARGIN)) as i32;
 
     drawing::draw_text_mut(
         img,
@@ -434,6 +434,13 @@ fn draw_advertisement(img: &mut RgbaImage) {
         20.0,
         &*FONTS[3].0,
         text,
+    );
+
+    drawing::draw_filled_rect_mut(
+        img,
+        Rect::at(MARGIN as i32, (img.height() - 3 * MARGIN) as i32)
+            .of_size(img.width() - (3 * MARGIN + tw), 2 * MARGIN),
+        Rgba([r, g, b, 255]),
     );
 }
 

@@ -286,10 +286,10 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
 
     let mut res = AGENT
         .get("https://us.api.blizzard.com/hearthstone/cards")
+        .header("Authorization", format!("Bearer {}", get_access_token()))
         .query("locale", opts.locale.to_compact_string())
         .query("textFilter", search_term)
-        .query("pageSize", "500")
-        .header("Authorization", format!("Bearer {}", get_access_token()));
+        .query("pageSize", "500");
 
     if opts.noncollectibles {
         res = res.query("collectible", "0,1");

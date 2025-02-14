@@ -332,7 +332,7 @@ async fn create_deck_dropdown(
     Ok(())
 }
 
-async fn parse_format(ctx: Context<'_>, format: Option<String>) -> mimiron::deck::Format {
+async fn parse_format(ctx: Context<'_>, format: Option<String>) -> deck::Format {
     format
         .or(ctx.guild_channel().await.map(|c| c.name).filter(|n|
             n.eq_ignore_ascii_case("standard")

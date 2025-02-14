@@ -467,7 +467,7 @@ impl Localize for EnumSet<MinionType> {
 pub struct RuneCost { blood: u8, frost: u8, unholy: u8 }
 
 impl Display for RuneCost {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         (0..self.blood)
             .map(|_| "B".red())
             .chain((0..self.frost).map(|_| "F".blue()))
@@ -476,7 +476,7 @@ impl Display for RuneCost {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum CardType {
     Hero { armor: u8 },
     Minion { attack: u8, health: u8, minion_types: EnumSet<MinionType> },

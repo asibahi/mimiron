@@ -371,9 +371,9 @@ fn raw_data_to_deck(
     let get_deck_w_code = || -> Result<Deck> {
         let deck = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
+            .header("Authorization", format!("Bearer {}", get_access_token()))
             .query("locale", opts.locale.to_compact_string())
             .query("code", &raw_data.deck_code)
-            .header("Authorization", format!("Bearer {}", get_access_token()))
             .call()?
             .body_mut()
             .read_json::<Deck>()?;
@@ -386,8 +386,8 @@ fn raw_data_to_deck(
     let get_deck_w_cards = || -> Result<Deck> {
         let mut req = AGENT
             .get("https://us.api.blizzard.com/hearthstone/deck")
-            .query("locale", opts.locale.to_compact_string())
             .header("Authorization", format!("Bearer {}", get_access_token()))
+            .query("locale", opts.locale.to_compact_string())
             .query("hero", raw_data.hero.to_compact_string())
             .query("ids", raw_data.cards.iter().map(|id| validate_id(*id)).join(","));
 
@@ -498,54 +498,46 @@ fn format_count(count: usize) -> CompactString {
 mod deck_code_tests {
     use super::*;
 
-    #[test]
-    fn normal_deck() {
-        const CODE: &str =
-            "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA=";
-
-        let rcd = RawCodeData::from_code(CODE).unwrap();
-
-        let expected = RawCodeData {
-            format: Format::Standard,
-            hero: 78065,
-            cards: Vec::from([
-                90648, 91251, 112846, 113663, 80647, 80647, 95344, 95344, 100101, 100101, 105855,
-                105855, 107920, 107920, 110880, 110880, 111969, 111969, 112799, 112799, 112812, 112812,
-                112830, 112830, 112834, 112834, 112867, 112867, 113576, 113576,
-            ]),
-            sideboard_cards: Vec::new(),
-            deck_code:
-                "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA="
-                    .into(),
+    macro_rules! test {
+        ($name:ident, $code:literal, $format:expr, $hero:literal, $cards:expr, $sb_cards:expr $(,)?) => {
+            #[test]
+            fn $name() {
+                let expected = RawCodeData {
+                    format: $format,
+                    hero: $hero,
+                    cards: $cards,
+                    sideboard_cards: $sb_cards,
+                    deck_code: $code.into(),
+                };
+                assert_eq!(RawCodeData::from_code($code).unwrap(), expected);
+            }
         };
-
-        assert_eq!(rcd, expected);
     }
 
-    #[test]
-    fn deck_with_sideboard() {
-        const CODE: &str =
-            "AAECAQcK/cQFrNEFtPgF95cGx6QGk6gG+skG0MoGquoGr/EGCo7UBOypBtW6BqS7BvPKBovcBrDiBtjxBrv0Brz0BgABBs2eBv3EBfSzBsekBvezBsekBtDKBv3EBejeBsekBuntBv3EBQAA";
+    test!(deck_normal,
+        "AAECAfHhBASYxAXzyAXO8Qb/9wYNh/YE8OgFhY4G/7oGkMsGoOIG4eoGn/EGrPEGvvEGwvEG4/EGqPcGAAA=",
+        Format::Standard,
+        78065,
+        vec![
+            90648, 91251, 112846, 113663, 80647, 80647, 95344, 95344, 100101, 100101, 105855,
+            105855, 107920, 107920, 110880, 110880, 111969, 111969, 112799, 112799, 112812, 112812,
+            112830, 112830, 112834, 112834, 112867, 112867, 113576, 113576,
+        ],
+        vec![],
+    );
 
-        let rcd = RawCodeData::from_code(CODE).unwrap();
-
-        let expected = RawCodeData {
-            format: Format::Standard,
-            hero: 7,
-            cards: vec![
-                90749, 92332, 97332, 101367, 102983, 103443, 107770, 107856, 111914, 112815, 76302,
-                76302, 103660, 103660, 105813, 105813, 105892, 105892, 107891, 107891, 110091,
-                110091, 110896, 110896, 112856, 112856, 113211, 113211, 113212, 113212,
-            ],
-            sideboard_cards: vec![
-                (102221, 90749), (104948, 102983), (104951, 102983), (107856, 90749),
-                (110440, 102983), (112361, 90749)
-            ],
-            deck_code:
-                "AAECAQcK/cQFrNEFtPgF95cGx6QGk6gG+skG0MoGquoGr/EGCo7UBOypBtW6BqS7BvPKBovcBrDiBtjxBrv0Brz0BgABBs2eBv3EBfSzBsekBvezBsekBtDKBv3EBejeBsekBuntBv3EBQAA"
-                .into()
-         };
-
-        assert_eq!(rcd, expected);
-    }
+    test!(deck_with_sideboard,
+        "AAECAQcK/cQFrNEFtPgF95cGx6QGk6gG+skG0MoGquoGr/EGCo7UBOypBtW6BqS7BvPKBovcBrDiBtjxBrv0Brz0BgABBs2eBv3EBfSzBsekBvezBsekBtDKBv3EBejeBsekBuntBv3EBQAA",
+        Format::Standard,
+        7,
+        vec![
+            90749, 92332, 97332, 101367, 102983, 103443, 107770, 107856, 111914, 112815, 76302,
+            76302, 103660, 103660, 105813, 105813, 105892, 105892, 107891, 107891, 110091,
+            110091, 110896, 110896, 112856, 112856, 113211, 113211, 113212, 113212,
+        ],
+        vec![
+            (102221, 90749), (104948, 102983), (104951, 102983), (107856, 90749),
+            (110440, 102983), (112361, 90749)
+        ],
+    );
 }

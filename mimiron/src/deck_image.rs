@@ -104,7 +104,7 @@ fn img_columns_format(
             + deck.sideboard_cards
                 .as_ref()
                 .filter(|_| !inline_sideboard)
-                .map_or(0, std::vec::Vec::len)) as u32;
+                .map_or(0, Vec::len)) as u32;
 
         let col_count =
             col_count.map_or_else(|| (length / 15 + (length % 15).min(1)).max(2), u32::from);

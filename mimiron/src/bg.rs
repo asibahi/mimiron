@@ -489,9 +489,9 @@ pub fn print_assoc_card(card: &Card, locale: Locale, assoc: Association) {
 fn get_card_by_id(id: usize, locale: Locale) -> Result<Card> {
     let res = AGENT
         .get(format!("https://us.api.blizzard.com/hearthstone/cards/{id}"))
+        .header("Authorization", format!("Bearer {}", get_access_token()))
         .query("locale", locale.to_compact_string())
         .query("gameMode", "battlegrounds")
-        .header("Authorization", format!("Bearer {}", get_access_token()))
         .call()?
         .body_mut()
         .read_json::<Card>()?;

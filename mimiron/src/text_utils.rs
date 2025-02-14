@@ -116,11 +116,19 @@ mod prettify_tests {
         }
     }
 
-    #[test]
-    fn test_climactic_necrotic_explosion() {
-        let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
-        let case = to_text_tree(input).unwrap();
-        let expected = TT::Seq(vec![
+    macro_rules! test {
+        ($name:ident, $text:literal, $expected:expr) => {
+            #[test]
+            fn $name() {
+                let case = to_text_tree($text).unwrap();
+                assert_eq!(case, $expected);
+            }
+        };
+    }
+
+    test!(test_climactic_necrotic_explosion,
+        "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>",
+        TT::Seq(vec![
             TT::in_bold(TT::String("Lifesteal")),
             TT::String(". Deal damage. Summon / Souls. "),
             TT::in_italic(TT::Seq(vec![
@@ -128,16 +136,12 @@ mod prettify_tests {
                 TT::in_bold(TT::String("Corpses")),
                 TT::String(" you've spent)"),
             ])),
-        ]);
+        ])
+    );
 
-        assert_eq!((case), expected);
-    }
-
-    #[test]
-    fn test_eternal_summoner() {
-        let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
-        let case = to_text_tree(input).unwrap();
-        let expected = TT::Seq(vec![
+    test!(test_eternal_summoner,
+        "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.",
+        TT::Seq(vec![
             TT::in_bold(TT::Seq(vec![
                 TT::in_bold(TT::String("Reborn")),
                 TT::String("."),
@@ -145,23 +149,17 @@ mod prettify_tests {
             TT::String(" "),
             TT::in_bold(TT::String("Deathrattle:")),
             TT::String(" Summon 1 Eternal Knight."),
-        ]);
+        ])
+    );
 
-        assert_eq!((case), expected);
-    }
-
-    #[test]
-    fn test_illidans_gift() {
-        let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
-        let case = to_text_tree(input).unwrap();
-        let expected = TT::Seq(vec![
+    test!(test_illidans_gift,
+        "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>",
+        TT::Seq(vec![
             TT::in_bold(TT::String("Discover")),
             TT::String(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova."),
             TT::in_bold(TT::Empty), // This is silly. It should cancel the surrounding tag.
-        ]);
-
-        assert_eq!((case), expected);
-    }
+        ])
+    );
 }
 
 // ====================
@@ -243,45 +241,40 @@ mod traverse_tests {
     use TextPiece as TP;
     use TextStyle as TS;
 
-    #[test]
-    fn test_eternal_summoner() {
-        let input = "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.";
-        let case = get_text_boxes(input);
-
-        let expected = vec![
-            TP::new("Reborn. Deathrattle:", TS::Bold),
-            TP::new(" Summon 1 Eternal Knight.", TS::Plain),
-        ];
-
-        assert!(case.eq(expected));
+    macro_rules! test {
+        ($name:ident, $text:literal, $expected:expr $(,)?) => {
+            #[test]
+            fn $name() {
+                let case = get_text_boxes($text);
+                assert!(case.eq($expected));
+            }
+        };
     }
 
-    #[test]
-    fn test_climactic_necrotic_explosion() {
-        let input = "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>";
-        let case = get_text_boxes(input);
-
-        let expected = vec![
+    test!(test_climactic_necrotic_explosion,
+        "<b>Lifesteal</b>. Deal damage. Summon / Souls. <i>(Randomly improved by <b>Corpses</b> you've spent)</i>",
+        vec![
             TP::new("Lifesteal", TS::Bold),
             TP::new(". Deal damage. Summon / Souls. ", TS::Plain),
             TP::new("(Randomly improved by ", TS::Italic),
             TP::new("Corpses", TS::BoldItalic),
             TP::new(" you've spent)", TS::Italic),
-        ];
+        ]
+    );
 
-        assert!(case.eq(expected));
-    }
+    test!(test_eternal_summoner,
+        "<b><b>Reborn</b>.</b> <b>Deathrattle:</b> Summon 1 Eternal Knight.",
+        vec![
+            TP::new("Reborn. Deathrattle:", TS::Bold),
+            TP::new(" Summon 1 Eternal Knight.", TS::Plain),
+        ]
+    );
 
-    #[test]
-    fn test_illidans_gift() {
-        let input = "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>";
-        let case = get_text_boxes(input);
-
-        let expected = vec![
+    test!(test_illidans_gift,
+        "<b>Discover</b> a temporary Fel Barrage, Chaos Strike, or Chaos Nova.<b></b>",
+        vec![
             TP::new("Discover", TS::Bold),
             TP::new(" a temporary Fel Barrage, Chaos Strike, or Chaos Nova.", TS::Plain),
-        ];
-
-        assert!(case.eq(expected));
-    }
+        ]
+    );
 }

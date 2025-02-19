@@ -348,18 +348,23 @@ pub enum SpellSchool {
     Holy,   Shadow, Fel,
 
     // BG Schools. Show up in tokens search.
-    Spellcraft, Tavern,
+    Spellcraft, Tavern, Upgrade,
     
     // BG Trinkets. They're grouped with Spell Schools in the API.
     Greater, Lesser,
 }
 impl Localize for SpellSchool {
     fn in_locale(&self, locale: Locale) -> impl Display {
-        get_metadata()
-            .spell_schools
-            .iter()
-            .find(|det| *self == Self::from(det.id))
-            .map_or("UNKNOWN".into(), |det| det.name(locale))
+        match self {
+            SpellSchool::Spellcraft
+            | SpellSchool::Tavern
+            | SpellSchool::Upgrade => locale.battlegrounds().into(),
+            _ => get_metadata()
+                .spell_schools
+                .iter()
+                .find(|det| *self == Self::from(det.id))
+                .map_or("UNKNOWN".into(), |det| det.name(locale)),
+        }
     }
 }
 impl From<u8> for SpellSchool {
@@ -376,6 +381,7 @@ impl From<u8> for SpellSchool {
             10 => Self::Spellcraft,
             11 => Self::Lesser,
             12 => Self::Greater,
+            13 => Self::Upgrade,
             _ => Self::Tavern, // 9
         }
     }

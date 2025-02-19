@@ -220,7 +220,7 @@ impl From<CardData> for Card {
                         .filter_map(|id| MinionType::try_from(id).ok())
                         .collect(),
                 },
-                5 => CardType::Spell { school: c.spell_school_id.map(SpellSchool::from) },
+                5 | 42 => CardType::Spell { school: c.spell_school_id.map(SpellSchool::from) },
                 7 => CardType::Weapon {
                     attack: c.attack.unwrap_or_default(),
                     durability: c.durability.unwrap_or_default(),

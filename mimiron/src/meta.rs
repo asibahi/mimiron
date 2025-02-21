@@ -1,11 +1,11 @@
 use crate::{
-    card_details::Class,
-    deck::{lookup, Deck, Format, LookupOptions},
-    localization::Locale,
     AGENT,
+    card_details::Class,
+    deck::{Deck, Format, LookupOptions, lookup},
+    localization::Locale,
 };
-use anyhow::{anyhow, Result};
-use compact_str::{format_compact, CompactString, ToCompactString};
+use anyhow::{Result, anyhow};
+use compact_str::{CompactString, ToCompactString, format_compact};
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -71,16 +71,16 @@ fn get_firestone_data(link: &'static str) -> Result<FirestoneStats> {
 
 pub fn meta_deck(
     class: Option<Class>,
-    format: &Format,
+    format: Format,
     locale: Locale,
-) -> Result<impl Iterator<Item = Deck> + use<>> {
+) -> Result<impl Iterator<Item = Deck>> {
     let decks =
         get_decks_stats(format, class)?.filter_map(move |ds| get_deck_from_deck_stat(ds, locale));
 
     Ok(decks)
 }
 
-pub fn meta_snap(format: &Format, locale: Locale) -> Result<impl Iterator<Item = Deck> + use<>> {
+pub fn meta_snap(format: Format, locale: Locale) -> Result<impl Iterator<Item = Deck>> {
     let decks = get_decks_stats(format, None)?
         .unique_by(|ds| ds.archetype_name.clone())
         .filter_map(move |ds| get_deck_from_deck_stat(ds, locale));
@@ -88,7 +88,7 @@ pub fn meta_snap(format: &Format, locale: Locale) -> Result<impl Iterator<Item =
     Ok(decks)
 }
 
-pub fn meta_search(search_term: &str, format: &Format, locale: Locale) -> Result<Deck> {
+pub fn meta_search(search_term: &str, format: Format, locale: Locale) -> Result<Deck> {
     // This function is ridiculous calling parse::<Class>() so often and redundantly.
     let class = search_term
         .split_ascii_whitespace()
@@ -152,10 +152,7 @@ fn get_deck_from_deck_stat(ds: DeckStat, locale: Locale) -> Option<Deck> {
     Some(deck)
 }
 
-fn get_decks_stats(
-    format: &Format,
-    class: Option<Class>,
-) -> Result<impl Iterator<Item = DeckStat> + use<>> {
+fn get_decks_stats(format: Format, class: Option<Class>) -> Result<impl Iterator<Item = DeckStat>> {
     let (d_l, all, min_count, min_log) = match format {
         Format::Standard => (STANDARD_DECKS_D_L, STANDARD_DECKS_ALL, 100, 10), // 2^10 == 1024
         Format::Wild => (WILD_DECKS_D_L, WILD_DECKS_ALL, 100, 9),              // 2^9  == 512

@@ -1,13 +1,13 @@
 use crate::{
+    AGENT, CardSearchResponse, CardTextDisplay,
     card_details::{CardType, Class, Faction, MinionType, Rarity, RuneCost, SpellSchool},
     get_access_token,
     hearth_sim::{fuzzy_search_hearth_sim, get_hearth_sim_details},
     localization::{Locale, Localize},
-    CardSearchResponse, CardTextDisplay, AGENT,
 };
 use anyhow::Result;
 use colored::Colorize;
-use compact_str::{format_compact, CompactString, ToCompactString};
+use compact_str::{CompactString, ToCompactString, format_compact};
 use eitherable::Eitherable;
 use enumset::EnumSet;
 use itertools::Itertools;

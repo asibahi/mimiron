@@ -1,14 +1,14 @@
 use crate::{
+    AGENT,
     card::Card,
     card_details::{CardType, Class, Details},
     get_access_token,
     hearth_sim::validate_id,
     localization::{Locale, Localize},
-    AGENT,
 };
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use colored::Colorize;
-use compact_str::{format_compact, CompactString, ToCompactString};
+use compact_str::{CompactString, ToCompactString, format_compact};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::{
@@ -252,13 +252,13 @@ impl RawCodeData {
             engine::{DecodePaddingMode, Engine as _, GeneralPurpose, GeneralPurposeConfig},
         };
         use nom::{
+            Parser,
             branch::alt,
             bytes::{tag, take, take_while_m_n},
             combinator::{recognize, success},
             multi::length_count,
             number::u8,
             sequence::preceded,
-            Parser,
         };
 
         const CONFIG: GeneralPurposeConfig =
@@ -285,7 +285,7 @@ impl RawCodeData {
             tracing::info!(raw_code);
         }
 
-        let ret = preceded(tag([0, 1].as_slice()), (
+        preceded(tag([0, 1].as_slice()), (
             // format
             u8().map(|f| f.try_into().unwrap_or_default()),
 
@@ -327,9 +327,7 @@ impl RawCodeData {
         }))
         .parse_complete(decoded)
         .map(|(_, rd)| rd)
-        .ok();
-
-        ret
+        .ok()
     }
 }
 
@@ -532,12 +530,16 @@ mod deck_code_tests {
         7,
         vec![
             90749, 92332, 97332, 101367, 102983, 103443, 107770, 107856, 111914, 112815, 76302,
-            76302, 103660, 103660, 105813, 105813, 105892, 105892, 107891, 107891, 110091,
-            110091, 110896, 110896, 112856, 112856, 113211, 113211, 113212, 113212,
+            76302, 103660, 103660, 105813, 105813, 105892, 105892, 107891, 107891, 110091, 110091,
+            110896, 110896, 112856, 112856, 113211, 113211, 113212, 113212,
         ],
         vec![
-            (102221, 90749), (104948, 102983), (104951, 102983), (107856, 90749),
-            (110440, 102983), (112361, 90749)
+            (102221, 90749),
+            (104948, 102983),
+            (104951, 102983),
+            (107856, 90749),
+            (110440, 102983),
+            (112361, 90749)
         ],
     );
 }

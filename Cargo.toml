@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = ["mimiron", "mimiron_cli", "mimiron_bot"]
 default-members = ["mimiron", "mimiron_cli"]
 
@@ -32,7 +32,7 @@ cached = "0.54"
 either = { version = "1.13", features = ["serde"] }
 nucleo-matcher = "0.3.1"
 parking_lot = "0.12"
-compact_str = { version = "0.8", features = ["serde"] }
+compact_str = { version = "0.9", features = ["serde"] }
 enumset = "1.1.5"
 
 # bot deps

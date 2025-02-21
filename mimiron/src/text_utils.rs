@@ -1,10 +1,10 @@
 use nom::{
+    Parser,
     branch::alt,
     bytes::{tag, take_till1},
     combinator::all_consuming,
     multi::many0,
     sequence::delimited,
-    Parser,
 };
 use std::{borrow::Cow, fmt::Write};
 

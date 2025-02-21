@@ -1,8 +1,8 @@
-use crate::{card_details::Rarity, AGENT};
-use compact_str::{format_compact, CompactString};
+use crate::{AGENT, card_details::Rarity};
+use compact_str::{CompactString, format_compact};
 use nucleo_matcher::{
-    pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,
+    pattern::{CaseMatching, Normalization, Pattern},
 };
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use serde::Deserialize;

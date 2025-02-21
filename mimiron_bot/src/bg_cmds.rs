@@ -1,11 +1,10 @@
 use crate::{
-    helpers::{get_server_locale, paginated_embeds, Emoji},
     Context, Error,
+    helpers::{Emoji, get_server_locale, paginated_embeds},
 };
 use mimiron::{
-    bg,
+    CardTextDisplay, bg,
     localization::{Locale, Localize},
-    CardTextDisplay,
 };
 use poise::serenity_prelude as serenity;
 
@@ -88,7 +87,7 @@ pub async fn bgtier(
 
 #[allow(clippy::unused_async)]
 // Should probably get a list from the library for ome source of truth. Needs streams.
-async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
+async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
     ["Solos", "Duos"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
@@ -96,7 +95,7 @@ async fn autocomplete_pool<'a>(_: Context<'_>, partial: &'a str) -> impl Iterato
 
 #[allow(clippy::unused_async)]
 // Should probably get a list from the library for ome source of truth. Needs streams.
-async fn autocomplete_type<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
+async fn autocomplete_type<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
     [
         "Beast",
         "Demon",

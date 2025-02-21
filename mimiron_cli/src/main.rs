@@ -77,7 +77,7 @@ pub fn run() -> Result<()> {
         Commands::Keyword { input } => mimiron::keyword::lookup(&input)?
             .for_each(|kw| println!("{}", kw.in_locale(locale))),
         Commands::Archetype { input } => println!("{}",
-            mimiron::meta::meta_search(&input, &mimiron::deck::Format::Standard, locale)?
+            mimiron::meta::meta_search(&input, mimiron::deck::Format::Standard, locale)?
                 .in_locale(locale)
         ),
     }

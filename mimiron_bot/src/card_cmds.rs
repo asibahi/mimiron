@@ -1,11 +1,10 @@
 use crate::{
-    helpers::{get_server_locale, paginated_embeds, terse_embeds, Emoji},
     Context, Error,
+    helpers::{Emoji, get_server_locale, paginated_embeds, terse_embeds},
 };
 use mimiron::{
-    card, keyword,
+    CardTextDisplay, card, keyword,
     localization::{Locale, Localize},
-    CardTextDisplay,
 };
 use poise::serenity_prelude as serenity;
 use std::ops::Not;

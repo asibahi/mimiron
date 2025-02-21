@@ -1,7 +1,7 @@
 use crate::{
-    card_details::{get_metadata, LocalizedName},
-    localization::{Locale, Localize},
     CardTextDisplay,
+    card_details::{LocalizedName, get_metadata},
+    localization::{Locale, Localize},
 };
 use anyhow::Result;
 use compact_str::{CompactString, ToCompactString};

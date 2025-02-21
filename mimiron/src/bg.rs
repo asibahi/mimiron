@@ -1,12 +1,12 @@
 use crate::{
-    card_details::{get_metadata, MinionType, SpellSchool},
+    AGENT, CardSearchResponse, CardTextDisplay,
+    card_details::{MinionType, SpellSchool, get_metadata},
     get_access_token,
     localization::{Locale, Localize},
-    CardSearchResponse, CardTextDisplay, AGENT,
 };
 use anyhow::Result;
 use colored::Colorize;
-use compact_str::{format_compact, CompactString, ToCompactString};
+use compact_str::{CompactString, ToCompactString, format_compact};
 use enumset::EnumSet;
 use itertools::Itertools;
 use serde::Deserialize;

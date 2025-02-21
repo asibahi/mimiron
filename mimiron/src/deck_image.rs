@@ -6,17 +6,17 @@
 )]
 
 use crate::{
+    AGENT,
     card::Card,
     card_details::{CardType, Class, Rarity},
     deck::Deck,
     hearth_sim::{get_hearth_sim_crop_image, get_hearth_sim_details},
     localization::Localize,
-    AGENT,
 };
 use ab_glyph::{Font, FontRef, ScaleFont};
 use anyhow::Result;
-use compact_str::{format_compact, CompactString, ToCompactString};
-use image::{imageops, GenericImage, GenericImageView, Rgba, RgbaImage};
+use compact_str::{CompactString, ToCompactString, format_compact};
+use image::{GenericImage, GenericImageView, Rgba, RgbaImage, imageops};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
 use rayon::prelude::*;

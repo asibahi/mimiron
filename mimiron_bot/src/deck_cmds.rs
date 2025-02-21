@@ -1,6 +1,6 @@
 use crate::{
-    helpers::{get_server_locale, Emoji},
     Context, Error,
+    helpers::{Emoji, get_server_locale},
 };
 use itertools::Itertools;
 use mimiron::{
@@ -50,14 +50,14 @@ pub async fn code(
 }
 
 #[allow(clippy::unused_async)]
-async fn autocomplete_mode<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
+async fn autocomplete_mode<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
     ["Standard", "Wild", "Twist"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
 }
 
 #[allow(clippy::unused_async)]
-async fn autocomplete_shape<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> + use<'a> {
+async fn autocomplete_shape<'a>(_: Context<'_>, partial: &'a str) -> impl Iterator<Item = &'a str> {
     ["Default", "Vertical", "Groups"]
         .into_iter()
         .filter(move |s| s.to_lowercase().starts_with(&partial.to_lowercase()))
@@ -83,7 +83,8 @@ pub async fn deck_inner(
 ) -> Result<(), Error> {
     let locale = get_server_locale(&ctx);
 
-    let l_opts = LookupOptions::lookup(&code).with_locale(locale).with_custom_format(format.as_deref());
+    let l_opts =
+        LookupOptions::lookup(&code).with_locale(locale).with_custom_format(format.as_deref());
 
     let i_opts = match shape {
         Some(s) if s.starts_with('V') || s.starts_with('v') => 
@@ -155,7 +156,11 @@ pub async fn deckcomp(
     create_deck_dropdown(ctx, embed, &[(0, deck1), (1, deck2)]).await
 }
 
-async fn send_deck_reply(ctx: Context<'_>, deck: Deck, opts: deck::ImageOptions) -> Result<(), Error> {
+async fn send_deck_reply(
+    ctx: Context<'_>,
+    deck: Deck,
+    opts: deck::ImageOptions,
+) -> Result<(), Error> {
     ctx.send(create_deck_reply(&deck, opts)?).await?;
 
     Ok(())
@@ -210,7 +215,7 @@ pub async fn metadeck(
     let class = class.and_then(|s| s.parse().ok());
     let format = parse_format(ctx, format).await;
 
-    let deck = meta::meta_deck(class, &format, locale)?
+    let deck = meta::meta_deck(class, format, locale)?
         .take(5)
         .find_or_first(|_| random::<u8>() % 5 == 0)
         .unwrap();
@@ -228,7 +233,7 @@ pub async fn metasnap(
 
     let locale = get_server_locale(&ctx);
     let format = parse_format(ctx, format).await;
-    let decks = meta::meta_snap(&format, locale)?.enumerate().take(10).collect::<Vec<_>>();
+    let decks = meta::meta_snap(format.clone(), locale)?.enumerate().take(10).collect::<Vec<_>>();
 
     let embed = serenity::CreateEmbed::new()
         .title(format!("{} Meta Snapshot (from Firestone)", format.to_string().to_uppercase()))
@@ -255,7 +260,7 @@ pub async fn archetype(
     let locale = get_server_locale(&ctx);
     let format = parse_format(ctx, format).await;
 
-    let deck = meta::meta_search(&search_term, &format, locale)?;
+    let deck = meta::meta_search(&search_term, format, locale)?;
 
     send_deck_reply(ctx, deck, deck::ImageOptions::Adaptable).await
 }

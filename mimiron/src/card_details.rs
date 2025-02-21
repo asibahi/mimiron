@@ -1,11 +1,10 @@
 use crate::{
-    get_access_token,
+    AGENT, get_access_token,
     keyword::Keyword,
     localization::{Locale, Localize},
-    AGENT,
 };
 use colored::Colorize;
-use compact_str::{format_compact, CompactString, ToCompactString};
+use compact_str::{CompactString, ToCompactString, format_compact};
 use either::Either::{self, Left, Right};
 use enumset::{EnumSet, EnumSetType};
 use itertools::Itertools;

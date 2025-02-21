@@ -1,7 +1,7 @@
 [package]
 name = "mimiron"
 version = "1.3.0"
-edition = "2021"
+edition = "2024"
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
 description = "A library to query Blizzard Hearthstone API"
 license = "MIT"

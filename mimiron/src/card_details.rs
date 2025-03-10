@@ -132,8 +132,8 @@ fn internal_get_metadata() -> Metadata {
 }
 
 pub(crate) fn get_metadata() -> MappedRwLockReadGuard<'static, Metadata> {
-    let last_update = METADATA.read().as_ref().map(|o| o.1);
-    if last_update.is_none_or(|t| t.elapsed() >= REFRESH_RATE) {
+    let last_update = METADATA.read().as_ref().map(|o|(o.0.sets.is_empty(), o.1));
+    if last_update.is_none_or(|(empty, t)| empty || t.elapsed() >= REFRESH_RATE) {
         _ = METADATA.write().insert((internal_get_metadata(), Instant::now()));
     }
 

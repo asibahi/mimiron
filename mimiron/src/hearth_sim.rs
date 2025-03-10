@@ -32,8 +32,8 @@ fn inner_get_hearth_sim_ids() -> HearthSim {
 }
 
 fn get_hearth_sim_ids() -> MappedRwLockReadGuard<'static, HearthSim> {
-    let last_update = HEARTH_SIM_IDS.read().as_ref().map(|o| o.1);
-    if last_update.is_none_or(|t| t.elapsed() >= REFRESH_RATE) {
+    let last_update = HEARTH_SIM_IDS.read().as_ref().map(|o| (o.0.is_empty(), o.1));
+    if last_update.is_none_or(|(empty, t)| empty || t.elapsed() >= REFRESH_RATE) {
         _ = HEARTH_SIM_IDS.write().insert((inner_get_hearth_sim_ids(), Instant::now()));
     }
 

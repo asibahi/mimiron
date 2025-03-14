@@ -10,6 +10,7 @@ mod hearth_sim;
 pub mod keyword;
 pub mod localization;
 pub mod meta;
+pub mod news;
 mod text_utils;
 
 pub use authorization::{get_access_token, set_blizzard_client_auth};

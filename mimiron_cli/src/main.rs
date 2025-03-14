@@ -58,6 +58,9 @@ enum Commands {
     #[clap(hide = true)]
     #[command(alias("at"))]
     Archetype { input: String },
+
+    #[clap(hide = true)]
+    News,
 }
 
 pub fn run() -> Result<()> {
@@ -80,6 +83,8 @@ pub fn run() -> Result<()> {
             mimiron::meta::meta_search(&input, mimiron::deck::Format::Standard, locale)?
                 .in_locale(locale)
         ),
+
+        Commands::News => mimiron::news::get_news()?.take(3).for_each(|news| println!("{news}")),
     }
 
     Ok(())
@@ -89,7 +94,8 @@ fn main() {
     #[cfg(debug_assertions)]
     tracing_subscriber::fmt()
         .with_line_number(true)
-        .with_writer(std::io::stderr).with_env_filter("mimiron=info")
+        .with_writer(std::io::stderr)
+        .with_env_filter("mimiron=info")
         // .with_max_level(tracing_subscriber::filter::LevelFilter::WARN)
         .without_time()
         .init();

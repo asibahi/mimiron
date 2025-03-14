@@ -67,7 +67,22 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub trait Emoji : Copy {
+/// News of Hearthstone
+#[poise::command(slash_command, install_context = "Guild|User", category = "General")]
+pub async fn news(ctx: Context<'_>) -> Result<(), Error> {
+    let news = mimiron::news::get_news()?;
+
+    paginated_embeds(ctx, news, |news| {
+        serenity::CreateEmbed::new()
+            .title(news.title)
+            .url(news.default_url)
+            .thumbnail(news.thumbnail.url)
+            .description(news.summary)
+    })
+    .await
+}
+
+pub trait Emoji: Copy {
     fn emoji(self) -> &'static str;
 }
 impl Emoji for Class {
@@ -147,10 +162,11 @@ pub fn on_success(ctx: &Context<'_>) {
 
 pub async fn terse_embeds<T>(
     ctx: Context<'_>,
+    count: usize,
     items: impl Iterator<Item = T> + Send,
     inner_embed: impl Fn(T) -> serenity::CreateEmbed + Send,
 ) -> Result<(), Error> {
-    let items = items.take(3);
+    let items = items.take(count);
     let embeds = items.map(inner_embed);
 
     let mut reply = poise::CreateReply::default();

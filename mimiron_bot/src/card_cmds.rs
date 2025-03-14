@@ -117,7 +117,7 @@ pub async fn keyword(
 
     let kws = keyword::lookup(&search_term)?;
 
-    terse_embeds(ctx, kws, |kw|
+    terse_embeds(ctx, 3, kws, |kw|
         serenity::CreateEmbed::default()
             .title(kw.name(locale))
             .description(kw.text(locale))

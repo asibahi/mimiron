@@ -87,11 +87,10 @@ pub async fn deck_inner(
         LookupOptions::lookup(&code).with_locale(locale).with_custom_format(format.as_deref());
 
     let i_opts = match shape {
-        Some(s) if s.starts_with('V') || s.starts_with('v') => 
+        Some(s) if s.starts_with('V') || s.starts_with('v') =>
             deck::ImageOptions::Regular { columns: 1, inline_sideboard: true },
-        Some(s) if s.starts_with('g') || s.starts_with('G') => 
-            deck::ImageOptions::Groups,
-        _ => deck::ImageOptions::Adaptable
+        Some(s) if s.starts_with('g') || s.starts_with('G') => deck::ImageOptions::Groups,
+        _ => deck::ImageOptions::Adaptable,
     };
 
     let mut deck = deck::lookup(l_opts)?;
@@ -218,7 +217,7 @@ pub async fn metadeck(
     let deck = meta::meta_deck(class, format, locale)?
         .take(5)
         .find_or_first(|_| random::<u8>() % 5 == 0)
-        .unwrap();
+        .ok_or("no deck found")?;
 
     send_deck_reply(ctx, deck, deck::ImageOptions::Adaptable).await
 }

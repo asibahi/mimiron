@@ -15,17 +15,19 @@ pub struct NewsArticle {
 
 impl Display for NewsArticle {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "\t{}", self.title.bold())?;
-
-        let summary = textwrap::fill(
-            &self.summary,
-            textwrap::Options::new(textwrap::termwidth() - 10)
-                .initial_indent("")
-                .subsequent_indent("          "),
-        );
-
-        writeln!(f, "{:>8}: {}", "Summary".bold(), summary)?;
-        writeln!(f, "{:>8}: {}", "Link".bold(), self.default_url)
+        writeln!(
+            f,
+            "\t{}\n{}\n{:>8}: {}",
+            self.title.bold().green(),
+            textwrap::fill(
+                &self.summary,
+                textwrap::Options::new(textwrap::termwidth() - 10)
+                    .initial_indent(&format!("{:>8}: ", "Summary".bold()))
+                    .subsequent_indent("          "),
+            ),
+            "Link".bold(),
+            self.default_url.underline().bright_blue()
+        )
     }
 }
 

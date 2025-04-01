@@ -160,24 +160,21 @@ fn get_decks_stats(format: Format, class: Option<Class>) -> Result<impl Iterator
         _ => anyhow::bail!("Meta decks for this format are not available"),
     };
 
-    let filter_decks =
-        |s: &DeckStat| s.total_games > min_count && class.is_none_or(|c| c == s.player_class);
+    let mut range = d_l;
+    loop {
+        let mut decks =
+            get_firestone_data(range)?.deck_stats.into_iter().filter(
+                |s| s.total_games >= min_count && class.is_none_or(|c| c == s.player_class)
+            ).peekable();
 
-    let first_try = get_firestone_data(d_l)?;
-    let mut decks = first_try.deck_stats.into_iter().filter(filter_decks).peekable();
-
-    if decks.peek().is_none() {
-        let second_try = get_firestone_data(all)?;
-        decks = second_try.deck_stats.into_iter().filter(filter_decks).peekable();
+        match decks.peek() {
+            None if range == d_l => { range = all; continue; }
+            None => anyhow::bail!("No decks found with more than {min_count} games."),
+            _ => return Ok(decks.sorted_by(|s1, s2|
+                (s2.total_games.ilog2().min(min_log))
+                    .cmp(&s1.total_games.ilog2().min(min_log))
+                    .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
+            ))
+        };
     }
-
-    anyhow::ensure!(decks.peek().is_some(), "No decks found with more than {min_count} games.");
-
-    let decks = decks.sorted_by(|s1, s2|
-        (s2.total_games.ilog2().min(min_log))
-            .cmp(&s1.total_games.ilog2().min(min_log))
-            .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
-    );
-
-    Ok(decks)
 }

@@ -470,7 +470,6 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
         .or_else(|| get_hearth_sim_crop_image(card.id))
         .unwrap_or_else(|| "https://art.hearthstonejson.com/v1/tiles/GAME_006.png".into());
 
-    // Might fail but meh. just a crop image.
     let mut counter = 2;
     let buf = loop {
         match AGENT.get(link.as_str()).call() {
@@ -478,7 +477,7 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
             Err(ureq::Error::Io(err))
                 if counter > 0 && err.kind() == std::io::ErrorKind::ConnectionReset =>
             {   // probably not a good idea
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(200));
                 counter -= 1;
                 continue;
             },

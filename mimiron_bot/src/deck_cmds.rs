@@ -304,7 +304,7 @@ async fn create_deck_dropdown(
     {
         let serenity::ComponentInteractionDataKind::StringSelect { ref values } = choice.data.kind
         else {
-            continue;
+            continue
         };
 
         choice

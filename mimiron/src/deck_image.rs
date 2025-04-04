@@ -479,10 +479,9 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
             {   // probably not a good idea
                 std::thread::sleep(std::time::Duration::from_millis(200));
                 counter -= 1;
-                continue;
             },
-            err => err?,
-        };
+            err => { err?; },
+        }
     };
     Ok(image::load_from_memory(&buf)?.into())
 }
@@ -500,8 +499,9 @@ fn draw_text(
     let y_offset = (CROP_HEIGHT - v_metric as u32) / 2 + y_offset;
 
     for c in text.chars() {
-        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) else {
-            continue;
+        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) 
+        else {
+            continue
         };
 
         let f_f = f_f.as_scaled(scale * f_s);

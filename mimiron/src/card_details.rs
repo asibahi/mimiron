@@ -355,9 +355,9 @@ pub enum SpellSchool {
 impl Localize for SpellSchool {
     fn in_locale(&self, locale: Locale) -> impl Display {
         match self {
-            SpellSchool::Spellcraft
-            | SpellSchool::Tavern
-            | SpellSchool::Upgrade => locale.battlegrounds().into(),
+            Self::Spellcraft
+            | Self::Tavern
+            | Self::Upgrade => locale.battlegrounds().into(),
             _ => get_metadata()
                 .spell_schools
                 .iter()

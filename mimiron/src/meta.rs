@@ -61,10 +61,9 @@ fn get_firestone_data(link: &'static str) -> Result<FirestoneStats> {
             {   // is this a good idea?
                 std::thread::sleep(std::time::Duration::from_millis(500));
                 counter -= 1;
-                continue;
             }
-            err => err?,
-        };
+            err => { err?; },
+        }
     };
     Ok(ret)
 }
@@ -104,7 +103,7 @@ pub fn meta_search(search_term: &str, format: Format, locale: Locale) -> Result<
                     .any(|s| search_term.to_lowercase().contains(s) && s.parse::<Class>().is_err())
         })
         .and_then(|ds| get_deck_from_deck_stat(ds, locale))
-        .ok_or(anyhow!("No deck found with this name in this format."))
+        .ok_or_else(|| anyhow!("No deck found with this name in this format."))
 }
 
 fn casify_archetype(at: &str) -> CompactString {
@@ -168,13 +167,13 @@ fn get_decks_stats(format: Format, class: Option<Class>) -> Result<impl Iterator
             ).peekable();
 
         match decks.peek() {
-            None if range == d_l => { range = all; continue; }
+            None if range == d_l => range = all,
             None => anyhow::bail!("No decks found with more than {min_count} games."),
             _ => return Ok(decks.sorted_by(|s1, s2|
                 (s2.total_games.ilog2().min(min_log))
                     .cmp(&s1.total_games.ilog2().min(min_log))
                     .then(s2.get_winrate().total_cmp(&s1.get_winrate()))
             ))
-        };
+        }
     }
 }

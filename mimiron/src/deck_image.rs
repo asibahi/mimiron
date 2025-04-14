@@ -51,7 +51,7 @@ macro_rules! lazy {
 static FONTS: [(LazyLock<FontRef<'_>>, f32); 4] = [
     // Base font
     lazy!("YanoneKaffeesatz-Medium.ttf", 1.0),
-    
+
     // Fallbacks
     lazy!("NotoSansCJK-Medium.ttc", 1.2),
     lazy!("NotoSansThaiLooped-Medium.ttf", 1.3),
@@ -499,7 +499,7 @@ fn draw_text(
     let y_offset = (CROP_HEIGHT - v_metric as u32) / 2 + y_offset;
 
     for c in text.chars() {
-        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) 
+        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0)
         else {
             continue
         };

@@ -43,7 +43,7 @@ struct CardData {
 
     attack: Option<u8>,
     health: Option<u8>,
-    durability: Option<u8>,
+    durability: Option<u8>, // apparently merged with health ?
     armor: Option<u8>,
 
     // Additional Info
@@ -167,7 +167,7 @@ impl Localize for Card {
                 let cost = self.0.cost;
 
                 let runes = self.0.rune_cost.as_ref().map_or_else(
-                    CompactString::default, 
+                    CompactString::default,
                     |r| format_compact!("{r} ")
                 );
 
@@ -223,7 +223,7 @@ impl From<CardData> for Card {
                 5 | 42 => CardType::Spell { school: c.spell_school_id.map(SpellSchool::from) },
                 7 => CardType::Weapon {
                     attack: c.attack.unwrap_or_default(),
-                    durability: c.durability.unwrap_or_default(),
+                    durability: c.durability.or(c.health).unwrap_or_default(),
                 },
                 39 => CardType::Location { durability: c.health.unwrap_or_default() },
                 10 => CardType::HeroPower,
@@ -309,7 +309,7 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
         .filter(|c|
             // Filtering out hero portraits if not searching for incollectibles
             (opts.noncollectibles || c.card_set != 17)
-            // Depending on opts.with_text, whether to restrict searches to card names 
+            // Depending on opts.with_text, whether to restrict searches to card names
             // or expand to search boxes.
                 && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())))
         // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)

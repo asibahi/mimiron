@@ -235,7 +235,7 @@ impl Localize for Card {
 impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         let card_type = match &c.battlegrounds {
-            Some(BGData { tier: Some(tier), .. }) if c.card_type_id == 42 => 
+            Some(BGData { tier: Some(tier), .. }) if c.card_type_id == 42 =>
                 BGCardType::Spell { tier: *tier, cost: c.mana_cost, text: c.text },
             Some(BGData { tier: Some(tier), upgrade_id, .. }) => BGCardType::Minion {
                 tier: *tier,
@@ -274,7 +274,7 @@ impl From<CardData> for Card {
         let pool = c
             .battlegrounds
             .as_ref()
-            .and_then(|bg| 
+            .and_then(|bg|
                 bg.duos_only.then_some(Pool::Duos).or_else(|| bg.solos_only.then_some(Pool::Solos))
             )
             .unwrap_or_default();
@@ -296,6 +296,8 @@ pub struct SearchOptions<'s> {
     pool: Pool,
     with_text: bool,
     locale: Locale,
+
+    debug: bool,
 }
 
 impl<'s> SearchOptions<'s> {
@@ -310,6 +312,8 @@ impl<'s> SearchOptions<'s> {
             pool: Pool::All,
             with_text: false,
             locale: Locale::enUS,
+
+            debug: false
         }
     }
     #[must_use]
@@ -335,6 +339,10 @@ impl<'s> SearchOptions<'s> {
     #[must_use]
     pub const fn for_pool(self, pool: Pool) -> Self {
         Self { pool, ..self }
+    }
+    #[must_use]
+    pub const fn debug(self, json: bool) -> Self {
+        Self { debug: json, ..self }
     }
 }
 
@@ -363,6 +371,12 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
         res = res.query("tier", t.to_compact_string());
     }
 
+    if opts.debug {
+        let res = res.call()?.into_body().read_to_string()?;
+        eprintln!("{res}");
+
+        return Ok(vec![].into_iter().peekable())
+    }
     let res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;
 
     anyhow::ensure!(res.card_count > 0, "No Battlegrounds card found. Check your spelling.");

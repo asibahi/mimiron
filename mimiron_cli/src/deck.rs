@@ -68,7 +68,9 @@ pub fn run(args: DeckArgs, locale: Locale) -> Result<()> {
 }
 
 pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
-    let opts = LookupOptions::lookup(&args.input).with_locale(locale).with_custom_format(args.mode.as_deref());
+    let opts = LookupOptions::lookup(&args.input)
+        .with_locale(locale)
+        .with_custom_format(args.mode.as_deref());
 
     let deck = deck::lookup(opts)?;
 

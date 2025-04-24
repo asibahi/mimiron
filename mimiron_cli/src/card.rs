@@ -26,6 +26,9 @@ pub struct CardArgs {
     /// Print image links
     #[arg(short, long)]
     image: bool,
+
+    #[arg(long, hide = true)]
+    debug: bool,
 }
 
 pub fn run(args: CardArgs, locale: Locale) -> Result<()> {
@@ -33,7 +36,9 @@ pub fn run(args: CardArgs, locale: Locale) -> Result<()> {
         .with_locale(locale)
         .with_text(args.text)
         .include_reprints(args.reprints)
-        .include_noncollectibles(args.all);
+        .include_noncollectibles(args.all)
+        .debug(args.debug);
+
     let cards = card::lookup(opts)?.take(30);
 
     for card in cards {

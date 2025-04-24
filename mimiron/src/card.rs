@@ -250,6 +250,8 @@ pub struct SearchOptions<'s> {
     reprints: bool,
     noncollectibles: bool,
     locale: Locale,
+
+    debug: bool, // for debugging
 }
 
 impl<'s> SearchOptions<'s> {
@@ -261,6 +263,8 @@ impl<'s> SearchOptions<'s> {
             reprints: false,
             noncollectibles: false,
             locale: Locale::enUS,
+
+            debug: false,
         }
     }
     #[must_use]
@@ -279,6 +283,10 @@ impl<'s> SearchOptions<'s> {
     pub const fn with_locale(self, locale: Locale) -> Self {
         Self { locale, ..self }
     }
+    #[must_use]
+    pub const fn debug(self, json: bool) -> Self {
+        Self { debug: json, ..self }
+    }
 }
 
 pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_> {
@@ -293,6 +301,13 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
 
     if opts.noncollectibles {
         res = res.query("collectible", "0,1");
+    }
+
+    if opts.debug {
+        let res = res.call()?.into_body().read_to_string()?;
+        eprintln!("{res}");
+
+        return Ok(vec![].into_iter().peekable())
     }
 
     let res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;

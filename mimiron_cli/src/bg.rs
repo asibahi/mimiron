@@ -27,6 +27,9 @@ pub struct BGArgs {
     /// Print image links.
     #[arg(short, long)]
     image: bool,
+
+    #[arg(long, hide = true)]
+    debug: bool,
 }
 
 pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
@@ -35,7 +38,9 @@ pub fn run(args: BGArgs, locale: Locale) -> Result<()> {
         .search_for(args.name.as_deref())
         .with_tier(args.tier)
         .with_type(args.minion_type.and_then(|s| s.parse().inspect_err(|e| eprintln!("{e}")).ok()))
-        .with_text(args.text);
+        .with_text(args.text)
+        .debug(args.debug);
+
     let cards = bg::lookup(opts)?;
 
     for card in cards {

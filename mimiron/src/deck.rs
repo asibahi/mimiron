@@ -216,7 +216,7 @@ impl Localize for DeckDifference {
 pub struct LookupOptions<'s> {
     code: &'s str,
     locale: Locale,
-    format: Option<&'s str>,
+    format: Option<&'s str>
 }
 
 impl<'s> LookupOptions<'s> {
@@ -270,7 +270,7 @@ impl RawCodeData {
             let is_ongoing = |b| b & 0x80 != 0;
 
             recognize(take_while_m_n(0, 8, is_ongoing).and(take(1u8))).map_opt(
-                |p: &[u8]| p.iter().enumerate().try_fold(0, |acc, (idx, byte)| 
+                |p: &[u8]| p.iter().enumerate().try_fold(0, |acc, (idx, byte)|
                     ((*byte as usize) & 0x7F).checked_shl(idx as u32 * 7).map(|n| acc | n)
                 ),
             )

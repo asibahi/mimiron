@@ -49,17 +49,17 @@ pub(crate) struct LocalizedName {
 }
 impl LocalizedName {
     pub fn contains(&self, search_term: &str) -> bool {
-        self.deDE.to_lowercase().contains(search_term)
-            || self.enUS.to_lowercase().contains(search_term)
-            || self.esES.to_lowercase().contains(search_term)
-            || self.esMX.to_lowercase().contains(search_term)
-            || self.frFR.to_lowercase().contains(search_term)
-            || self.itIT.to_lowercase().contains(search_term)
+        self.deDE.to_lowercase().contains(&search_term.to_lowercase())
+            || self.enUS.to_lowercase().contains(&search_term.to_lowercase())
+            || self.esES.to_lowercase().contains(&search_term.to_lowercase())
+            || self.esMX.to_lowercase().contains(&search_term.to_lowercase())
+            || self.frFR.to_lowercase().contains(&search_term.to_lowercase())
+            || self.itIT.to_lowercase().contains(&search_term.to_lowercase())
             || self.jaJP.contains(search_term)
             || self.koKR.contains(search_term)
-            || self.plPL.to_lowercase().contains(search_term)
-            || self.ptBR.to_lowercase().contains(search_term)
-            || self.ruRU.to_lowercase().contains(search_term)
+            || self.plPL.to_lowercase().contains(&search_term.to_lowercase())
+            || self.ptBR.to_lowercase().contains(&search_term.to_lowercase())
+            || self.ruRU.to_lowercase().contains(&search_term.to_lowercase())
             || self.thTH.contains(search_term)
             || self.zhCN.as_ref().is_some_and(|s| s.contains(search_term))
             || self.zhTW.contains(search_term)
@@ -348,7 +348,7 @@ pub enum SpellSchool {
 
     // BG Schools. Show up in tokens search.
     Spellcraft, Tavern, Upgrade,
-    
+
     // BG Trinkets. They're grouped with Spell Schools in the API.
     Greater, Lesser,
 }

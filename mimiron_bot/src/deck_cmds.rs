@@ -71,6 +71,7 @@ pub async fn deck_context_menu(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
+    tracing::info!(msg.content);
     deck_inner(ctx, msg.content, None, None, None).await
 }
 

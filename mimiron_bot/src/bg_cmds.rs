@@ -138,7 +138,7 @@ fn inner_card_embed(card: &bg::Card, locale: Locale) -> serenity::CreateEmbed {
             };
             let title = match assoc {
                 bg::Association::Golden =>
-                format!("{}: {}", locale.golden(), assoc_card.name).into(),
+                format!("{}", locale.golden()).into(),
                 _ => assoc_card.name,
             };
             Some((title, format!("{}: {}", assoc_card.card_type.in_locale(locale), text.to_markdown()), false))

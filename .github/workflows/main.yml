@@ -3,7 +3,7 @@ name: Shuttle Deploy
 on:
   push:
     branches:
-      - main
+      - master # i am an idiot. was wondering why this does not work.
   workflow_dispatch:
 
 jobs:

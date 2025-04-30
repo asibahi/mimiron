@@ -6,7 +6,7 @@ use mimiron::{
     localization::Locale,
 };
 use poise::serenity_prelude as serenity;
-use std::{cell::LazyCell, collections::HashMap, ops::Not};
+use std::{cell::LazyCell, collections::HashMap, iter::once, ops::Not};
 
 const FOOTER: &str = "This bot uses the Blizzard API, which mirrors the official card library, \
                       with supplemental data from HearthSim and Firestone. Code is available at \
@@ -20,8 +20,9 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
     // ego inflation
     if ctx.guild().is_none() && ctx.framework().options().owners.contains(&ctx.author().id) {
-        let guilds =
-            ctx.cache().guilds().into_iter().filter_map(|g| g.name(ctx.cache())).join("\n'");
+        let guilds = once(env!("CARGO_PKG_VERSION").to_string()).chain(
+            ctx.cache().guilds().into_iter().filter_map(|g| g.name(ctx.cache()))
+        ).join("\n");
 
         let reply = poise::CreateReply::default().content(guilds).ephemeral(true);
 
@@ -58,7 +59,11 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let embed = serenity::CreateEmbed::new()
         .title("Help")
         .fields(fields)
-        .footer(serenity::CreateEmbedFooter::new(FOOTER));
+        .footer(serenity::CreateEmbedFooter::new(format!(
+            "{} v:{}",
+            FOOTER,
+            env!("CARGO_PKG_VERSION"),
+        )));
 
     let reply = poise::CreateReply::default().embed(embed).ephemeral(true);
 

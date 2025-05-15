@@ -67,7 +67,7 @@ struct CardData {
 #[serde(from = "CardData")]
 pub struct Card {
     pub id: usize,
-    card_set: usize,
+    set: usize,
 
     pub name: CompactString,
     pub class: EnumSet<Class>,
@@ -96,7 +96,7 @@ impl Card {
 
         Self {
             id,
-            card_set: 1635,
+            set: 1635,
             name,
             class: EnumSet::empty(),
             cost,
@@ -113,7 +113,7 @@ impl Card {
     }
     #[must_use]
     pub fn card_set(&self, locale: Locale) -> CompactString {
-        crate::card_details::get_set_by_id(self.card_set, locale)
+        crate::card_details::get_set_by_id(self.set, locale)
     }
 
     pub(crate) const fn stats(&self) -> (Option<u8>, Option<u8>) {
@@ -200,7 +200,7 @@ impl From<CardData> for Card {
     fn from(c: CardData) -> Self {
         Self {
             id: c.id,
-            card_set: c.card_set_id,
+            set: c.card_set_id,
             name: c.name,
             class: c.multi_class_ids
                 .into_iter()
@@ -323,7 +323,7 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
         .into_iter()
         .filter(|c|
             // Filtering out hero portraits if not searching for incollectibles
-            (opts.noncollectibles || c.card_set != 17)
+            (opts.noncollectibles || c.set != 17)
             // Depending on opts.with_text, whether to restrict searches to card names
             // or expand to search boxes.
                 && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())))

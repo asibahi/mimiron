@@ -5,7 +5,6 @@ use mimiron::{
     localization::{Locale, Localize},
 };
 
-#[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
 pub struct CardArgs {
     /// Text to search for

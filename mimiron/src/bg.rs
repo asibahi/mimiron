@@ -46,7 +46,6 @@ struct CardData {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(clippy::struct_excessive_bools)]
 struct BGData {
     hero: bool,
     quest: bool,

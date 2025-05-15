@@ -372,7 +372,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
         _ => count.to_compact_string(),
     };
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
-    draw_text(&mut img, [255; 4], SLUG_WIDTH - (INFO_WIDTH + tw) / 2, 0, CARD_NAME_SCALE, &count);
+    draw_text(&mut img, [255; 4], SLUG_WIDTH - INFO_WIDTH.midpoint(tw), 0, CARD_NAME_SCALE, &count);
 
     img
 }

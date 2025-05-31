@@ -321,7 +321,7 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
     let fuzzed = if res.card_count == 0 {
       	let fuzzed = fuzzy_search_hearth_sim(search_term);
         match &fuzzed {
-            Some(fuzzed) if fuzzed.1 >= 160 => { // arbitrary
+            Some(fuzzed) if fuzzed.1 >= 150 => { // arbitrary
                 res = get_res(&fuzzed.0)
                     .call()?
                     .body_mut()
@@ -347,7 +347,8 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
             // Depending on opts.with_text, whether to restrict searches to card names
             // or expand to search boxes. Also if found a result with fuzzing, list it.
                 && (opts.with_text
-                    || fuzzed.is_some()
+                    || fuzzed.as_ref()
+                        .is_some_and(|f| c.name.to_lowercase().contains(&*f.0.to_lowercase()))
                     || c.name.to_lowercase().contains(&search_term.to_lowercase())))
         // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)
         .unique_by(|c| opts.reprints.either(c.id, c.text_elements()))

@@ -290,18 +290,24 @@ impl<'s> SearchOptions<'s> {
 }
 
 pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_> {
-    let search_term = &opts.search_term;
+    let search_term = opts.search_term;
 
-    let mut res = AGENT
-        .get("https://us.api.blizzard.com/hearthstone/cards")
-        .header("Authorization", format!("Bearer {}", get_access_token()))
-        .query("locale", opts.locale.to_compact_string())
-        .query("textFilter", search_term)
-        .query("pageSize", "500");
+    let get_res = |st| {
+        let mut res = AGENT
+            .get("https://us.api.blizzard.com/hearthstone/cards")
+            .header("Authorization", format!("Bearer {}", get_access_token()))
+            .query("locale", opts.locale.to_compact_string())
+            .query("textFilter", st)
+            .query("pageSize", "500");
 
-    if opts.noncollectibles {
-        res = res.query("collectible", "0,1");
-    }
+        if opts.noncollectibles {
+            res = res.query("collectible", "0,1");
+        }
+
+        res
+    };
+
+    let res = get_res(search_term);
 
     if opts.debug {
         let res = res.call()?.into_body().read_to_string()?;
@@ -310,12 +316,26 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
         return Ok(vec![].into_iter().peekable())
     }
 
-    let res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;
+    let mut res = res.call()?.body_mut().read_json::<CardSearchResponse<Card>>()?;
+
+    let fuzzed = if res.card_count == 0 {
+      	let fuzzed = fuzzy_search_hearth_sim(search_term);
+        match &fuzzed {
+            Some(fuzzed) if fuzzed.1 >= 160 => { // arbitrary
+                res = get_res(&fuzzed.0)
+                    .call()?
+                    .body_mut()
+                    .read_json::<CardSearchResponse<Card>>()?;
+            },
+            _ => {}
+        }
+        fuzzed
+    } else { None };
+
     anyhow::ensure!(
         res.card_count > 0,
         "No constructed card found with name or text {search_term}. {}",
-        fuzzy_search_hearth_sim(search_term)
-            .map_or("Check your spelling".to_owned(), |s| format!("Did you mean \"{s}\"?"))
+        fuzzed.map_or("Check your spelling".to_owned(), |s| format!("Did you mean \"{}\"?", s.0))
     );
 
     let mut cards = res
@@ -325,8 +345,10 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
             // Filtering out hero portraits if not searching for incollectibles
             (opts.noncollectibles || c.set != 17)
             // Depending on opts.with_text, whether to restrict searches to card names
-            // or expand to search boxes.
-                && (opts.with_text || c.name.to_lowercase().contains(&search_term.to_lowercase())))
+            // or expand to search boxes. Also if found a result with fuzzing, list it.
+                && (opts.with_text
+                    || fuzzed.is_some()
+                    || c.name.to_lowercase().contains(&search_term.to_lowercase())))
         // Cards may have copies in different sets, or cards with the same name but different text (Khadgar!!)
         .unique_by(|c| opts.reprints.either(c.id, c.text_elements()))
         // when searching for Ragnaros guarantee that Ragnaros is the first result.

@@ -5,3 +5,4 @@
 /target
 .shuttle*
 Secrets*.toml
+logs.zsh

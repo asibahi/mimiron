@@ -91,7 +91,7 @@ pub fn validate_id(input_id: usize) -> usize {
         .unwrap_or(input_id)
 }
 
-pub fn fuzzy_search_hearth_sim(search_term: &str) -> Option<CompactString> {
+pub fn fuzzy_search_hearth_sim(search_term: &str) -> Option<(CompactString, u32)> {
     // according to the docs doing these here is apparently horribly inefficient.
     // c'est la vie
     let mut matcher = Matcher::new(Config::DEFAULT);
@@ -101,5 +101,5 @@ pub fn fuzzy_search_hearth_sim(search_term: &str) -> Option<CompactString> {
             &mut matcher,
         );
 
-    results.first().map(|d| d.0.clone())
+    results.first().cloned()
 }

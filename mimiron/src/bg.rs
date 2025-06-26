@@ -386,10 +386,10 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
         // filtering only cards that include the text in the name, instead of the body,
         // depending on the args.text variable
         .filter(|c| opts.with_text
-                || opts
-                    .search_term
-                    .as_ref()
-                    .is_none_or(|name| c.name.to_lowercase().contains(&name.to_lowercase()))
+            || opts
+                .search_term
+                .as_ref()
+                .is_none_or(|name| c.name.to_lowercase().contains(&name.to_lowercase()))
         )
         .filter(|c| match opts.pool {
             Pool::All => true,
@@ -397,9 +397,9 @@ pub fn lookup(opts: SearchOptions<'_>) -> Result<impl Iterator<Item = Card> + '_
             Pool::Solos => matches!(c.pool, Pool::All | Pool::Solos),
         })
         .sorted_by_key(|c| c.name
-                .to_lowercase()
-                .starts_with(&opts.search_term.unwrap_or_default().to_lowercase())
-                .not()
+            .to_lowercase()
+            .starts_with(&opts.search_term.unwrap_or_default().to_lowercase())
+            .not()
         )
         .peekable();
 
@@ -439,7 +439,7 @@ pub fn get_associated_cards(
                 }
             }
 
-            if let Some(res) = buddy_id.and_then(|id| get_card_by_id(id, locale).ok()) {
+            if let Some(id) = buddy_id && let Ok(res) = get_card_by_id(*id, locale) {
                 cards.push((res, Association::Buddy));
             }
         }

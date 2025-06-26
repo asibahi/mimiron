@@ -488,7 +488,7 @@ fn specific_card_adjustments(deck: &mut Deck) {
 }
 
 fn format_count(count: usize) -> CompactString {
-    (count > 1).then(|| format_compact!("{count}x")).unwrap_or_default()
+    if count > 1 { format_compact!("{count}x")  } else { CompactString::default() }
 }
 
 #[cfg(test)]

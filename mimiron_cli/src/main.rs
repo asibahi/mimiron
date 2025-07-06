@@ -60,7 +60,7 @@ enum Commands {
     Archetype { input: String },
 
     #[clap(hide = true)]
-    News,
+    News { #[arg(short, default_value("3"))] count: usize },
 }
 
 pub fn run() -> Result<()> {
@@ -83,8 +83,10 @@ pub fn run() -> Result<()> {
             mimiron::meta::meta_search(&input, mimiron::deck::Format::Standard, locale)?
                 .in_locale(locale)
         ),
-
-        Commands::News => mimiron::news::get_news()?.take(3).for_each(|news| println!("{news}")),
+        Commands::News { count } => mimiron::news::get_news()?
+            .take(count).enumerate()
+            .collect::<Vec<_>>().into_iter().rev()
+            .for_each(|(idx, news)| println!("{}. {news}", idx + 1)),
     }
 
     Ok(())

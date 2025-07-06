@@ -24,7 +24,7 @@ impl Display for NewsArticle {
                 textwrap::Options::new(textwrap::termwidth() - 10)
                     .initial_indent(&format!("{:>8}: ", "Summary".bold()))
                     .subsequent_indent("          "),
-            ),
+            ).trim_end(),
             "Link".bold(),
             self.default_url.underline().bright_blue()
         )

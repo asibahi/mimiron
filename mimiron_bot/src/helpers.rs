@@ -143,6 +143,9 @@ pub async fn on_error(
             let mut error = error.to_string();
             if rand::random::<u8>() % 5 == 0 && ctx.command().category != Some("Deck".into()) {
                 error += "\nOther ways to search can be found in /help.";
+                   if rand::random::<u8>() % 3 == 0 {
+                       error += "e.g. /allcards or /cardtext.";
+                   }
             }
 
             tracing::warn!(command, guild, invocation, error, "Command returned an error.");

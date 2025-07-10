@@ -33,7 +33,7 @@ either = { version = "1.15", features = ["serde"] }
 nucleo-matcher = "0.3.1"
 parking_lot = "0.12"
 compact_str = { version = "0.9", features = ["serde"] }
-enumset = "1.1.6"
+enumset = "1.1.7"
 
 # bot deps
 poise = { git = "https://github.com/serenity-rs/poise.git", rev = "22b5b01" }

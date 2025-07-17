@@ -87,6 +87,32 @@ pub async fn news(ctx: Context<'_>) -> Result<(), Error> {
     .await
 }
 
+/// Patch Time. Next Tuesday or Thurday 5pm UTC
+#[poise::command(slash_command, install_context = "Guild|User", category = "General")]
+pub async fn patchtime(ctx: Context<'_>) -> Result<(), Error> {
+    use chrono::{Datelike, Days, NaiveDateTime, NaiveTime, Weekday};
+    let mut now = chrono::Utc::now();
+
+    let five = NaiveTime::from_hms_opt(17, 0, 0).unwrap();
+    if now.time() > five {
+        now = now.checked_add_days(Days::new(1)).unwrap();
+    }
+
+    let patch = now.date_naive();
+    let mut patch = NaiveDateTime::new(patch, five);
+
+    while patch.weekday() != Weekday::Tue && patch.weekday() != Weekday::Thu {
+        patch = patch.checked_add_days(Days::new(1)).unwrap();
+    }
+
+    println!("UTC: {} {}", patch, patch.weekday());
+    let reply = poise::CreateReply::default()
+        .content(format!("<t:{0}:F> <t:{0}:R>", patch.and_utc().timestamp()));
+    ctx.send(reply).await?;
+
+    Ok(())
+}
+
 pub trait Emoji: Copy {
     fn emoji(self) -> &'static str;
 }

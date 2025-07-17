@@ -1,6 +1,6 @@
 [package]
 name = "mimiron_bot"
-version = "1.2.1"
+version = "1.2.2"
 edition = "2024"
 publish = false
 authors = ["Abdul Rahman Sibahi <a.sibahi@gmail.com"]
@@ -22,3 +22,5 @@ shuttle-runtime.workspace = true
 tracing.workspace = true
 urlencoding.workspace = true
 rand.workspace = true
+
+chrono.workspace = true

@@ -6,7 +6,7 @@ use mimiron::{
     localization::Locale,
 };
 use poise::serenity_prelude as serenity;
-use std::{cell::LazyCell, collections::HashMap, iter::once, ops::Not};
+use std::{cell::LazyCell, collections::HashMap, ops::Not};
 
 const FOOTER: &str = "This bot uses the Blizzard API, which mirrors the official card library, \
                       with supplemental data from HearthSim and Firestone. Code is available at \
@@ -20,11 +20,9 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
     // ego inflation
     if ctx.guild().is_none() && ctx.framework().options().owners.contains(&ctx.author().id) {
-        let guilds = once(env!("CARGO_PKG_VERSION").to_string()).chain(
-            ctx.cache().guilds().into_iter().filter_map(|g| g.name(ctx.cache()))
-        ).join("\n");
-
-        let reply = poise::CreateReply::default().content(guilds).ephemeral(true);
+        let reply = poise::CreateReply::default()
+            .content(env!("CARGO_PKG_VERSION").to_string())
+            .ephemeral(true);
 
         ctx.send(reply).await?;
 
@@ -90,7 +88,7 @@ pub async fn news(ctx: Context<'_>) -> Result<(), Error> {
     .await
 }
 
-/// Patch Time. Next Tuesday or Thurday 5pm UTC
+/// Patch Time. Next Tuesday or Thurday 10am Pacific
 #[poise::command(slash_command, install_context = "Guild|User", category = "General")]
 pub async fn patchtime(ctx: Context<'_>) -> Result<(), Error> {
 	use jiff::{

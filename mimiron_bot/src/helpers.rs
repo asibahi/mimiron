@@ -28,6 +28,9 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
         ctx.send(reply).await?;
 
+        // registeration buttons
+        poise::builtins::register_application_commands_buttons(ctx).await?;
+
         return Ok(());
     }
 
@@ -90,24 +93,24 @@ pub async fn news(ctx: Context<'_>) -> Result<(), Error> {
 /// Patch Time. Next Tuesday or Thurday 5pm UTC
 #[poise::command(slash_command, install_context = "Guild|User", category = "General")]
 pub async fn patchtime(ctx: Context<'_>) -> Result<(), Error> {
-    use chrono::{Datelike, Days, NaiveDateTime, NaiveTime, Weekday};
-    let mut now = chrono::Utc::now();
+	use jiff::{
+        Zoned,
+        civil::{Time, Weekday},
+        tz::TimeZone,
+    };
+    let now = Zoned::now().with_time_zone(TimeZone::get("America/Los_Angeles")?);
 
-    let five = NaiveTime::from_hms_opt(17, 0, 0).unwrap();
-    if now.time() > five {
-        now = now.checked_add_days(Days::new(1)).unwrap();
+    let mut patch = now.with().time(Time::constant(10, 0, 0, 0)).build()?;
+
+    while patch < now || !matches!(patch.weekday(), Weekday::Tuesday | Weekday::Thursday) {
+        patch = patch.tomorrow()?;
     }
 
-    let patch = now.date_naive();
-    let mut patch = NaiveDateTime::new(patch, five);
+    let reply = poise::CreateReply::default().content(format!(
+        "<t:{0}:F> <t:{0}:R>",
+        patch.timestamp().as_second()
+    ));
 
-    while patch.weekday() != Weekday::Tue && patch.weekday() != Weekday::Thu {
-        patch = patch.checked_add_days(Days::new(1)).unwrap();
-    }
-
-    println!("UTC: {} {}", patch, patch.weekday());
-    let reply = poise::CreateReply::default()
-        .content(format!("<t:{0}:F> <t:{0}:R>", patch.and_utc().timestamp()));
     ctx.send(reply).await?;
 
     Ok(())

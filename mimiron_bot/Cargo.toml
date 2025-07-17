@@ -22,5 +22,4 @@ shuttle-runtime.workspace = true
 tracing.workspace = true
 urlencoding.workspace = true
 rand.workspace = true
-
-chrono.workspace = true
+jiff.workspace = true

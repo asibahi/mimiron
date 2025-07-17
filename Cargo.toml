@@ -12,6 +12,7 @@ image = { version = "0.25", default-features = false, features = [
     "jpeg",
     "rayon",
 ] }
+jiff = "0.2.15"
 
 # lib deps
 colored = "3.0"
@@ -46,7 +47,6 @@ rand = "0.9"
 # cli deps
 clap = { version = "4", features = ["derive", "env"] }
 directories = "6.0"
-chrono = "0.4"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 
 [workspace.lints.rust]

@@ -101,7 +101,7 @@ pub fn run_one(args: DeckArgs, locale: Locale) -> Result<()> {
             "{} {} {}.png",
             deck.title,
             deck.deck_code.chars().filter(|c| c.is_alphanumeric()).collect::<String>(),
-            chrono::Local::now().format("%Y%m%d %H%M")
+            jiff::Zoned::now().strftime("%Y%m%d %H%M")
         );
 
         let save_file = args

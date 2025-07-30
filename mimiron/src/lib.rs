@@ -19,17 +19,17 @@ pub use text_utils::CardTextDisplay;
 pub const BLIZZARD_CLIENT_ID: &str = "BLIZZARD_CLIENT_ID";
 pub const BLIZZARD_CLIENT_SECRET: &str = "BLIZZARD_CLIENT_SECRET";
 
-pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(||
-    ureq::Agent::config_builder()
-        .timeout_connect(Some(std::time::Duration::from_secs(2)))
-        .user_agent("mimiron cli https://github.com/asibahi/mimiron")
-        .build()
-        .into()
-);
+pub(crate) static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
+  ureq::Agent::config_builder()
+    .timeout_connect(Some(std::time::Duration::from_secs(2)))
+    .user_agent("mimiron cli https://github.com/asibahi/mimiron")
+    .build()
+    .into()
+});
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CardSearchResponse<T> {
-    pub cards: Vec<T>,
-    pub card_count: usize,
+  pub cards: Vec<T>,
+  pub card_count: usize,
 }

@@ -14,65 +14,67 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
-    let discord_token =
-        secret_store
-            .get("DISCORD_TOKEN")
-            .context("DISCORD_TOKEN was not found")?;
+  let discord_token = secret_store.get("DISCORD_TOKEN").context("DISCORD_TOKEN was not found")?;
 
-    mimiron::set_blizzard_client_auth(
-        secret_store
-            .get(mimiron::BLIZZARD_CLIENT_ID)
-            .with_context(|| format!("{} was not found", mimiron::BLIZZARD_CLIENT_ID))?,
-        secret_store
-            .get(mimiron::BLIZZARD_CLIENT_SECRET)
-            .with_context(|| format!("{} was not found", mimiron::BLIZZARD_CLIENT_SECRET))?,
-    );
+  mimiron::set_blizzard_client_auth(
+    secret_store
+      .get(mimiron::BLIZZARD_CLIENT_ID)
+      .with_context(|| format!("{} was not found", mimiron::BLIZZARD_CLIENT_ID))?,
+    secret_store
+      .get(mimiron::BLIZZARD_CLIENT_SECRET)
+      .with_context(|| format!("{} was not found", mimiron::BLIZZARD_CLIENT_SECRET))?,
+  );
 
-    let framework = poise::Framework::builder()
-        .options(poise::FrameworkOptions {
-            commands: vec![
-                card_cmds::card(),
-                card_cmds::cardtext(),
-                card_cmds::cardreprints(),
-                card_cmds::allcards(),
-                card_cmds::keyword(),
-                bg_cmds::bg(),
-                bg_cmds::battlegrounds(),
-                bg_cmds::bgtext(),
-                bg_cmds::bgtier(),
-                deck_cmds::deck(),
-                deck_cmds::code(),
-                deck_cmds::deck_context_menu(),
-                deck_cmds::deckcomp(),
-                deck_cmds::archetype(),
-                deck_cmds::metadeck(),
-                deck_cmds::metasnap(),
-                helpers::news(),
-                helpers::patchtime(),
-                helpers::help(),
-            ],
-            on_error: |error|
-                Box::pin(async move {
-                    if let Err(e) = helpers::on_error(error).await {
-                        tracing::error!("Error while handling error: {}", e);
-                    }
-                }),
-            post_command: |ctx| Box::pin(async move { helpers::on_success(&ctx); }),
-            ..Default::default()
+  let framework = poise::Framework::builder()
+    .options(poise::FrameworkOptions {
+      commands: vec![
+        card_cmds::card(),
+        card_cmds::cardtext(),
+        card_cmds::cardreprints(),
+        card_cmds::allcards(),
+        card_cmds::keyword(),
+        bg_cmds::bg(),
+        bg_cmds::battlegrounds(),
+        bg_cmds::bgtext(),
+        bg_cmds::bgtier(),
+        deck_cmds::deck(),
+        deck_cmds::code(),
+        deck_cmds::deck_context_menu(),
+        deck_cmds::deckcomp(),
+        deck_cmds::archetype(),
+        deck_cmds::metadeck(),
+        deck_cmds::metasnap(),
+        helpers::news(),
+        helpers::patchtime(),
+        helpers::help(),
+      ],
+      on_error: |error| {
+        Box::pin(async move {
+          if let Err(e) = helpers::on_error(error).await {
+            tracing::error!("Error while handling error: {}", e);
+          }
         })
-        .setup(|ctx, _ready, framework|
-            Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
-            })
-        )
-        .build();
+      },
+      post_command: |ctx| {
+        Box::pin(async move {
+          helpers::on_success(&ctx);
+        })
+      },
+      ..Default::default()
+    })
+    .setup(|ctx, _ready, framework| {
+      Box::pin(async move {
+        poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+        Ok(Data {})
+      })
+    })
+    .build();
 
-    let client =
-        serenity::ClientBuilder::new(discord_token, serenity::GatewayIntents::non_privileged())
-            .framework(framework)
-            .await
-            .map_err(shuttle_runtime::CustomError::new)?;
+  let client =
+    serenity::ClientBuilder::new(discord_token, serenity::GatewayIntents::non_privileged())
+      .framework(framework)
+      .await
+      .map_err(shuttle_runtime::CustomError::new)?;
 
-    Ok(client.into())
+  Ok(client.into())
 }

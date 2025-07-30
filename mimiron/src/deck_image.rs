@@ -23,27 +23,32 @@ use rayon::prelude::*;
 use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock};
 
 // Numbers based on the crops provided by Blizzard API
-const CROP_WIDTH        : u32 = 243;
-const CROP_HEIGHT       : u32 = 64;
+const CROP_WIDTH: u32 = 243;
+const CROP_HEIGHT: u32 = 64;
 
-const INFO_WIDTH        : u32 = CROP_HEIGHT;
-const COLOR_BAND_WIDTH  : u32 = CROP_HEIGHT / 8;
-const MANA_WIDTH        : u32 = INFO_WIDTH - COLOR_BAND_WIDTH;
+const INFO_WIDTH: u32 = CROP_HEIGHT;
+const COLOR_BAND_WIDTH: u32 = CROP_HEIGHT / 8;
+const MANA_WIDTH: u32 = INFO_WIDTH - COLOR_BAND_WIDTH;
 
-const MARGIN            : u32 = 5;
+const MARGIN: u32 = 5;
 
-const SLUG_WIDTH        : u32 = CROP_WIDTH * 2 + INFO_WIDTH;
-const ROW_HEIGHT        : u32 = CROP_HEIGHT + MARGIN;
-const COLUMN_WIDTH      : u32 = SLUG_WIDTH + MARGIN;
+const SLUG_WIDTH: u32 = CROP_WIDTH * 2 + INFO_WIDTH;
+const ROW_HEIGHT: u32 = CROP_HEIGHT + MARGIN;
+const COLUMN_WIDTH: u32 = SLUG_WIDTH + MARGIN;
 
-const CROP_IMAGE_OFFSET : u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
+const CROP_IMAGE_OFFSET: u32 = SLUG_WIDTH - CROP_WIDTH - INFO_WIDTH;
 
-const HEADING_SCALE     : f32 = 50.0;
-const CARD_NAME_SCALE   : f32 = 40.0;
+const HEADING_SCALE: f32 = 50.0;
+const CARD_NAME_SCALE: f32 = 40.0;
 
 macro_rules! lazy {
     ($s:literal, $f: literal) => {
-        (LazyLock::new(|| FontRef::try_from_slice(include_bytes!(concat!("../fonts/", $s))).unwrap()), $f)
+        (
+            LazyLock::new(|| {
+                FontRef::try_from_slice(include_bytes!(concat!("../fonts/", $s))).unwrap()
+            }),
+            $f,
+        )
     };
 }
 
@@ -51,11 +56,9 @@ macro_rules! lazy {
 static FONTS: [(LazyLock<FontRef<'_>>, f32); 4] = [
     // Base font
     lazy!("YanoneKaffeesatz-Medium.ttf", 1.0),
-
     // Fallbacks
     lazy!("NotoSansCJK-Medium.ttc", 1.2),
     lazy!("NotoSansThaiLooped-Medium.ttf", 1.3),
-
     // pixel font
     lazy!("Jersey10-Regular.ttf", 1.0),
 ];
@@ -79,12 +82,17 @@ pub enum ImageOptions {
     Adaptable,
 }
 
-pub fn get(deck: &Deck, shape: ImageOptions) -> RgbaImage {
+pub fn get(
+    deck: &Deck,
+    shape: ImageOptions,
+) -> RgbaImage {
     match shape {
         ImageOptions::Groups => img_groups_format(deck),
         ImageOptions::Adaptable => img_columns_format(deck, None, true),
-        ImageOptions::Regular { columns, inline_sideboard } =>
-            img_columns_format(deck, NonZeroU32::new(columns as u32), inline_sideboard),
+        ImageOptions::Regular {
+            columns,
+            inline_sideboard,
+        } => img_columns_format(deck, NonZeroU32::new(columns as u32), inline_sideboard),
     }
 }
 
@@ -96,12 +104,17 @@ fn img_columns_format(
     let ordered_main_deck = deck.cards.iter().sorted().dedup();
     let slug_map = get_cards_slugs(
         deck,
-        if inline_sideboard { SideboardStyle::Indented } else { SideboardStyle::EndOfDeck },
+        if inline_sideboard {
+            SideboardStyle::Indented
+        } else {
+            SideboardStyle::EndOfDeck
+        },
     );
 
     let (mut img, pos_in_img) = {
         let length = (slug_map.len()
-            + deck.sideboard_cards
+            + deck
+                .sideboard_cards
                 .as_ref()
                 .filter(|_| !inline_sideboard)
                 .map_or(0, Vec::len)) as u32;
@@ -133,7 +146,12 @@ fn img_columns_format(
 
         draw_footer(&mut img, deck.class.color());
 
-        (img, move |c| (c / cards_in_col, c % cards_in_col + (!vertical_title) as u32))
+        (img, move |c| {
+            (
+                c / cards_in_col,
+                c % cards_in_col + (!vertical_title) as u32,
+            )
+        })
     };
 
     let mut cursor = 0;
@@ -154,7 +172,14 @@ fn img_columns_format(
                 .flatten()
                 .filter(|sb| sb.sideboard_card.id == card.id)
                 .flat_map(|sb| sb.cards_in_sideboard.iter().sorted().dedup())
-                .map(|c| &slug_map[&(c.id, Zone::Sideboard { sb_card_id: card.id })])
+                .map(|c| {
+                    &slug_map[&(
+                        c.id,
+                        Zone::Sideboard {
+                            sb_card_id: card.id,
+                        },
+                    )]
+                })
             {
                 let (col, row) = pos_in_img(cursor);
 
@@ -174,11 +199,14 @@ fn img_columns_format(
             );
             cursor += 1;
 
-            for slug in
-                sb.cards_in_sideboard.iter().sorted().dedup().map(|c|
-                    &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
-                )
-            {
+            for slug in sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
+                &slug_map[&(
+                    c.id,
+                    Zone::Sideboard {
+                        sb_card_id: sb.sideboard_card.id,
+                    },
+                )]
+            }) {
                 let (col, row) = pos_in_img(cursor);
                 _ = img.copy_from(slug, col * COLUMN_WIDTH + MARGIN, row * ROW_HEIGHT + MARGIN);
 
@@ -218,10 +246,9 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
         }
 
         let rows = 1 + class_cards.len().max(neutral_cards.len()).max(
-            deck.sideboard_cards
-                .iter()
-                .flatten()
-                .fold(0, |acc, sb| acc + (sb.cards_in_sideboard.iter().unique().count() + 1)),
+            deck.sideboard_cards.iter().flatten().fold(0, |acc, sb| {
+                acc + (sb.cards_in_sideboard.iter().unique().count() + 1)
+            }),
         ) as u32;
 
         RgbaImage::from_pixel(
@@ -257,11 +284,14 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
             );
             sb_cursor += 1;
 
-            for slug in
-                sb.cards_in_sideboard.iter().sorted().dedup().map(|c|
-                    &slug_map[&(c.id, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })]
-                )
-            {
+            for slug in sb.cards_in_sideboard.iter().sorted().dedup().map(|c| {
+                &slug_map[&(
+                    c.id,
+                    Zone::Sideboard {
+                        sb_card_id: sb.sideboard_card.id,
+                    },
+                )]
+            }) {
                 _ = img.copy_from(slug, sb_col, sb_cursor * ROW_HEIGHT + MARGIN);
                 sb_cursor += 1;
             }
@@ -278,9 +308,17 @@ enum Zone {
 }
 
 #[derive(Clone, Copy)]
-enum SideboardStyle { EndOfDeck, Indented }
+enum SideboardStyle {
+    EndOfDeck,
+    Indented,
+}
 
-fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyle) -> RgbaImage {
+fn draw_card_slug(
+    card: &Card,
+    count: usize,
+    zone: Zone,
+    sb_style: SideboardStyle,
+) -> RgbaImage {
     assert!(count > 0);
 
     // if card type is Unknown data other than card id is usually junk.
@@ -292,7 +330,11 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     let alpha = |(x, y, z)| [x, y, z, 255];
 
     let r_color = alpha(rarity.color());
-    let c_color = card.class.iter().map(|c| alpha(c.color())).collect::<Vec<_>>();
+    let c_color = card
+        .class
+        .iter()
+        .map(|c| alpha(c.color()))
+        .collect::<Vec<_>>();
 
     let indent = match (zone, sb_style) {
         (Zone::MainDeck, _) | (_, SideboardStyle::EndOfDeck) => 0,
@@ -300,7 +342,7 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     };
 
     // main canvas
-    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y|
+    let mut img = RgbaImage::from_fn(SLUG_WIDTH, CROP_HEIGHT, |x, y| {
         match x {
             // Legendary color for Sideboard indent
             _ if x < indent.saturating_sub(MARGIN) => alpha(Rarity::Legendary.color()),
@@ -315,12 +357,15 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
             _ if x <= indent + MANA_WIDTH + COLOR_BAND_WIDTH => {
                 let idx = y * c_color.len() as u32 / CROP_HEIGHT;
                 // Neutral color
-                c_color.get(idx as usize).copied().unwrap_or([169, 169, 169, 255])
+                c_color
+                    .get(idx as usize)
+                    .copied()
+                    .unwrap_or([169, 169, 169, 255])
             }
             _ => [10, 10, 10, 255],
         }
         .into()
-    );
+    });
 
     match get_crop_image(card).and_then(|crop| Ok(img.copy_from(&crop, CROP_IMAGE_OFFSET, 0)?)) {
         Ok(()) => {
@@ -343,7 +388,14 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
     }
 
     // card name
-    draw_text(&mut img, [255; 4], indent + INFO_WIDTH + 10, 0, CARD_NAME_SCALE, &name);
+    draw_text(
+        &mut img,
+        [255; 4],
+        indent + INFO_WIDTH + 10,
+        0,
+        CARD_NAME_SCALE,
+        &name,
+    );
 
     // card cost
     let cost = cost.to_compact_string();
@@ -372,24 +424,44 @@ fn draw_card_slug(card: &Card, count: usize, zone: Zone, sb_style: SideboardStyl
         _ => count.to_compact_string(),
     };
     let (tw, _) = drawing::text_size(CARD_NAME_SCALE, &*FONTS[0].0, &count);
-    draw_text(&mut img, [255; 4], SLUG_WIDTH - INFO_WIDTH.midpoint(tw), 0, CARD_NAME_SCALE, &count);
+    draw_text(
+        &mut img,
+        [255; 4],
+        SLUG_WIDTH - INFO_WIDTH.midpoint(tw),
+        0,
+        CARD_NAME_SCALE,
+        &count,
+    );
 
     img
 }
 
-fn get_cards_slugs(deck: &Deck, sb_style: SideboardStyle) -> HashMap<(usize, Zone), RgbaImage> {
+fn get_cards_slugs(
+    deck: &Deck,
+    sb_style: SideboardStyle,
+) -> HashMap<(usize, Zone), RgbaImage> {
     deck.cards
         .iter()
         .sorted()
         .dedup_with_count()
         .map(|(count, card)| (card, count, Zone::MainDeck))
-        .chain(deck.sideboard_cards.iter().flat_map(
-            |sbs| sbs.iter().flat_map(
-                |sb| sb.cards_in_sideboard.iter().sorted().dedup_with_count().map(
-                    |(count, card)| (card, count, Zone::Sideboard { sb_card_id: sb.sideboard_card.id })
-                )
-            )
-        ))
+        .chain(deck.sideboard_cards.iter().flat_map(|sbs| {
+            sbs.iter().flat_map(|sb| {
+                sb.cards_in_sideboard
+                    .iter()
+                    .sorted()
+                    .dedup_with_count()
+                    .map(|(count, card)| {
+                        (
+                            card,
+                            count,
+                            Zone::Sideboard {
+                                sb_card_id: sb.sideboard_card.id,
+                            },
+                        )
+                    })
+            })
+        }))
         .par_bridge()
         .map(|(card, count, zone)| {
             let slug = draw_card_slug(card, count, zone, sb_style);
@@ -404,10 +476,18 @@ fn draw_heading_slug(heading: &str) -> RgbaImage {
     img
 }
 
-fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
+fn draw_deck_title(
+    img: &mut RgbaImage,
+    deck: &Deck,
+    vertical: bool,
+) {
     let offset = get_class_icon(deck.class).map_or(MARGIN, |class_img| {
-        let mut class_img =
-            imageops::resize(&class_img, INFO_WIDTH, CROP_HEIGHT, imageops::FilterType::Gaussian);
+        let mut class_img = imageops::resize(
+            &class_img,
+            INFO_WIDTH,
+            CROP_HEIGHT,
+            imageops::FilterType::Gaussian,
+        );
         if vertical {
             class_img = imageops::rotate270(&class_img);
         }
@@ -416,10 +496,20 @@ fn draw_deck_title(img: &mut RgbaImage, deck: &Deck, vertical: bool) {
         MARGIN + INFO_WIDTH + 10
     });
 
-    draw_text(img, [10, 10, 10, 255], offset, MARGIN, HEADING_SCALE, &deck.title);
+    draw_text(
+        img,
+        [10, 10, 10, 255],
+        offset,
+        MARGIN,
+        HEADING_SCALE,
+        &deck.title,
+    );
 }
 
-fn draw_footer(img: &mut RgbaImage, (r, g, b): (u8, u8, u8)) {
+fn draw_footer(
+    img: &mut RgbaImage,
+    (r, g, b): (u8, u8, u8),
+) {
     let text = "github.com/asibahi/mimiron";
     let (tw, th) = drawing::text_size(20.0, &*FONTS[3].0, text);
 
@@ -448,7 +538,11 @@ fn draw_footer(img: &mut RgbaImage, (r, g, b): (u8, u8, u8)) {
 fn get_class_icon(class: Class) -> Result<RgbaImage> {
     let link = format!(
         "https://render.worldofwarcraft.com/us/icons/56/classicon_{}.jpg",
-        class.in_en_us().to_compact_string().to_ascii_lowercase().replace(' ', "")
+        class
+            .in_en_us()
+            .to_compact_string()
+            .to_ascii_lowercase()
+            .replace(' ', "")
     );
 
     let buf = AGENT.get(link).call()?.body_mut().read_to_vec()?;
@@ -476,11 +570,14 @@ fn get_crop_image(card: &Card) -> Result<RgbaImage> {
             Ok(mut res) => break res.body_mut().read_to_vec()?,
             Err(ureq::Error::Io(err))
                 if counter > 0 && err.kind() == std::io::ErrorKind::ConnectionReset =>
-            {   // probably not a good idea
+            {
+                // probably not a good idea
                 std::thread::sleep(std::time::Duration::from_millis(200));
                 counter -= 1;
-            },
-            err => { err?; },
+            }
+            err => {
+                err?;
+            }
         }
     };
     Ok(image::load_from_memory(&buf)?.into())
@@ -499,9 +596,8 @@ fn draw_text(
     let y_offset = (CROP_HEIGHT - v_metric as u32) / 2 + y_offset;
 
     for c in text.chars() {
-        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0)
-        else {
-            continue
+        let Some((f_f, f_s)) = FONTS.iter().find(|(f_f, _)| f_f.glyph_id(c).0 > 0) else {
+            continue;
         };
 
         let f_f = f_f.as_scaled(scale * f_s);
@@ -511,7 +607,9 @@ fn draw_text(
 
         caret += f_f.h_advance(g.id);
 
-        let Some(g) = f_f.outline_glyph(g) else { continue };
+        let Some(g) = f_f.outline_glyph(g) else {
+            continue;
+        };
 
         let bb = g.px_bounds();
         g.draw(|gx, gy, gv| {

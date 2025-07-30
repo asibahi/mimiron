@@ -282,7 +282,7 @@ impl RawCodeData {
         #[cfg(debug_assertions)]
         {
             let raw_code = nom::combinator::iterator(decoded, varint()).fuse().join(", ");
-            tracing::info!(raw_code);
+            tracing::info!(code, raw_code);
         }
 
         preceded(tag([0, 1].as_slice()), (
@@ -356,6 +356,7 @@ pub fn lookup(opts: LookupOptions<'_>) -> Result<Deck> {
     let title = code
         .split_once("###")
         .and_then(|(_, s)| s.split_once("# ")) // space added to allow for titles that have #1 in them.
+        .filter(|(s, _)| !s.trim().is_empty())
         .map(|(s, _)| s.trim().to_compact_string());
 
     Ok(raw_data_to_deck(opts, raw_data, title))

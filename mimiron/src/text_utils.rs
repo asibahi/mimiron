@@ -245,7 +245,7 @@ fn traverse_text_tree<'s>(tree: TextTree<'s>) -> impl Iterator<Item = TextPiece<
 
     let mut visit = |tp: TextPiece<'s>| match collector.last_mut() {
         Some(last) if last.style == tp.style || tp.text.trim().is_empty() => {
-            last.text.to_mut().push_str(&tp.text)
+            last.text.to_mut().push_str(&tp.text);
         }
         _ => collector.push(tp),
     };

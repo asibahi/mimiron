@@ -535,7 +535,7 @@ pub fn get_associated_cards(
                 if all {
                     match card.card_type {
                         BGCardType::Minion { .. } if Some(card.id) != *buddy_id => {
-                            cards.push((card, Association::Token))
+                            cards.push((card, Association::Token));
                         }
                         BGCardType::HeroPower { .. } => cards.push((card, Association::HeroPower)),
                         _ => (),

@@ -81,7 +81,7 @@ pub fn run() -> Result<()> {
         Commands::Token => println!("{}", mimiron::get_access_token()),
 
         Commands::Keyword { input } => {
-            mimiron::keyword::lookup(&input)?.for_each(|kw| println!("{}", kw.in_locale(locale)))
+            mimiron::keyword::lookup(&input)?.for_each(|kw| println!("{}", kw.in_locale(locale)));
         }
         Commands::Archetype { input } => println!(
             "{}",

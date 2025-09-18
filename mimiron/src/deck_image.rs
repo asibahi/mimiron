@@ -20,7 +20,7 @@ use image::{GenericImage, GenericImageView, Rgba, RgbaImage, imageops};
 use imageproc::{drawing, pixelops::interpolate, rect::Rect};
 use itertools::Itertools;
 use rayon::prelude::*;
-use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock};
+use std::{collections::HashMap, num::NonZeroU32, ops::Not, sync::LazyLock, time::Duration};
 
 // Numbers based on the crops provided by Blizzard API
 const CROP_WIDTH: u32 = 243;

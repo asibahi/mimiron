@@ -112,12 +112,11 @@ fn img_columns_format(
     );
 
     let (mut img, pos_in_img) = {
-        let length = (slug_map.len()
-            + deck
-                .sideboard_cards
-                .as_ref()
-                .filter(|_| !inline_sideboard)
-                .map_or(0, Vec::len)) as u32;
+        let length = if inline_sideboard {
+            slug_map.len()
+        } else {
+            slug_map.len() + deck.sideboard_cards.len()
+        } as u32;
 
         let col_count =
             col_count.map_or_else(|| (length / 15 + (length % 15).min(1)).max(2), u32::from);
@@ -169,7 +168,6 @@ fn img_columns_format(
             for slug in deck
                 .sideboard_cards
                 .iter()
-                .flatten()
                 .filter(|sb| sb.sideboard_card.id == card.id)
                 .flat_map(|sb| sb.cards_in_sideboard.iter().sorted().dedup())
                 .map(|c| {
@@ -190,7 +188,7 @@ fn img_columns_format(
     }
 
     if inline_sideboard.not() {
-        for sb in deck.sideboard_cards.iter().flatten() {
+        for sb in deck.sideboard_cards.iter() {
             let (col, row) = pos_in_img(cursor);
             _ = img.copy_from(
                 &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),
@@ -241,12 +239,12 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
         if neutral_cards.is_empty().not() {
             columns += 1;
         }
-        if deck.sideboard_cards.is_some() {
+        if deck.sideboard_cards.is_empty().not() {
             columns += 1;
         }
 
         let rows = 1 + class_cards.len().max(neutral_cards.len()).max(
-            deck.sideboard_cards.iter().flatten().fold(0, |acc, sb| {
+            deck.sideboard_cards.iter().fold(0, |acc, sb| {
                 acc + (sb.cards_in_sideboard.iter().unique().count() + 1)
             }),
         ) as u32;
@@ -271,12 +269,13 @@ fn img_groups_format(deck: &Deck) -> RgbaImage {
         _ = img.copy_from(slug, COLUMN_WIDTH + MARGIN, i * ROW_HEIGHT + MARGIN);
     }
 
-    if let Some(sideboards) = &deck.sideboard_cards {
+    {
+        // sideboards
         // always last column
         let sb_col = img.width() - COLUMN_WIDTH;
         let mut sb_cursor = 1;
 
-        for sb in sideboards {
+        for sb in &deck.sideboard_cards {
             _ = img.copy_from(
                 &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),
                 sb_col,
@@ -445,22 +444,20 @@ fn get_cards_slugs(
         .sorted()
         .dedup_with_count()
         .map(|(count, card)| (card, count, Zone::MainDeck))
-        .chain(deck.sideboard_cards.iter().flat_map(|sbs| {
-            sbs.iter().flat_map(|sb| {
-                sb.cards_in_sideboard
-                    .iter()
-                    .sorted()
-                    .dedup_with_count()
-                    .map(|(count, card)| {
-                        (
-                            card,
-                            count,
-                            Zone::Sideboard {
-                                sb_card_id: sb.sideboard_card.id,
-                            },
-                        )
-                    })
-            })
+        .chain(deck.sideboard_cards.iter().flat_map(|sb| {
+            sb.cards_in_sideboard
+                .iter()
+                .sorted()
+                .dedup_with_count()
+                .map(|(count, card)| {
+                    (
+                        card,
+                        count,
+                        Zone::Sideboard {
+                            sb_card_id: sb.sideboard_card.id,
+                        },
+                    )
+                })
         }))
         .par_bridge()
         .map(|(card, count, zone)| {

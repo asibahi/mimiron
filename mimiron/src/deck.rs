@@ -92,7 +92,9 @@ struct DeckData {
     hero: Card,
     class: Details<u8>,
     cards: Vec<Card>,
-    sideboard_cards: Option<Vec<Sideboard>>,
+
+    #[serde(default)]
+    sideboard_cards: Vec<Sideboard>,
     invalid_card_ids: Option<Vec<usize>>,
 }
 
@@ -104,7 +106,7 @@ pub struct Deck {
     pub format: Format,
     pub class: Class,
     pub cards: Vec<Card>,
-    pub sideboard_cards: Option<Vec<Sideboard>>,
+    pub sideboard_cards: Vec<Sideboard>,
     invalid_card_ids: Option<Vec<usize>>,
 }
 impl Deck {
@@ -175,8 +177,8 @@ impl Localize for Deck {
             writeln!(buffer, "{count:>4} {}", card.in_locale(locale)).ok();
         }
 
-        if let Some(sideboards) = &self.sideboard_cards {
-            for sideboard in sideboards {
+        {
+            for sideboard in &self.sideboard_cards {
                 writeln!(buffer, "Sideboard: {}", sideboard.sideboard_card.name).ok();
 
                 let cards =
@@ -477,9 +479,7 @@ fn raw_data_to_deck(
                     sideboard_card: Card::dummy(sb_card),
                     cards_in_sideboard: sb.map(|&(c, _)| Card::dummy(c)).collect(),
                 })
-                .map(Some)
-                .collect::<Option<Vec<_>>>()
-                .filter(|v| v.is_empty().not()),
+                .collect(),
             invalid_card_ids: None,
         }
     };
@@ -517,7 +517,7 @@ fn specific_card_adjustments(deck: &mut Deck) {
 
     // Treatments for Zilliax Deluxe 3000
     const ZILLIAX_DELUXE_3000_ID: usize = 102_983;
-    '_zilliax_deluxe_3000: for sb in deck.sideboard_cards.iter_mut().flatten() {
+    '_zilliax_deluxe_3000: for sb in deck.sideboard_cards.iter_mut() {
         // removes cosmetic cards from all sideboards.
         // Currently only has an effect on Zilliax Cosmetic Modules
         sb.cards_in_sideboard.retain(|c| c.cosmetic.not());

@@ -516,38 +516,43 @@ fn specific_card_adjustments(deck: &mut Deck) {
     // This function contains specific adjustments to specific cards as needed.
 
     // Treatments for Zilliax Deluxe 3000
-    const ZILLIAX_DELUXE_3000_ID: usize = 102_983;
-    '_zilliax_deluxe_3000: for sb in deck.sideboard_cards.iter_mut() {
-        // removes cosmetic cards from all sideboards.
-        // Currently only has an effect on Zilliax Cosmetic Modules
+    'zilliax_deluxe_3000: {
+        const ZILLIAX_DELUXE_3000_ID: usize = 102_983;
+        let Some(sb) = deck
+            .sideboard_cards
+            .iter_mut()
+            .find(|sb| sb.sideboard_card.id == ZILLIAX_DELUXE_3000_ID)
+        else {
+            break 'zilliax_deluxe_3000;
+        };
+
+        // removes Cosmetic Modules
         sb.cards_in_sideboard.retain(|c| c.cosmetic.not());
 
-        if sb.sideboard_card.id == ZILLIAX_DELUXE_3000_ID {
-            let (zilliax_cost, zilliax_attack, zilliax_health) =
-                sb.cards_in_sideboard
-                    .iter()
-                    .fold((0, 0, 0), |(acc_c, acc_a, acc_h), c| {
-                        let (a, h) = c.stats();
-                        (
-                            acc_c + c.cost,
-                            acc_a + a.unwrap_or_default(),
-                            acc_h + h.unwrap_or_default(),
-                        )
-                    });
+        let (zilliax_cost, zilliax_attack, zilliax_health) =
+            sb.cards_in_sideboard
+                .iter()
+                .fold((0, 0, 0), |(acc_c, acc_a, acc_h), c| {
+                    let (a, h) = c.stats();
+                    (
+                        acc_c + c.cost,
+                        acc_a + a.unwrap_or_default(),
+                        acc_h + h.unwrap_or_default(),
+                    )
+                });
 
-            if let Some(Card {
-                cost,
-                card_type: CardType::Minion { attack, health, .. },
-                ..
-            }) = deck
-                .cards
-                .iter_mut()
-                .find(|c| c.id == ZILLIAX_DELUXE_3000_ID)
-            {
-                *cost = zilliax_cost;
-                *attack = zilliax_attack;
-                *health = zilliax_health;
-            }
+        if let Some(Card {
+            cost,
+            card_type: CardType::Minion { attack, health, .. },
+            ..
+        }) = deck
+            .cards
+            .iter_mut()
+            .find(|c| c.id == ZILLIAX_DELUXE_3000_ID)
+        {
+            *cost = zilliax_cost;
+            *attack = zilliax_attack;
+            *health = zilliax_health;
         }
     }
 }

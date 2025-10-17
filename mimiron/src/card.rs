@@ -52,6 +52,7 @@ struct CardData {
 
     spell_school_id: Option<u8>,
 
+    // Zerg, Kabal, etc
     faction_id: Option<Vec<usize>>,
 
     // Whether card is functional or cosmetic. For Zilliax Deluxe 3000.

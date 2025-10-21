@@ -95,7 +95,9 @@ struct DeckData {
 
     #[serde(default)]
     sideboard_cards: Vec<Sideboard>,
-    invalid_card_ids: Option<Vec<usize>>,
+
+    #[serde(default)]
+    invalid_card_ids: Vec<usize>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -107,7 +109,7 @@ pub struct Deck {
     pub class: Class,
     pub cards: Vec<Card>,
     pub sideboard_cards: Vec<Sideboard>,
-    invalid_card_ids: Option<Vec<usize>>,
+    invalid_card_ids: Vec<usize>,
 }
 impl Deck {
     #[must_use]
@@ -422,7 +424,7 @@ fn raw_data_to_deck(
             .body_mut()
             .read_json::<Deck>()?;
 
-        anyhow::ensure!(deck.invalid_card_ids.is_none(), "Deck has invalid IDs");
+        anyhow::ensure!(deck.invalid_card_ids.is_empty(), "Deck has invalid IDs");
 
         Ok(deck)
     };
@@ -454,9 +456,7 @@ fn raw_data_to_deck(
         let deck = req.call()?.body_mut().read_json::<Deck>()?;
 
         anyhow::ensure!(
-            deck.invalid_card_ids
-                .as_ref()
-                .is_none_or(|ids| ids.iter().all(|&id| id != 0)),
+            deck.invalid_card_ids.iter().all(|&id| id != 0),
             "Deck invalid IDs are 0."
         );
 
@@ -480,7 +480,7 @@ fn raw_data_to_deck(
                     cards_in_sideboard: sb.map(|&(c, _)| Card::dummy(c)).collect(),
                 })
                 .collect(),
-            invalid_card_ids: None,
+            invalid_card_ids: Vec::new(),
         }
     };
 
@@ -503,7 +503,7 @@ fn raw_data_to_deck(
     deck.title = title.unwrap_or(deck.title);
 
     // if the deck has invalid card IDs, add dummy cards with backup Data from HearthSim.
-    for id in deck.invalid_card_ids.iter().flatten() {
+    for id in deck.invalid_card_ids.iter() {
         deck.cards.push(Card::dummy(*id));
     }
 

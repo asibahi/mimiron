@@ -43,7 +43,6 @@ struct CardData {
 
     attack: Option<u8>,
     health: Option<u8>,
-    durability: Option<u8>, // apparently merged with health ?
     armor: Option<u8>,
 
     // Additional Info
@@ -53,7 +52,8 @@ struct CardData {
     spell_school_id: Option<u8>,
 
     // Zerg, Kabal, etc
-    faction_id: Option<Vec<usize>>,
+    #[serde(default)]
+    faction_id: Vec<usize>,
 
     // Whether card is functional or cosmetic. For Zilliax Deluxe 3000.
     is_zilliax_cosmetic_module: bool,
@@ -264,7 +264,7 @@ impl From<CardData> for Card {
                 },
                 7 => CardType::Weapon {
                     attack: c.attack.unwrap_or_default(),
-                    durability: c.durability.or(c.health).unwrap_or_default(),
+                    durability: c.health.unwrap_or_default(),
                 },
                 39 => CardType::Location {
                     durability: c.health.unwrap_or_default(),
@@ -273,8 +273,7 @@ impl From<CardData> for Card {
                 _ => CardType::Unknown,
             },
             rarity: c.rarity_id.unwrap_or_default().into(),
-
-            faction: c.faction_id.into_iter().flatten().next().map(Faction),
+            faction: c.faction_id.into_iter().next().map(Faction),
 
             text: c.text,
 

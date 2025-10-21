@@ -188,7 +188,7 @@ fn img_columns_format(
     }
 
     if inline_sideboard.not() {
-        for sb in deck.sideboard_cards.iter() {
+        for sb in &deck.sideboard_cards {
             let (col, row) = pos_in_img(cursor);
             _ = img.copy_from(
                 &draw_heading_slug(&format_compact!("> {}", sb.sideboard_card.name)),

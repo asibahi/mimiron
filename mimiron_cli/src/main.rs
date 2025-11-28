@@ -45,7 +45,7 @@ enum Commands {
     #[clap(hide = true)]
     Token,
 
-    // Get a meta deck
+    /// Get a meta deck from Firestone's data
     #[clap(hide = true)]
     Meta(meta::MetaArgs),
 
@@ -59,9 +59,10 @@ enum Commands {
     #[command(alias("at"))]
     Archetype { input: String },
 
-    #[clap(hide = true)]
+    /// Get the latest news from Hearthstone
     News {
-        #[arg(short, default_value("3"))]
+        #[clap(hide = true)]
+        #[arg(default_value("3"))]
         count: usize,
     },
 }
@@ -91,9 +92,6 @@ pub fn run() -> Result<()> {
         Commands::News { count } => mimiron::news::get_news()?
             .take(count)
             .enumerate()
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
             .for_each(|(idx, news)| println!("{}. {news}", idx + 1)),
     }
 

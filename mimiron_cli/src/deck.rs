@@ -8,7 +8,7 @@ use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[derive(Args, Clone)]
@@ -21,6 +21,9 @@ pub struct DeckArgs {
     comp: Option<String>,
 
     /// Instead of a code, specify a file with multiple deck codes (separated by new lines).
+    ///
+    /// If generating images, it saves them to a folder with the same name as the file instead
+    /// of the Downloads folder unless --output is set
     #[arg(long, conflicts_with("comp"))]
     batch: bool,
 
@@ -28,7 +31,7 @@ pub struct DeckArgs {
     #[arg(short, long)]
     mode: Option<String>,
 
-    /// Save deck image. Defaults to your downloads folder unless --output is set
+    /// Save deck image. Defaults to Downloads folder unless --output is set
     #[arg(short, long, conflicts_with("comp"))]
     image: bool,
 
@@ -63,11 +66,22 @@ enum ImageFormat {
 }
 
 pub fn run(
-    args: DeckArgs,
+    mut args: DeckArgs,
     locale: Locale,
 ) -> Result<()> {
     if args.batch {
-        let file = BufReader::new(File::open(&args.input)?);
+        let file = Path::new(&args.input);
+
+        if args.image {
+            args.output = args.output.or_else(|| {
+                let output_dir = file.with_extension("");
+                std::fs::create_dir(&output_dir).ok()?;
+                Some(output_dir)
+            });
+        }
+
+        let file = File::open(file)?;
+        let file = BufReader::new(&file);
         file.lines()
             .map_while(Result::ok)
             .par_bridge()

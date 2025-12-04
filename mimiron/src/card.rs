@@ -90,6 +90,22 @@ pub struct Card {
     pub cosmetic: bool,
 }
 impl Card {
+    pub(crate) fn get_by_id(
+        id: usize,
+        locale: Locale,
+    ) -> Result<Card> {
+        let res = AGENT
+            .get(format!(
+                "https://us.api.blizzard.com/hearthstone/cards/{id}"
+            ))
+            .header("Authorization", format!("Bearer {}", get_access_token()))
+            .query("locale", locale.to_compact_string())
+            .call()?
+            .body_mut()
+            .read_json::<Card>()?;
+        Ok(res)
+    }
+
     pub(crate) fn dummy(id: usize) -> Self {
         let (name, cost, rarity) = get_hearth_sim_details(id).unwrap_or_else(|| {
             (
@@ -116,6 +132,7 @@ impl Card {
             cosmetic: false,
         }
     }
+
     #[must_use]
     pub fn card_set(
         &self,

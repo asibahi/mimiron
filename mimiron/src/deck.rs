@@ -487,6 +487,7 @@ fn raw_data_to_deck(
     let mut deck = get_deck_w_code()
         .or_else(|e| {
             tracing::warn!("Encountered error validating code from Blizzard's servers: {e}. Using direct card data instead.");
+            // this validates reprints by using the original card ID
             get_deck_w_cards()
         })
         .unwrap_or_else(|e| {
@@ -502,9 +503,15 @@ fn raw_data_to_deck(
 
     deck.title = title.unwrap_or(deck.title);
 
-    // if the deck has invalid card IDs, add dummy cards with backup Data from HearthSim.
+    // if the deck still has invalid card IDs, add dcard manually
     for id in deck.invalid_card_ids.iter() {
-        deck.cards.push(Card::dummy(*id));
+        // this potentially makes a lot of calls to Blizzard servers.
+        // Tried putting all the invalid cards in a deck but that did not work.
+        // could cache results if it ever becomes a problem.
+        // `get_by_id` calls official server. `dummy` uses dummy cached HearthSim Data
+
+        deck.cards
+            .push(Card::get_by_id(*id, opts.locale).unwrap_or_else(|_| Card::dummy(*id)));
     }
 
     specific_card_adjustments(&mut deck);
